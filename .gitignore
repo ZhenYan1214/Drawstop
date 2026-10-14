@@ -1,0 +1,6 @@
+*.env
+node_modules/
+contracts/evm/out/
+contracts/evm/cache/
+contracts/evm/broadcast/
+.cre_build_tmp.js
