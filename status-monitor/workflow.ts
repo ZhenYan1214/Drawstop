@@ -1,245 +1,274 @@
 import {
 	bytesToHex,
-	ConsensusAggregationByFields,
+	consensusIdenticalAggregation,
 	type CronPayload,
 	cre,
 	getNetwork,
-	type HTTPSendRequester,
-	median,
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { type Address, parseUnits } from 'viem'
+import { type Address, encodeAbiParameters, type Hex, keccak256, parseAbiParameters, toHex, zeroAddress } from 'viem'
 import { z } from 'zod'
-import { BalanceReader } from '../contracts/evm/ts/generated/BalanceReader'
-import { IERC20 } from '../contracts/evm/ts/generated/IERC20'
-import { MessageEmitter, type DecodedLog, type MessageEmittedDecoded } from '../contracts/evm/ts/generated/MessageEmitter'
-import { ReserveManager } from '../contracts/evm/ts/generated/ReserveManager'
+import { type DecodedLog, type DrawdownRequestedDecoded, LoanFacility } from '../contracts/evm/ts/generated/LoanFacility'
+import { StatusRegistry } from '../contracts/evm/ts/generated/StatusRegistry'
+import {
+	type CompaniesHouseResult,
+	crossCheck,
+	fetchCompaniesHouse,
+	fetchGazette,
+	fetchGleif,
+	type GazetteResult,
+	type GleifResult,
+	normalizeCompanyNumber,
+	SRC_COMPANIES_HOUSE,
+	SRC_GAZETTE,
+	SRC_GLEIF,
+} from './sources'
 
 export const configSchema = z.object({
 	schedule: z.string(),
-	url: z.string(),
-	evms: z.array(
-		z.object({
-			tokenAddress: z.string(),
-			porAddress: z.string(),
-			proxyAddress: z.string(),
-			balanceReaderAddress: z.string(),
-			messageEmitterAddress: z.string(),
-			chainSelectorName: z.string(),
-			gasLimit: z.string(),
-		}),
-	),
+	chainSelectorName: z.string(),
+	registryAddress: z.string(),
+	facilityAddress: z.string(),
+	gasLimit: z.string(),
+	maxAgeSeconds: z.number().int().positive(),
+	maxEntitiesPerRun: z.number().int().min(1).max(2),
+	maxNoticeConfirmations: z.number().int().min(1).max(4),
+	gazetteBaseUrl: z.string(),
+	companiesHouseBaseUrl: z.string(),
+	gleifBaseUrl: z.string(),
+	companiesHouseSecretId: z.string(),
+	/** Used only when registryAddress is the zero address: check these entities and log the report without writing. */
+	previewEntities: z.array(z.object({ companyNumber: z.string(), lei: z.string() })).default([]),
 })
 
-type Config = z.infer<typeof configSchema>
+export type Config = z.infer<typeof configSchema>
 
-interface PORResponse {
-	accountName: string
-	totalTrust: number
-	totalToken: number
-	ripcord: boolean
-	updatedAt: string
+export interface Entity {
+	entityId: Hex
+	companyNumber: string
+	lei: string
 }
 
-interface ReserveInfo {
-	lastUpdated: Date
-	totalReserve: number
+export interface CheckResult {
+	entity: Entity
+	checkedAt: number
+	validUntil: number
+	eventBits: number
+	unavailableBits: number
+	chUpdatedAt: number
+	gazetteUpdatedAt: number
+	gleifUpdatedAt: number
+	petitionPresentedAt: number
+	petitionPublishedAt: number
+	petitionCaseRef: Hex
+	evidenceHash: Hex
+	evidence: string
 }
 
-// Utility function to safely stringify objects with bigints
-const safeJsonStringify = (obj: any): string =>
-	JSON.stringify(obj, (_, value) => (typeof value === 'bigint' ? value.toString() : value), 2)
+const REPORT_PARAMS = parseAbiParameters(
+	'(bytes32 entityId, uint64 checkedAt, uint64 validUntil, uint32 eventBits, uint32 unavailableBits, uint64 chUpdatedAt, uint64 gazetteUpdatedAt, uint64 gleifUpdatedAt, uint64 petitionPresentedAt, uint64 petitionPublishedAt, bytes32 petitionCaseRef, bytes32 evidenceHash, bytes32 requestId)',
+)
 
-const fetchReserveInfo = (sendRequester: HTTPSendRequester, config: Config): ReserveInfo => {
-	const response = sendRequester.sendRequest({ method: 'GET', url: config.url }).result()
+const ZERO_BYTES32 = `0x${'0'.repeat(64)}` as Hex
 
-	if (response.statusCode !== 200) {
-		throw new Error(`HTTP request failed with status: ${response.statusCode}`)
+/** Must match StatusRegistry.entityIdFor: keccak256(abi.encodePacked("GB-CH:", companyNumber)). */
+export const entityIdFor = (companyNumber: string): Hex => keccak256(toHex(`GB-CH:${companyNumber}`))
+
+const hashOrZero = (s: string): Hex => (s === '' ? ZERO_BYTES32 : keccak256(toHex(s)))
+
+const failed = <T extends { ok: boolean; error: string }>(fallback: Omit<T, 'ok' | 'error'>, err: unknown): T =>
+	({ ...fallback, ok: false, error: err instanceof Error ? err.message : String(err) }) as T
+
+// ─── Checking one entity ────────────────────────────────────────────────
+
+/**
+ * Queries every source with identical-value consensus. A source whose nodes fail or disagree is marked
+ * unavailable: "could not be checked" is recorded as such and never as an adverse finding.
+ */
+export const checkEntity = (runtime: Runtime<Config>, entity: Entity): CheckResult => {
+	const cfg = runtime.config
+	const http = new cre.capabilities.HTTPClient()
+
+	const gazette: GazetteResult = (() => {
+		try {
+			return http
+				.sendRequest(runtime, fetchGazette, consensusIdenticalAggregation<GazetteResult>())({
+					baseUrl: cfg.gazetteBaseUrl,
+					companyNumber: entity.companyNumber,
+					maxConfirmations: cfg.maxNoticeConfirmations,
+				})
+				.result()
+		} catch (err) {
+			return failed<GazetteResult>(
+				{ eventBits: 0, updatedAt: 0, petitionPresentedAt: 0, petitionPublishedAt: 0, petitionCaseRef: '', notices: '' },
+				err,
+			)
+		}
+	})()
+
+	const ch: CompaniesHouseResult = (() => {
+		try {
+			const apiKey = runtime.getSecret({ id: cfg.companiesHouseSecretId }).result().value
+			return http
+				.sendRequest(runtime, fetchCompaniesHouse, consensusIdenticalAggregation<CompaniesHouseResult>())({
+					baseUrl: cfg.companiesHouseBaseUrl,
+					companyNumber: entity.companyNumber,
+					apiKey,
+				})
+				.result()
+		} catch (err) {
+			return failed<CompaniesHouseResult>({ eventBits: 0, companyStatus: '' }, err)
+		}
+	})()
+
+	const gleif: GleifResult | null =
+		entity.lei === ''
+			? null // no LEI bound: not checked, and not "unavailable"
+			: (() => {
+					try {
+						return http
+							.sendRequest(runtime, fetchGleif, consensusIdenticalAggregation<GleifResult>())({
+								baseUrl: cfg.gleifBaseUrl,
+								lei: entity.lei,
+							})
+							.result()
+					} catch (err) {
+						return failed<GleifResult>(
+							{ eventBits: 0, registeredAs: '', entityStatus: '', registrationStatus: '', updatedAt: 0 },
+							err,
+						)
+					}
+				})()
+
+	let eventBits = 0
+	let unavailableBits = 0
+	if (gazette.ok) eventBits |= gazette.eventBits
+	else unavailableBits |= 1 << SRC_GAZETTE
+	if (ch.ok) eventBits |= ch.eventBits
+	else unavailableBits |= 1 << SRC_COMPANIES_HOUSE
+	if (gleif) {
+		if (gleif.ok) eventBits |= gleif.eventBits | crossCheck(entity.companyNumber, gleif, ch)
+		else unavailableBits |= 1 << SRC_GLEIF
 	}
 
-	const responseText = Buffer.from(response.body).toString('utf-8')
-	const porResp: PORResponse = JSON.parse(responseText)
-
-	if (porResp.ripcord) {
-		throw new Error('ripcord is true')
-	}
+	const checkedAt = Math.floor(runtime.now().getTime() / 1000)
+	// Canonical evidence: normalized per-source results only, fixed key order, no raw responses.
+	const evidence = JSON.stringify({
+		v: 1,
+		entity: entity.companyNumber,
+		checkedAt,
+		gazette: { ok: gazette.ok, bits: gazette.eventBits, notices: gazette.notices },
+		companiesHouse: { ok: ch.ok, bits: ch.eventBits, status: ch.companyStatus },
+		gleif: gleif
+			? { ok: gleif.ok, bits: gleif.eventBits, registeredAs: gleif.registeredAs, entity: gleif.entityStatus, registration: gleif.registrationStatus }
+			: null,
+	})
 
 	return {
-		lastUpdated: new Date(porResp.updatedAt),
-		totalReserve: porResp.totalToken,
+		entity,
+		checkedAt,
+		validUntil: checkedAt + cfg.maxAgeSeconds,
+		eventBits,
+		unavailableBits,
+		chUpdatedAt: 0, // Companies House profile publishes no last-update time
+		gazetteUpdatedAt: gazette.ok ? gazette.updatedAt : 0,
+		gleifUpdatedAt: gleif?.ok ? gleif.updatedAt : 0,
+		petitionPresentedAt: gazette.petitionPresentedAt,
+		petitionPublishedAt: gazette.petitionPublishedAt,
+		petitionCaseRef: hashOrZero(gazette.petitionCaseRef),
+		evidenceHash: keccak256(toHex(evidence)),
+		evidence,
 	}
 }
 
-const fetchNativeTokenBalance = (
-	runtime: Runtime<Config>,
-	evmConfig: Config['evms'][0],
-	tokenHolderAddress: string,
-): bigint => {
-	const network = getNetwork({
-		chainFamily: 'evm',
-		chainSelectorName: evmConfig.chainSelectorName,
-		isTestnet: true,
-	})
+export const encodeReport = (r: CheckResult, requestId: Hex): Hex =>
+	encodeAbiParameters(REPORT_PARAMS, [
+		{
+			entityId: r.entity.entityId,
+			checkedAt: BigInt(r.checkedAt),
+			validUntil: BigInt(r.validUntil),
+			eventBits: r.eventBits,
+			unavailableBits: r.unavailableBits,
+			chUpdatedAt: BigInt(r.chUpdatedAt),
+			gazetteUpdatedAt: BigInt(r.gazetteUpdatedAt),
+			gleifUpdatedAt: BigInt(r.gleifUpdatedAt),
+			petitionPresentedAt: BigInt(r.petitionPresentedAt),
+			petitionPublishedAt: BigInt(r.petitionPublishedAt),
+			petitionCaseRef: r.petitionCaseRef,
+			evidenceHash: r.evidenceHash,
+			requestId,
+		},
+	])
 
-	if (!network) {
-		throw new Error(`Network not found for chain selector name: ${evmConfig.chainSelectorName}`)
-	}
+// ─── Writing ────────────────────────────────────────────────────────────
 
-	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
-	const balanceReader = new BalanceReader(evmClient, evmConfig.balanceReaderAddress as Address)
-	const balances = balanceReader.getNativeBalances(runtime, [tokenHolderAddress as Address])
-
-	if (!balances || balances.length === 0) {
-		throw new Error('No balances returned from contract')
-	}
-
-	return balances[0]
+const evmClientFor = (cfg: Config) => {
+	const network = getNetwork({ chainFamily: 'evm', chainSelectorName: cfg.chainSelectorName, isTestnet: true })
+	if (!network) throw new Error(`Network not found: ${cfg.chainSelectorName}`)
+	return new cre.capabilities.EVMClient(network.chainSelector.selector)
 }
 
-const getTotalSupply = (runtime: Runtime<Config>): bigint => {
-	const evms = runtime.config.evms
-	let totalSupply = 0n
+const isPreview = (cfg: Config) => cfg.registryAddress.toLowerCase() === zeroAddress
 
-	for (const evmConfig of evms) {
-		const network = getNetwork({
-			chainFamily: 'evm',
-			chainSelectorName: evmConfig.chainSelectorName,
-			isTestnet: true,
-		})
-
-		if (!network) {
-			throw new Error(`Network not found for chain selector name: ${evmConfig.chainSelectorName}`)
-		}
-
-		const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
-		const token = new IERC20(evmClient, evmConfig.tokenAddress as Address)
-		const supply = token.totalSupply(runtime)
-		totalSupply += supply
-	}
-
-	return totalSupply
-}
-
-const updateReserves = (
-	runtime: Runtime<Config>,
-	totalSupply: bigint,
-	totalReserveScaled: bigint,
-): string => {
-	const evmConfig = runtime.config.evms[0]
-	const network = getNetwork({
-		chainFamily: 'evm',
-		chainSelectorName: evmConfig.chainSelectorName,
-		isTestnet: true,
-	})
-
-	if (!network) {
-		throw new Error(`Network not found for chain selector name: ${evmConfig.chainSelectorName}`)
-	}
-
-	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
-	const proxy = new ReserveManager(evmClient, evmConfig.proxyAddress as Address)
-
+const attestAndWrite = (runtime: Runtime<Config>, entity: Entity, requestId: Hex): string => {
+	const result = checkEntity(runtime, entity)
 	runtime.log(
-		`Updating reserves totalSupply ${totalSupply.toString()} totalReserveScaled ${totalReserveScaled.toString()}`,
+		`[${entity.companyNumber}] eventBits=0b${result.eventBits.toString(2)} unavailableBits=0b${result.unavailableBits.toString(2)} ` +
+			`petitionPresentedAt=${result.petitionPresentedAt} petitionPublishedAt=${result.petitionPublishedAt}`,
 	)
+	runtime.log(`[${entity.companyNumber}] evidence ${result.evidence}`)
+	runtime.log(`[${entity.companyNumber}] evidenceHash ${result.evidenceHash}`)
 
-	const resp = proxy.writeReportFromUpdateReserves(
-		runtime,
-		{ totalMinted: totalSupply, totalReserve: totalReserveScaled },
-		{ gasLimit: evmConfig.gasLimit },
-	)
-
-	const txStatus = resp.txStatus
-
-	if (txStatus !== TxStatus.SUCCESS) {
-		throw new Error(`Failed to write report: ${resp.errorMessage || txStatus}`)
+	const report = encodeReport(result, requestId)
+	if (isPreview(runtime.config)) {
+		runtime.log(`[${entity.companyNumber}] preview mode, report not written: ${report}`)
+		return result.evidenceHash
 	}
 
-	const txHash = resp.txHash || new Uint8Array(32)
-
-	runtime.log(`Write report transaction succeeded at txHash: ${bytesToHex(txHash)}`)
-
-	return txHash.toString()
-}
-
-const doPOR = (runtime: Runtime<Config>): string => {
-	runtime.log(`fetching por url ${runtime.config.url}`)
-
-	const httpCapability = new cre.capabilities.HTTPClient()
-	const reserveInfo = httpCapability
-		.sendRequest(
-			runtime,
-			fetchReserveInfo,
-			ConsensusAggregationByFields<ReserveInfo>({
-				lastUpdated: median,
-				totalReserve: median,
-			}),
-		)(runtime.config)
-		.result()
-
-	runtime.log(`ReserveInfo ${safeJsonStringify(reserveInfo)}`)
-
-	const totalSupply = getTotalSupply(runtime)
-	runtime.log(`TotalSupply ${totalSupply.toString()}`)
-
-	const totalReserveScaled = parseUnits(reserveInfo.totalReserve.toString(), 18)
-	runtime.log(`TotalReserveScaled ${totalReserveScaled.toString()}`)
-
-	const nativeTokenBalance = fetchNativeTokenBalance(
-		runtime,
-		runtime.config.evms[0],
-		runtime.config.evms[0].tokenAddress,
-	)
-	runtime.log(`NativeTokenBalance ${nativeTokenBalance.toString()}`)
-
-	updateReserves(runtime, totalSupply, totalReserveScaled)
-
-	return reserveInfo.totalReserve.toString()
-}
-
-export const onCronTrigger = (runtime: Runtime<Config>, payload: CronPayload): string => {
-	if (!payload.scheduledExecutionTime) {
-		throw new Error('Scheduled execution time is required')
+	const registry = new StatusRegistry(evmClientFor(runtime.config), runtime.config.registryAddress as Address)
+	const resp = registry.writeReport(runtime, report, { gasLimit: runtime.config.gasLimit })
+	if (resp.txStatus !== TxStatus.SUCCESS) {
+		throw new Error(`Attestation write failed for ${entity.companyNumber}: ${resp.errorMessage ?? resp.txStatus}`)
 	}
-
-	runtime.log('Running CronTrigger')
-
-	return doPOR(runtime)
+	const txHash = bytesToHex(resp.txHash ?? new Uint8Array(32))
+	runtime.log(`[${entity.companyNumber}] attestation written, tx ${txHash}`)
+	return txHash
 }
 
-export const onLogTrigger = (runtime: Runtime<Config>, payload: DecodedLog<MessageEmittedDecoded>): string => {
-	runtime.log('Running LogTrigger')
-	runtime.log(`Emitter ${payload.data.emitter}`)
-	runtime.log(`Message decoded from log: ${payload.data.message}`)
+// ─── Handlers ───────────────────────────────────────────────────────────
 
-	return payload.data.message
+/** H2: periodic monitoring of every entity registered by a bound facility. */
+export const onCron = (runtime: Runtime<Config>, _payload: CronPayload): string => {
+	const cfg = runtime.config
+	let entities: Entity[]
+	if (isPreview(cfg)) {
+		entities = cfg.previewEntities.map((e) => ({
+			entityId: entityIdFor(normalizeCompanyNumber(e.companyNumber)),
+			companyNumber: normalizeCompanyNumber(e.companyNumber),
+			lei: e.lei,
+		}))
+	} else {
+		const registry = new StatusRegistry(evmClientFor(cfg), cfg.registryAddress as Address)
+		const [ids, numbers, leis] = registry.getMonitored(runtime)
+		entities = ids.map((entityId, i) => ({ entityId, companyNumber: numbers[i], lei: leis[i] }))
+	}
+	runtime.log(`Monitoring ${entities.length} entities, up to ${cfg.maxEntitiesPerRun} this run`)
+
+	const results = entities.slice(0, cfg.maxEntitiesPerRun).map((e) => attestAndWrite(runtime, e, ZERO_BYTES32))
+	return results.join(',')
+}
+
+/** H3: a borrower asked to draw funds; check now so the facility can decide on fresh evidence. */
+export const onDrawdownRequested = (runtime: Runtime<Config>, log: DecodedLog<DrawdownRequestedDecoded>): string => {
+	const { drawdownId, requestId, entityId, companyNumber, lei, amount } = log.data
+	runtime.log(`DrawdownRequested #${drawdownId} for ${companyNumber}, amount ${amount}`)
+	return attestAndWrite(runtime, { entityId, companyNumber, lei }, requestId)
 }
 
 export function initWorkflow(config: Config) {
-	const cronTrigger = new cre.capabilities.CronCapability()
-	const network = getNetwork({
-		chainFamily: 'evm',
-		chainSelectorName: config.evms[0].chainSelectorName,
-		isTestnet: true,
-	})
-
-	if (!network) {
-		throw new Error(
-			`Network not found for chain selector name: ${config.evms[0].chainSelectorName}`,
-		)
-	}
-
-	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
-	const messageEmitter = new MessageEmitter(evmClient, config.evms[0].messageEmitterAddress as Address)
-
-	return [
-		cre.handler(
-			cronTrigger.trigger({
-				schedule: config.schedule,
-			}),
-			onCronTrigger,
-		),
-		cre.handler(messageEmitter.logTriggerMessageEmitted(), onLogTrigger),
-	]
+	const cron = cre.handler(new cre.capabilities.CronCapability().trigger({ schedule: config.schedule }), onCron)
+	if (config.facilityAddress.toLowerCase() === zeroAddress) return [cron]
+	const facility = new LoanFacility(evmClientFor(config), config.facilityAddress as Address)
+	return [cron, cre.handler(facility.logTriggerDrawdownRequested(), onDrawdownRequested)]
 }

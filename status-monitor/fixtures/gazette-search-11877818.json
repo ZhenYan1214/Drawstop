@@ -1,0 +1,204 @@
+{
+ "id": "https://www.thegazette.co.uk/insolvency/notice/data.feed?results-page-size=20&categorycode=G205010000&text=11877818&results-page=1",
+ "link": [
+  {
+   "@href": "https://www.thegazette.co.uk/insolvency/notice/data.feed?results-page-size=20&categorycode=G205010000&text=11877818&results-page=1",
+   "@rel": "alternate",
+   "@type": "application/atom+xml",
+   "@title": "ATOM"
+  },
+  {
+   "@href": "https://www.thegazette.co.uk/insolvency/notice/data.json?results-page=1",
+   "@rel": "first",
+   "@type": "application/json"
+  },
+  {
+   "@href": "https://www.thegazette.co.uk/insolvency/notice/data.json?results-page=1",
+   "@rel": "last",
+   "@type": "application/json"
+  },
+  {
+   "@href": "https://www.thegazette.co.uk/insolvency/notice/data.htm?results-page-size=20&categorycode=G205010000&text=11877818&results-page=1",
+   "@rel": "alternate",
+   "@title": "HTML",
+   "@type": "application/xhtml+xml"
+  },
+  {
+   "@href": "https://www.thegazette.co.uk/insolvency/notice/data.json?results-page-size=20&categorycode=G205010000&text=11877818&results-page=1",
+   "@rel": "self",
+   "@type": "application/json"
+  }
+ ],
+ "title": "Search Result",
+ "updated": "2026-10-14T15:52:48.794799+01:00",
+ "openSearch:Query": {
+  "@role": "request",
+  "@searchTerms": "11877818"
+ },
+ "f:page-number": "1",
+ "f:page-size": "20",
+ "f:page-start": "1",
+ "f:page-stop": "2",
+ "f:total": "2",
+ "f:facets": null,
+ "entry": [
+  {
+   "id": "https://www.thegazette.co.uk/id/notice/5219886",
+   "f:status": "published",
+   "f:notice-code": "2450",
+   "title": "AMS FACILITIES (SW) LTD",
+   "link": [
+    {
+     "@href": "https://www.thegazette.co.uk/id/notice/5219886",
+     "@rel": "self"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.ttl",
+     "@rel": "alternate",
+     "@title": "TURTLE",
+     "@type": "text/turtle"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.jsonld",
+     "@rel": "alternate",
+     "@title": "JSON-LD",
+     "@type": "application/json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.rdf",
+     "@rel": "alternate",
+     "@title": "RDF/XML",
+     "@type": "application/rdf+xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.ttl?view=linked-data",
+     "@rel": "alternate",
+     "@title": "TURTLE",
+     "@type": "text/turtle"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.json?view=linked-data",
+     "@rel": "alternate",
+     "@title": "JSON-SIMPLE",
+     "@type": "application/json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.rdfjson?view=linked-data",
+     "@rel": "alternate",
+     "@title": "JSON-RDF",
+     "@type": "application/rdf+json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.rdf?view=linked-data",
+     "@rel": "alternate",
+     "@title": "RDF/XML",
+     "@type": "application/rdf+xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.xml?view=linked-data",
+     "@rel": "alternate",
+     "@title": "XML",
+     "@type": "application/xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5219886/data.html?view=linked-data",
+     "@rel": "alternate",
+     "@title": "HTML",
+     "@type": "application/html"
+    }
+   ],
+   "author": {},
+   "updated": "2026-09-30T14:28:00+01:00",
+   "published": "2026-09-29T09:30:08",
+   "category": {
+    "@term": "Petitions to Wind Up (Companies)"
+   },
+   "geo:Point": {
+    "geo:lat": "50.36858",
+    "geo:long": "-4.154043"
+   }
+  },
+  {
+   "id": "https://www.thegazette.co.uk/id/notice/5229442",
+   "f:status": "published",
+   "f:notice-code": "2452",
+   "title": "AMS FACILITIES (SW) LTD",
+   "link": [
+    {
+     "@href": "https://www.thegazette.co.uk/id/notice/5229442",
+     "@rel": "self"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.ttl",
+     "@rel": "alternate",
+     "@title": "TURTLE",
+     "@type": "text/turtle"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.jsonld",
+     "@rel": "alternate",
+     "@title": "JSON-LD",
+     "@type": "application/json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.rdf",
+     "@rel": "alternate",
+     "@title": "RDF/XML",
+     "@type": "application/rdf+xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.ttl?view=linked-data",
+     "@rel": "alternate",
+     "@title": "TURTLE",
+     "@type": "text/turtle"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.json?view=linked-data",
+     "@rel": "alternate",
+     "@title": "JSON-SIMPLE",
+     "@type": "application/json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.rdfjson?view=linked-data",
+     "@rel": "alternate",
+     "@title": "JSON-RDF",
+     "@type": "application/rdf+json"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.rdf?view=linked-data",
+     "@rel": "alternate",
+     "@title": "RDF/XML",
+     "@type": "application/rdf+xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.xml?view=linked-data",
+     "@rel": "alternate",
+     "@title": "XML",
+     "@type": "application/xml"
+    },
+    {
+     "@href": "https://www.thegazette.co.uk/notice/5229442/data.html?view=linked-data",
+     "@rel": "alternate",
+     "@title": "HTML",
+     "@type": "application/html"
+    }
+   ],
+   "author": {},
+   "updated": "2026-10-14T14:00:14+01:00",
+   "published": "2026-10-14T14:00:14",
+   "category": {
+    "@term": "Winding-Up Orders"
+   },
+   "geo:Point": {
+    "geo:lat": "50.36858",
+    "geo:long": "-4.154043"
+   }
+  }
+ ]
+}

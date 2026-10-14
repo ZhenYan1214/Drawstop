@@ -10,7 +10,7 @@ import {ReceiverTemplate} from "./ReceiverTemplate.sol";
 ///      petition that has been presented but not yet advertised. Severity is decided by consumers such as
 ///      LoanFacility.
 contract StatusRegistry is ReceiverTemplate {
-    // Sources (index into sourceUpdatedAt and bit position in unavailableBits)
+    // Sources (bit position in unavailableBits)
     uint8 public constant SRC_COMPANIES_HOUSE = 0;
     uint8 public constant SRC_GAZETTE = 1;
     uint8 public constant SRC_GLEIF = 2;
@@ -38,7 +38,9 @@ contract StatusRegistry is ReceiverTemplate {
         uint64 validUntil; // stale after this time
         uint32 eventBits; // events found in this check
         uint32 unavailableBits; // sources that could not be checked in this check
-        uint64[3] sourceUpdatedAt; // source's own last-update time, 0 = not published by the source
+        uint64 chUpdatedAt; // source's own last-update time, 0 = not published by the source
+        uint64 gazetteUpdatedAt; // publication time of the newest confirmed notice, 0 = none
+        uint64 gleifUpdatedAt; // LEI record lastUpdateDate, 0 = not checked
         uint64 petitionPresentedAt; // Gazette dateOfPetitionPresentation of the pending petition, 0 = none/unknown
         uint64 petitionPublishedAt; // Gazette publication time of that petition notice, 0 = none
         bytes32 petitionCaseRef; // keccak256 of normalized court case reference, 0 = none
@@ -53,7 +55,9 @@ contract StatusRegistry is ReceiverTemplate {
         uint32 eventBits;
         uint32 unavailableBits;
         uint32 activeBits; // eventBits, carrying forward last known state for unavailable sources
-        uint64[3] sourceUpdatedAt;
+        uint64 chUpdatedAt;
+        uint64 gazetteUpdatedAt;
+        uint64 gleifUpdatedAt;
         uint64 petitionPresentedAt;
         uint64 petitionPublishedAt;
         bytes32 petitionCaseRef;
@@ -123,7 +127,9 @@ contract StatusRegistry is ReceiverTemplate {
             eventBits: r.eventBits,
             unavailableBits: r.unavailableBits,
             activeBits: activeBits,
-            sourceUpdatedAt: r.sourceUpdatedAt,
+            chUpdatedAt: r.chUpdatedAt,
+            gazetteUpdatedAt: r.gazetteUpdatedAt,
+            gleifUpdatedAt: r.gleifUpdatedAt,
             petitionPresentedAt: gazetteUnavailable ? prev.petitionPresentedAt : r.petitionPresentedAt,
             petitionPublishedAt: gazetteUnavailable ? prev.petitionPublishedAt : r.petitionPublishedAt,
             petitionCaseRef: gazetteUnavailable ? prev.petitionCaseRef : r.petitionCaseRef,
@@ -164,8 +170,12 @@ contract StatusRegistry is ReceiverTemplate {
         return s_latest[entityId];
     }
 
-    function getFirstSeen(bytes32 entityId) external view returns (uint64[7] memory) {
-        return s_firstSeen[entityId];
+    /// @notice firstSeen per event bit (dynamic array for binding-friendly ABI; always EVENT_COUNT long).
+    function getFirstSeen(bytes32 entityId) external view returns (uint64[] memory firstSeen) {
+        firstSeen = new uint64[](EVENT_COUNT);
+        for (uint8 bit = 0; bit < EVENT_COUNT; bit++) {
+            firstSeen[bit] = s_firstSeen[entityId][bit];
+        }
     }
 
     function getEntity(bytes32 entityId) external view returns (Entity memory) {

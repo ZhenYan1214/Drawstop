@@ -1,0 +1,103 @@
+{
+ "format": "linked-data-api",
+ "version": "0.2",
+ "result": {
+  "_about": "https://www.thegazette.co.uk/notice/5219886/data.json?view=linked-data",
+  "definition": "https://www.thegazette.co.uk/lda#gazetteNotice",
+  "extendedMetadataVersion": "https://www.thegazette.co.uk/notice/5219886/data.json?view=linked-data&_metadata=all%2Cviews%2Cformats%2Cexecution%2Cbindings%2Csite",
+  "label": "5219886",
+  "primaryTopic": {
+   "_about": "https://www.thegazette.co.uk/id/notice/5219886",
+   "publisher": "TSO (The Stationery Office), customer.services@thegazette.co.uk",
+   "type": [
+    "https://www.thegazette.co.uk/def/publication#Notice",
+    "https://www.thegazette.co.uk/def/insolvency#PetitionsToWindUpCompaniesNotice"
+   ],
+   "sameAs": "https://www.thegazette.co.uk/id/edition/London/issue/65191/notice/5219886",
+   "alternateOf": "http://www.london-gazette.co.uk/id/issues/65191/notices/5219886",
+   "has_anchor": "https://www.thegazette.co.uk/id/notice/5219886",
+   "hasProvenance": "https://www.thegazette.co.uk/id/notice/5219886/provenance",
+   "isPrimaryTopicOf": "https://www.thegazette.co.uk/notice/5219886/data.json?view=linked-data",
+   "hasNoticeCode": 2450,
+   "hasNoticeID": "5219886",
+   "hasNoticeNumber": 5219886,
+   "hasPageNumber": "18915",
+   "hasPublicationDate": "Tuesday, 29-Sep-2026 09:30:08 UTC",
+   "isAbout": {
+    "_about": "https://www.thegazette.co.uk/id/notice/5219886#notifiableThing",
+    "type": [
+     "https://www.thegazette.co.uk/def/legislation#Legislation",
+     "https://www.thegazette.co.uk/def/publication#NotifiableThing",
+     "https://www.thegazette.co.uk/def/insolvency#Petition"
+    ],
+    "dateOfHearing": "Wednesday, 07-Oct-2026 00:00:00 UTC",
+    "dateOfPetitionPresentation": "2026-08-11T00:00:00+00:00",
+    "company": {
+     "_about": "http://business.data.gov.uk/id/company/11877818",
+     "type": "https://www.thegazette.co.uk/def/organisation#LimitedCompany",
+     "adr": {
+      "_about": "https://www.thegazette.co.uk/id/notice/5219886#company-1-address-0",
+      "type": "http://www.w3.org/2006/vcard/ns#Address",
+      "label": "C/O Sound Accountancy Services Ltd, 19 Phoenix Street, Plymouth, Devon, England, PL1 3DN",
+      "postcode": "https://www.thegazette.co.uk/id/postcode/PL13DN"
+     },
+     "companyNumber": "11877818",
+     "organisationName": "AMS FACILITIES (SW) LTD"
+    },
+    "hasCourtCase": {
+     "_about": "https://www.thegazette.co.uk/id/notice/5219886#courtCase",
+     "type": "https://www.thegazette.co.uk/def/court#CourtCase",
+     "caseNumber": "CR-2026-006286",
+     "caseYear": "2026",
+     "hasCourt": {
+      "_about": "https://www.thegazette.co.uk/id/notice/5219886#court",
+      "type": "https://www.thegazette.co.uk/def/court#Court",
+      "courtDistrict": "Companies Court",
+      "courtName": "High Court of Justice (Chancery Division)"
+     }
+    },
+    "petitioner": {
+     "_about": "https://www.thegazette.co.uk/id/notice/5219886#petitioner-1",
+     "type": "https://www.thegazette.co.uk/def/organisation#Organisation",
+     "adr": {
+      "_about": "https://www.thegazette.co.uk/id/notice/5219886#petitioner-1-address-0",
+      "type": "http://www.w3.org/2006/vcard/ns#Address",
+      "label": "14 Westfield Avenue, Stratford, London, E20 1HZ",
+      "postcode": "https://www.thegazette.co.uk/id/postcode/E201HZ"
+     },
+     "organisationName": "COMMISSIONERS FOR HM REVENUE AND CUSTOMS"
+    },
+    "placeOfHearing": {
+     "_about": "https://www.thegazette.co.uk/id/notice/5219886#hearingAddress",
+     "type": "http://www.w3.org/2006/vcard/ns#Address",
+     "label": "Royal Courts of Justice, 7 Rolls Building, Fetter Lane, London, EC4A 1NL",
+     "postcode": {
+      "_about": "https://www.thegazette.co.uk/id/postcode/EC4A1NL",
+      "label": "EC4A 1NL",
+      "lat": 51.515771,
+      "long": -0.110291,
+      "msg0_administrative_area": "https://www.thegazette.co.uk/id/administrative-area/gb/7000000000011105"
+     }
+    },
+    "dateAuthorisationSigned": "2026-09-29T00:00:00+00:00",
+    "isEnabledByLegislation": {
+     "_about": "https://www.thegazette.co.uk/id/notice/5219886#InsolvencyAct1986",
+     "label": "Insolvency Act 1986"
+    },
+    "relatedDate": [
+     "2026-09-29T00:00:00+00:00",
+     "2026-10-06T00:00:00+00:00",
+     "2026-08-11T00:00:00+00:00",
+     "2026-10-07T00:00:00+00:00"
+    ],
+    "relatedLegislation": {
+     "_about": "http://www.legislation.gov.uk/id/ukpga/1986/45",
+     "type": "https://www.thegazette.co.uk/def/legislation#Legislation",
+     "label": "Insolvency Act 1986"
+    },
+    "companyGroup": "and in the Matter of the "
+   },
+   "isInIssue": "https://www.thegazette.co.uk/id/edition/London/issue/65191"
+  }
+ }
+}

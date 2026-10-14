@@ -1,0 +1,74 @@
+{
+ "format": "linked-data-api",
+ "version": "0.2",
+ "result": {
+  "_about": "https://www.thegazette.co.uk/notice/5229442/data.json?view=linked-data",
+  "definition": "https://www.thegazette.co.uk/lda#gazetteNotice",
+  "extendedMetadataVersion": "https://www.thegazette.co.uk/notice/5229442/data.json?view=linked-data&_metadata=all%2Cviews%2Cformats%2Cexecution%2Cbindings%2Csite",
+  "label": "5229442",
+  "primaryTopic": {
+   "_about": "https://www.thegazette.co.uk/id/notice/5229442",
+   "publisher": "TSO (The Stationery Office), customer.services@thegazette.co.uk",
+   "type": [
+    "https://www.thegazette.co.uk/def/publication#Notice",
+    "https://www.thegazette.co.uk/def/insolvency#WindingUpOrdersNotice"
+   ],
+   "has_anchor": "https://www.thegazette.co.uk/id/notice/5229442",
+   "hasProvenance": "https://www.thegazette.co.uk/id/notice/5229442/provenance",
+   "isPrimaryTopicOf": "https://www.thegazette.co.uk/notice/5229442/data.json?view=linked-data",
+   "hasNoticeCode": 2452,
+   "hasNoticeID": "5229442",
+   "hasNoticeNumber": 5229442,
+   "hasPublicationDate": "Wednesday, 14-Oct-2026 14:00:14 UTC",
+   "isAbout": {
+    "_about": "https://www.thegazette.co.uk/id/notice/5229442#notifiableThing",
+    "type": [
+     "https://www.thegazette.co.uk/def/insolvency#WindingUpOrder",
+     "https://www.thegazette.co.uk/def/publication#NotifiableThing"
+    ],
+    "dateOfAppointment": "2026-10-07T00:00:00+00:00",
+    "datePetitionFiled": "2026-08-11T00:00:00+00:00",
+    "dateWoundUp": "2026-10-07T00:00:00+00:00",
+    "company": {
+     "_about": "http://business.data.gov.uk/id/company/11877818",
+     "type": "https://www.thegazette.co.uk/def/organisation#LimitedCompany",
+     "companyNumber": "11877818",
+     "hasRegisteredOffice": {
+      "_about": "https://www.thegazette.co.uk/id/notice/5229442#company-1-CompanyRegisteredOffice-1",
+      "type": "http://www.w3.org/2006/vcard/ns#Address",
+      "extendedAddress": [
+       "Devon",
+       "Plymouth"
+      ],
+      "label": [
+       "C/O Sound Accountancy Services Ltd, 19 Phoenix Street,\nPlymouth,\nDevon,\nPL1 3DN ",
+       "C/O Sound Accountancy Services Ltd, 19 Phoenix Street, Plymouth, Devon, PL1 3DN"
+      ],
+      "postalCode": "PL1 3DN ",
+      "streetAddress": "C/O Sound Accountancy Services Ltd, 19 Phoenix Street",
+      "postcode": "https://www.thegazette.co.uk/id/postcode/PL13DN"
+     },
+     "organisationName": "AMS FACILITIES (SW) LTD"
+    },
+    "hasCourtCase": {
+     "_about": "https://www.thegazette.co.uk/id/notice/5229442#courtCase",
+     "type": "https://www.thegazette.co.uk/def/court#CourtCase",
+     "caseNumber": "006286",
+     "caseYear": "2026",
+     "hasCourt": {
+      "_about": "https://www.thegazette.co.uk/id/notice/5229442#court",
+      "type": "https://www.thegazette.co.uk/def/court#Court",
+      "courtName": "High Court Of Justice"
+     }
+    },
+    "hasPrimaryIP": "https://www.thegazette.co.uk/id/notice/5229442#IP1",
+    "relatedDate": [
+     "2026-10-12T00:00:00+00:00",
+     "2026-08-11T00:00:00+00:00",
+     "2026-10-14T00:00:00+00:00",
+     "2026-10-07T00:00:00+00:00"
+    ]
+   }
+  }
+ }
+}

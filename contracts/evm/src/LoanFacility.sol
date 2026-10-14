@@ -316,7 +316,7 @@ contract LoanFacility {
         StatusRegistry.Attestation memory a = registry.getLatest(entityId);
         if (a.id == 0 || block.timestamp > a.validUntil) return Status.STALE;
 
-        uint64[7] memory firstSeen = registry.getFirstSeen(entityId);
+        uint64[] memory firstSeen = registry.getFirstSeen(entityId);
         uint32 uncovered = a.activeBits & ~coveredBits(firstSeen);
 
         // Winding-up order, resolution, liquidator/administrator appointment, or adverse CH status: no grace.
@@ -332,7 +332,7 @@ contract LoanFacility {
     }
 
     /// @notice Start of the petition grace window per the agreed anchor; falls back to the next later known time.
-    function graceStart(StatusRegistry.Attestation memory a, uint64[7] memory firstSeen) public view returns (uint64) {
+    function graceStart(StatusRegistry.Attestation memory a, uint64[] memory firstSeen) public view returns (uint64) {
         uint64 detected = firstSeen[2];
         if (clockAnchor == ClockAnchor.PRESENTATION && a.petitionPresentedAt != 0) return a.petitionPresentedAt;
         if (clockAnchor != ClockAnchor.DETECTION && a.petitionPublishedAt != 0) return a.petitionPublishedAt;
@@ -341,7 +341,7 @@ contract LoanFacility {
 
     /// @notice Bits neutralized by active reviews. A review covers an occurrence only if it began before the
     ///         review was recorded; a new occurrence of the same event is not covered.
-    function coveredBits(uint64[7] memory firstSeen) public view returns (uint32 covered) {
+    function coveredBits(uint64[] memory firstSeen) public view returns (uint32 covered) {
         for (uint256 i = 0; i < reviews.length; i++) {
             Review memory r = reviews[i];
             if (block.timestamp >= r.expiresAt) continue;

@@ -17,18 +17,18 @@
 # ==========================================================================
 staging-settings:
   user-workflow:
-    workflow-name: "my-workflow-ts-staging"
+    workflow-name: "uk-insolvency-drawstop-staging"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.staging.json"
-    secrets-path: ""
+    secrets-path: "../secrets.yaml"
     
 
 # ==========================================================================
 production-settings:
   user-workflow:
-    workflow-name: "my-workflow-ts-production"
+    workflow-name: "uk-insolvency-drawstop"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.production.json"
-    secrets-path: ""
+    secrets-path: "../secrets.yaml"
