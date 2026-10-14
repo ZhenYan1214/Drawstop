@@ -1,9 +1,9 @@
 {
   "schedule": "0 */10 * * * *",
   "chainSelectorName": "ethereum-testnet-sepolia",
-  "registryAddress": "0x0000000000000000000000000000000000000000",
+  "registryAddress": "0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897",
   "facilityAddress": "0x0000000000000000000000000000000000000000",
-  "gasLimit": "600000",
+  "gasLimit": "6000000",
   "maxAgeSeconds": 86400,
   "maxEntitiesPerRun": 2,
   "maxNoticeConfirmations": 4,
@@ -12,7 +12,13 @@
   "gleifBaseUrl": "https://api.gleif.org",
   "companiesHouseSecretId": "COMPANIES_HOUSE_API_KEY",
   "previewEntities": [
-    { "companyNumber": "11877818", "lei": "" },
-    { "companyNumber": "00445790", "lei": "2138002P5RNKC5W2JZ46" }
+    {
+      "companyNumber": "11877818",
+      "lei": ""
+    },
+    {
+      "companyNumber": "00445790",
+      "lei": "2138002P5RNKC5W2JZ46"
+    }
   ]
 }

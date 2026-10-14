@@ -47,9 +47,10 @@ contract LoanFacilityTest {
     MockUSDC private usdc;
     LoanFacility private facility;
     address private borrower;
+    uint256 private t; // current test time; see _warp
 
     function setUp() public {
-        vm.warp(PRESENTED - 30 days);
+        _warp(PRESENTED - 30 days);
         borrower = vm.addr(BORROWER_PK);
         registry = new StatusRegistry(FORWARDER);
         usdc = new MockUSDC();
@@ -59,6 +60,13 @@ contract LoanFacilityTest {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /// via-ir can cache t inside one test function, so tests read time from storage instead.
+    function _warp(uint256 to) private {
+        t = to;
+        vm.warp(to);
+    }
+
 
     function _newFacility(LoanFacility.ClockAnchor anchor) private returns (LoanFacility f) {
         f = new LoanFacility(registry, IERC20Minimal(address(usdc)), LENDER, borrower, ARBITER, CH, LEI, GRACE, anchor);
@@ -73,7 +81,7 @@ contract LoanFacilityTest {
     }
 
     function _bind(LoanFacility f) private {
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = t + 1 hours;
         bytes memory sig = _sign(BORROWER_PK, f.bindingDigest(0, deadline));
         vm.prank(LENDER);
         f.bind(0, deadline, sig);
@@ -84,7 +92,7 @@ contract LoanFacilityTest {
         view
         returns (bytes memory)
     {
-        uint64 nowTs = uint64(block.timestamp);
+        uint64 nowTs = uint64(t);
         return abi.encode(
             StatusRegistry.Report({
                 entityId: facility.entityId(),
@@ -121,7 +129,7 @@ contract LoanFacilityTest {
     // ------------------------------------------------------------------ binding
 
     function testBindingRequiresBorrowerSignature() public {
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = t + 1 hours;
         bytes memory wrong = _sign(0xBAD, facility.bindingDigest(0, deadline));
         vm.prank(LENDER);
         vm.expectRevert(LoanFacility.BadSignature.selector);
@@ -129,7 +137,7 @@ contract LoanFacilityTest {
     }
 
     function testBindingOnlyLenderAndNoReplay() public {
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = t + 1 hours;
         bytes memory sig = _sign(BORROWER_PK, facility.bindingDigest(0, deadline));
         vm.prank(borrower);
         vm.expectRevert(LoanFacility.OnlyLender.selector);
@@ -144,7 +152,7 @@ contract LoanFacilityTest {
 
     function testBindingSignatureIsScopedToFacility() public {
         LoanFacility other = _newFacility(LoanFacility.ClockAnchor.PRESENTATION);
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = t + 1 hours;
         bytes memory sigForOther = _sign(BORROWER_PK, other.bindingDigest(0, deadline));
         vm.prank(LENDER);
         vm.expectRevert(LoanFacility.BadSignature.selector);
@@ -152,9 +160,9 @@ contract LoanFacilityTest {
     }
 
     function testBindingExpires() public {
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = t + 1 hours;
         bytes memory sig = _sign(BORROWER_PK, facility.bindingDigest(0, deadline));
-        vm.warp(deadline + 1);
+        _warp(deadline + 1);
         vm.prank(LENDER);
         vm.expectRevert(LoanFacility.BindingExpired.selector);
         facility.bind(0, deadline, sig);
@@ -168,7 +176,7 @@ contract LoanFacilityTest {
         _eq(facility.status(), LoanFacility.Status.STALE, "no attestation is stale");
         _attest(0, 0);
         _eq(facility.status(), LoanFacility.Status.NORMAL, "clean");
-        vm.warp(block.timestamp + MAX_AGE + 1);
+        _warp(t + MAX_AGE + 1);
         _eq(facility.status(), LoanFacility.Status.STALE, "expired attestation is stale");
     }
 
@@ -176,7 +184,7 @@ contract LoanFacilityTest {
         _bind(facility);
         vm.prank(borrower);
         uint256 id = facility.requestDrawdown(100e6);
-        vm.warp(block.timestamp + 60);
+        _warp(t + 60);
         _attest(LEI_LAPSED | CONFLICT, 0);
         _eq(facility.status(), LoanFacility.Status.WATCH, "LEI lapse and source conflict are watch only");
         facility.executeDrawdown(id);
@@ -201,7 +209,7 @@ contract LoanFacilityTest {
     /// 49 days after presentation, so the window had already closed before anyone could see it.
     function testRealTimelineGraceAlreadyExpiredAtPublication() public {
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "grace from presentation already elapsed");
     }
@@ -209,10 +217,10 @@ contract LoanFacilityTest {
     function testPublicationAnchorGivesGraceWindow() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "within grace from publication");
-        vm.warp(PUBLISHED + GRACE);
+        _warp(PUBLISHED + GRACE);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "grace elapsed");
     }
@@ -220,10 +228,10 @@ contract LoanFacilityTest {
     function testWindingUpOrderGoesStraightToReview() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "petition pending");
-        vm.warp(ORDER_PUBLISHED + 1 hours);
+        _warp(ORDER_PUBLISHED + 1 hours);
         _attest(PROCEEDING, 0); // 2452 supersedes the petition; CH still "active" (true on 2026-10-14)
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "order: no grace");
         vm.prank(LENDER);
@@ -235,10 +243,10 @@ contract LoanFacilityTest {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         usdc.mint(address(facility), 1_000e6);
         _bind(facility);
-        vm.warp(PUBLISHED);
+        _warp(PUBLISHED);
         vm.prank(borrower);
         uint256 id = facility.requestDrawdown(100e6);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         vm.expectRevert(abi.encodeWithSelector(LoanFacility.DrawdownsBlocked.selector, LoanFacility.Status.PETITION_PENDING));
         facility.executeDrawdown(id);
@@ -247,7 +255,7 @@ contract LoanFacilityTest {
     function testDefaultNotAllowedDuringGrace() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         vm.prank(LENDER);
         vm.expectRevert(abi.encodeWithSelector(LoanFacility.DefaultNotAllowed.selector, LoanFacility.Status.PETITION_PENDING));
@@ -256,9 +264,9 @@ contract LoanFacilityTest {
 
     function testOutageCarriesForwardPetitionAndItsDates() public {
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
-        vm.warp(PUBLISHED + 2 hours);
+        _warp(PUBLISHED + 2 hours);
         _attest(0, SRC_GAZETTE); // Gazette down: petition must not disappear
         StatusRegistry.Attestation memory a = registry.getLatest(facility.entityId());
         require(a.activeBits & PETITION != 0, "petition carried forward");
@@ -271,7 +279,7 @@ contract LoanFacilityTest {
     function testRepaymentHeldInSuspenseThenReleasedOnDismissal() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
 
         vm.prank(borrower);
@@ -282,7 +290,7 @@ contract LoanFacilityTest {
         vm.expectRevert();
         facility.releaseSuspense();
 
-        vm.warp(PUBLISHED + 3 days);
+        _warp(PUBLISHED + 3 days);
         _attest(DISMISSED, 0); // 2461 dismissal matched to the petition
         _eq(facility.status(), LoanFacility.Status.NORMAL, "resumes after dismissal");
         facility.releaseSuspense();
@@ -291,7 +299,7 @@ contract LoanFacilityTest {
 
     function testSuspenseHeldAfterOrderUntilHumanResolution() public {
         _bind(facility);
-        vm.warp(ORDER_PUBLISHED);
+        _warp(ORDER_PUBLISHED);
         _attest(PROCEEDING, 0);
         vm.prank(borrower);
         facility.repay(50e6);
@@ -307,14 +315,14 @@ contract LoanFacilityTest {
     function testReviewCannotReleaseSuspenseWhilePetitionLive() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         vm.prank(borrower);
         facility.repay(50e6);
         uint256 attId = registry.getLatest(facility.entityId()).id;
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         vm.prank(ARBITER);
-        facility.recordReview(PETITION, attId, keccak256("petition disputed, debt paid"), uint64(block.timestamp + 7 days));
+        facility.recordReview(PETITION, attId, keccak256("petition disputed, debt paid"), uint64(t + 7 days));
         _eq(facility.status(), LoanFacility.Status.NORMAL, "review lets drawdowns resume");
         vm.expectRevert();
         facility.releaseSuspense();
@@ -323,13 +331,13 @@ contract LoanFacilityTest {
     function testRepaymentsBeforeDetectionAreFlagged() public {
         facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
-        vm.warp(PRESENTED + 10 days); // petition presented but not yet advertised: invisible
+        _warp(PRESENTED + 10 days); // petition presented but not yet advertised: invisible
         _attest(0, 0);
         vm.prank(borrower);
         facility.repay(70e6); // passes to lender, nobody knows yet
         require(usdc.balanceOf(LENDER) == 70e6, "passed through");
 
-        vm.warp(PUBLISHED + 1 hours);
+        _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
         require(facility.repaidSincePetitionPresented() == 70e6, "flagged as s.127-exposed");
     }
@@ -348,13 +356,13 @@ contract LoanFacilityTest {
         _bind(facility);
         _attest(CH_ADVERSE, 0); // e.g. registry error
         uint256 attId = registry.getLatest(facility.entityId()).id;
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         vm.prank(ARBITER);
-        facility.recordReview(CH_ADVERSE, attId, keccak256("registry correction letter"), uint64(block.timestamp + 7 days));
+        facility.recordReview(CH_ADVERSE, attId, keccak256("registry correction letter"), uint64(t + 7 days));
         _eq(facility.status(), LoanFacility.Status.NORMAL, "covered by review");
         require(registry.getLatest(facility.entityId()).eventBits == CH_ADVERSE, "attestation untouched");
 
-        vm.warp(block.timestamp + 7 days);
+        _warp(t + 7 days);
         _attest(CH_ADVERSE, 0);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "review expired, original evidence governs");
     }
@@ -363,18 +371,18 @@ contract LoanFacilityTest {
         _bind(facility);
         _attest(CH_ADVERSE, 0);
         uint256 attId = registry.getLatest(facility.entityId()).id;
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         vm.prank(ARBITER);
-        facility.recordReview(CH_ADVERSE, attId, keccak256("reason"), uint64(block.timestamp + 30 days));
+        facility.recordReview(CH_ADVERSE, attId, keccak256("reason"), uint64(t + 30 days));
 
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         _attest(CH_ADVERSE | PROCEEDING, 0);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "other bit not covered");
 
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         _attest(0, 0);
         _eq(facility.status(), LoanFacility.Status.NORMAL, "clear");
-        vm.warp(block.timestamp + 1 hours);
+        _warp(t + 1 hours);
         _attest(CH_ADVERSE, 0);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "new occurrence not covered");
     }
@@ -383,7 +391,7 @@ contract LoanFacilityTest {
         _bind(facility);
         vm.prank(LENDER);
         vm.expectRevert(LoanFacility.OnlyArbiter.selector);
-        facility.recordReview(1, 0, keccak256("x"), uint64(block.timestamp + 1 days));
+        facility.recordReview(1, 0, keccak256("x"), uint64(t + 1 days));
         vm.prank(borrower);
         vm.expectRevert(LoanFacility.OnlyParty.selector);
         facility.acknowledge(1, keccak256("note"));
@@ -412,7 +420,7 @@ contract LoanFacilityTest {
         vm.prank(FORWARDER);
         registry.onReport(good, report);
 
-        vm.warp(block.timestamp + 1);
+        _warp(t + 1);
         bytes memory report2 = _report(0, 0, 0, 0, bytes32(0));
         bytes memory bad = abi.encodePacked(bytes32(uint256(1)), bytes10("wf"), address(0xBEEF), bytes2(0x0001));
         vm.prank(FORWARDER);
@@ -423,7 +431,7 @@ contract LoanFacilityTest {
     function testRegistryRejectsOutOfOrderReport() public {
         _bind(facility);
         bytes memory older = _report(PETITION, 0, 0, 0, bytes32(0));
-        vm.warp(block.timestamp + 10);
+        _warp(t + 10);
         _attest(0, 0);
         vm.prank(FORWARDER);
         vm.expectRevert(); // StaleReport
@@ -442,12 +450,12 @@ contract LoanFacilityTest {
     function testDrawdownNeedsAttestationAfterRequest() public {
         _bind(facility);
         _attest(0, 0);
-        vm.warp(block.timestamp + 60);
+        _warp(t + 60);
         vm.prank(borrower);
         uint256 id = facility.requestDrawdown(100e6);
         vm.expectRevert(); // AttestationNotFresh
         facility.executeDrawdown(id);
-        vm.warp(block.timestamp + 60);
+        _warp(t + 60);
         bytes memory report = _report(0, 0, 0, 0, facility.requestId(id));
         vm.prank(FORWARDER);
         registry.onReport("", report);

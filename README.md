@@ -1,197 +1,112 @@
-<div style="text-align:center" align="center">
-    <a href="https://chain.link" target="_blank">
-        <img src="https://raw.githubusercontent.com/smartcontractkit/chainlink/develop/docs/logo-chainlink-blue.svg" width="225" alt="Chainlink logo">
-    </a>
+# Drawstop — UK insolvency notices in, LMA-style pause-and-review out
 
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![CRE Home](https://img.shields.io/static/v1?label=CRE&message=Home&color=blue)](https://chain.link/chainlink-runtime-environment)
-[![CRE Documentation](https://img.shields.io/static/v1?label=CRE&message=Docs&color=blue)](https://docs.chain.link/cre)
+A Chainlink CRE workflow that turns UK statutory insolvency notices into a consensus-verified attestation, so a tokenized loan to a **known, lender-verified UK company** can stop new drawdowns, run the agreement's petition grace window, hold at-risk repayments in suspense and record human review — before money moves, not after a governance vote.
 
-</div>
+Built for BLI Legal Tech Hackathon 2 (Chainlink "Best workflow with CRE" bounty). Testnet only. Not legal advice.
 
-# Custom Data Feed – CRE Template (TypeScript)
+## The problem
 
-A template for bringing your own **custom off-chain data feed** on-chain with the **Chainlink Runtime Environment (CRE)** using **TypeScript** and **Bun**.
+Under English law a compulsory winding-up is deemed to start when the petition is **presented** ([Insolvency Act 1986 s.129(2)](https://www.legislation.gov.uk/ukpga/1986/45/section/129)). If a winding-up order follows, payments the company made after that date are void unless the court validates them ([s.127](https://www.legislation.gov.uk/ukpga/1986/45/section/127)), and the payee's good faith is not enough ([*Express Electrical v Beavis* [2016] EWCA Civ 765](https://caselaw.nationalarchives.gov.uk/ewca/civ/2016/765)). But the petition only becomes public when advertised in The Gazette, at least seven business days after service ([IR 2016 r.7.10](https://www.legislation.gov.uk/uksi/2016/1024/rule/7.10)). Petitions are never filed at Companies House.
 
----
+LMA-style facility agreements already treat a pending petition as a Default that blocks new drawdowns, with a short carve-out for petitions dismissed within an agreed number of days (7–60 in real agreements). Lenders learn of it only if the borrower self-reports or someone checks, and a facility agent has no duty to look (*Torre Asset Funding v RBS* [2013] EWHC 2670 (Ch)). On-chain credit has repeated the pattern: Centrifuge token holders learned of a borrower's court-ordered liquidation [53 days after the order](https://gov.centrifuge.io/t/consolfreight-cf4-pool-update-august-2023-important-notice/5674).
 
-**⚠️ DISCLAIMER**
+### A real public timeline (checked 2026-10-14)
 
-This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **“AS IS”** and **“AS AVAILABLE”** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
+AMS FACILITIES (SW) LTD, company 11877818:
 
----
+| Date | Event | Public where |
+|---|---|---|
+| 2026-08-11 | HMRC presents a winding-up petition (case CR-2026-006286). s.127 exposure starts | no free public source |
+| 2026-09-29 | Petition advertised, [Gazette notice 5219886](https://www.thegazette.co.uk/notice/5219886) — **49 days later** | Gazette |
+| 2026-10-07 | Winding-up order | — |
+| 2026-10-14 | Order advertised, [Gazette notice 5229442](https://www.thegazette.co.uk/notice/5229442) | Gazette |
+| 2026-10-14 | Companies House API still returns `company_status: active`, `has_insolvency_history: false` | — |
 
-## Table of Contents
+A 30-day carve-out counted from presentation had expired 19 days before the petition appeared in any free public source. A lender watching only Companies House would still have seen nothing a week after the order. (One case at one point in time — not a lag statistic.)
 
-* [What This Template Does](#what-this-template-does)
-* [Getting Started](#getting-started)
-  * [1. Update .env file](#1-update-env-file)
-  * [2. Install dependencies](#2-install-dependencies)
-  * [3. Configure RPC endpoints](#3-configure-rpc-endpoints)
-  * [4. Deploy contracts](#4-deploy-contracts)
-  * [5. Configure workflow](#5-configure-workflow)
-  * [6. Simulate the workflow](#6-simulate-the-workflow)
-* [Security Considerations](#security-considerations)
-* [License](#license)
+## What is new, and what is not
 
----
+**Not new — and we do not claim to beat it:** Companies House and Gazette monitoring exists (Creditsafe, Red Flag Alert, Company Watch; Red Flag Alert claims court-sourced petition alerts up to seven weeks before the Gazette). Chainlink hackathon projects (Covenant Sentinel, SentinelFi) already gate tokens on CRE-monitored financial covenants.
 
-## What This Template Does
+**New here:**
 
-This template provides an end-to-end starting point for bringing your own **custom data feed** on-chain with the **Chainlink Runtime Environment (CRE)**. It showcases local simulation and the core CRE workflow patterns.
+1. **Statutory insolvency notices as a three-state attestation.** "As of time T, in source S, event E was *found / not found / could not be checked*", with the source's own update time kept separate from our query time, and an expiry.
+2. **Responses that mirror the agreement, inside the contract that moves the money.** Drawstop (cf. LMA cl. 4.2); petition grace window counted from the agreed anchor (presentation / publication / detection, cf. cl. 23.7); winding-up orders, resolutions and appointments go straight to human review; a matched dismissal (2461) lets the facility resume.
+3. **s.127 suspense.** Repayments received while a petition is live are held instead of being distributed to token holders, because a later order would make them void and they could not be recovered from many holders. Repayments already passed through after the presentation date are surfaced (`repaidSincePetitionPresented`).
+4. **Human decisions stay human.** Default, acceleration and enforcement are never automatic. Reviews are append-only, expire, and cannot cover a new occurrence or release s.127 suspense.
 
-**Components:**
-- **Contracts** (Solidity) under `projectRoot/contracts/evm/src`  
-  Example demo contracts used by the workflow:
-  - `ReserveManager`
-  - `SimpleERC20`
-  - `BalanceReader`
-  - `MessageEmitter`
-- **CRE Workflow** (**TypeScript**) that fetches your off-chain data and optionally performs chain writes based on configurable triggers (cron or EVM log). The entry point is typically `main.ts`.
+## How it works
 
-**Key Technologies**
-- **CRE (Chainlink Runtime Environment)** – orchestrates workflows with DON consensus.
-- **TypeScript + Bun** – authoring and running the workflow locally.
+```
+ Cron (H2) ──┐                       ┌─ Gazette: corporate-insolvency search → confirm each notice's
+             ├─► CRE workflow ──────►│  linked data (company number, petition date, court case)
+ Drawdown    │   (per source:        ├─ Companies House: company_status, insolvency history
+ Requested ──┘    identical-value    └─ GLEIF: LEI ↔ company number cross-check (never a trigger)
+ event (H3)       consensus)
+                       │  normalized results only; failure/disagreement → "could not be checked"
+                       ▼
+             signed report ──► KeystoneForwarder ──► StatusRegistry ──► LoanFacility.status()
+```
 
----
+| Gazette code | Meaning | Facility response |
+|---|---|---|
+| 2450 / 2451 | Petition to wind up | `PETITION_PENDING` (drawstop) until the grace window ends, then `REVIEW_REQUIRED` |
+| 2461 | Dismissal (matched by court case) | petition cleared; suspense releasable |
+| 2452, 2431/2441, 2432/2443/2454, 2410 | Order, resolution, liquidator or administrator appointment | `REVIEW_REQUIRED`, no grace |
 
-## Getting Started
+Companies House adverse status (liquidation, administration, dissolved, …) is also a hard event. GLEIF mismatches are `WATCH` only: an LEI says who an entity is, not whether it is insolvent.
 
-### 1. Update .env file
+Full specification: [DESIGN.md](DESIGN.md).
 
-You need to add a private key to the `.env` file. This is specifically required if you want to simulate **chain writes** (the key must be valid and funded).  
-If your workflow does **not** write on-chain, you can keep a dummy key:
+## Trust model and honest limits
+
+- The lender is trusted to have done KYB. The borrower's EIP-712 signature plus the lender's transaction prove both parties **acknowledged** the wallet ↔ company binding, not that the wallet is the company.
+- CRE consensus proves the nodes fetched and normalized the same data; it cannot fix a registry that is late or wrong. "Not found" never excludes a petition presented but not yet advertised.
+- `cre workflow simulate` runs consensus on one node; multi-node agreement is designed, not demonstrated. Sepolia writes go through Chainlink's simulation forwarder; they demonstrate the flow, not report authenticity. In production the registry pins the workflow owner/ID.
+- No real company is bound to a test wallet. Real companies are registered for public-record monitoring only; loan scenarios use a fictional company.
+- Demand is argued from statute, case law, LMA structure and on-chain incidents; no user interviews yet. No UK borrower default has occurred on-chain that we know of; the failure mode is documented in Australia and the BVI.
+- No personal data is stored: only notice IDs, codes, dates and hashes.
+
+## Run it
+
+Requirements: [CRE CLI](https://docs.chain.link/cre/getting-started/cli-installation) (v1.38.0), Bun ≥ 1.3, Foundry, a [Companies House API key](https://developer.company-information.service.gov.uk/) (REST, Live).
 
 ```bash
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
-````
+cd contracts/evm && forge test                 # 27 contract tests, incl. the real AMS timeline
+cd ../../status-monitor && bun install && bun test   # 18 workflow tests on recorded real responses
+```
 
-### 2. Install dependencies
+`.env` (never committed):
 
-If **Bun** is not already installed, follow the instructions at: [https://bun.com/docs/installation](https://bun.com/docs/installation)
+```
+CRE_ETH_PRIVATE_KEY=<funded Sepolia test key>
+CH_API_KEY_VAR=<Companies House key>
+```
 
-From your project root, run:
+Simulate against live sources (set `registryAddress` to the zero address in `config.staging.json` for preview mode, which logs the report without writing):
 
 ```bash
-bun install --cwd ./my-workflow
+cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0
+cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0 --broadcast
 ```
 
-### 3. Configure RPC endpoints
+## Deployments (Ethereum Sepolia)
 
-For local simulation to interact with a chain, specify RPC endpoints for the chains you interact with in `project.yaml`. This is required for submitting transactions and reading blockchain state.
+| Contract | Address |
+|---|---|
+| StatusRegistry | [`0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897`](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897) |
 
-Supported for local simulation (testnet/mainnet variants):
+First CRE writes (`cre workflow simulate --broadcast`, live sources, 2026-10-14):
 
-* Ethereum (`ethereum-testnet-sepolia`, `ethereum-mainnet`)
-* Base (`ethereum-testnet-sepolia-base-1`, `ethereum-mainnet-base-1`)
-* Avalanche (`avalanche-testnet-fuji`, `avalanche-mainnet`)
-* Polygon (`polygon-testnet-amoy`, `polygon-mainnet`)
-* BNB Chain (`binance-smart-chain-testnet`, `binance-smart-chain-mainnet`)
-* Arbitrum (`ethereum-testnet-sepolia-arbitrum-1`, `ethereum-mainnet-arbitrum-1`)
-* Optimism (`ethereum-testnet-sepolia-optimism-1`, `ethereum-mainnet-optimism-1`)
+| Company | Attestation | Transaction |
+|---|---|---|
+| AMS FACILITIES (SW) LTD (11877818) | #1 — `GZ_INSOLVENCY_PROCEEDING` (winding-up order, Gazette 5229442); Companies House `active` | [`0x5bc10a05…`](https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda) |
+| TESCO PLC (00445790), control | #2 — nothing found; LEI matches company number | [`0x46f6e23d…`](https://sepolia.etherscan.io/tx/0x46f6e23dd3026d014f62785157b20ecf84aa42e3512b374f9e8aa873a4ff819a) |
 
-Add your RPCs under `rpcs` (example):
+Read back with `cast call 0xE1e4…1897 "getLatest(bytes32)" <entityId>`; the forwarder does not revert when a receiver fails, so success is confirmed from registry state, not only the transaction status.
 
-```yaml
-rpcs:
-  - chain-name: ethereum-testnet-sepolia
-    url: <Your RPC endpoint to ETH Sepolia>
-```
+Note: Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth_estimateGas`), so contracts are compiled with `via_ir` and `optimizer_runs = 1` to fit in one transaction.
 
-> For chain names, see the selectors list:
-> [https://github.com/smartcontractkit/chain-selectors/blob/main/selectors.yml](https://github.com/smartcontractkit/chain-selectors/blob/main/selectors.yml)
+## Disclaimer
 
-### 4. Deploy contracts
-
-Deploy the demo contracts: **BalanceReader**, **MessageEmitter**, **ReserveManager**, **SimpleERC20**.
-You can deploy to a local chain or a testnet using tools like Foundry.
-
-For a quick start, you can also use the pre-deployed contract addresses on Ethereum Sepolia—no action required if you’re just trying things out.
-
-### 5. Configure workflow
-
-Configure `config.json` for the workflow:
-
-* `schedule`: e.g. `"*/30 * * * * *"` (every 30 seconds), or any cron you prefer
-* `url`: your off-chain data endpoint (custom data feed)
-* `tokenAddress`: `SimpleERC20` contract address
-* `porAddress`: `ReserveManager` contract address
-* `proxyAddress`: `UpdateReservesProxySimplified` contract address
-* `balanceReaderAddress`: `BalanceReader` contract address
-* `messageEmitterAddress`: `MessageEmitter` contract address
-* `chainSelectorName`: human-readable chain name (see selectors YAML linked above)
-* `gasLimit`: gas limit used for chain writes
-
-Ensure `workflow.yaml` points to the config (example):
-
-```yaml
-staging-settings:
-  user-workflow:
-    workflow-name: "my-workflow"
-  workflow-artifacts:
-    workflow-path: "./main.ts"
-    config-path: "./config.json"
-    secrets-path: ""
-```
-
-### 6. Simulate the workflow
-
-Run the command from the **project root** and pass the **path to the workflow directory**:
-
-```bash
-cre workflow simulate <path-to-workflow-directory>
-```
-
-Example (for `my-workflow`):
-
-```bash
-cre workflow simulate my-workflow
-```
-
-You’ll see trigger options similar to:
-
-```
-🚀 Workflow simulation ready. Please select a trigger:
-1. cron-trigger@1.0.0 Trigger
-2. evm:ChainSelector:16015286601757825753@1.0.0 LogTrigger
-```
-
-* **Cron Trigger**: choose `1` → the workflow executes on the schedule.
-* **Log Trigger**: choose `2`, then provide the example inputs:
-
-```
-Transaction Hash: 0x420721d7d00130a03c5b525b2dbfd42550906ddb3075e8377f9bb5d1a5992f8e
-Log Event Index: 0
-```
-
-Example output:
-
-```
-🔗 EVM Trigger Configuration:
-Please provide the transaction hash and event index for the EVM log event.
-Enter transaction hash (0x...): 0x420721d7d00130a03c5b525b2dbfd42550906ddb3075e8377f9bb5d1a5992f8e
-Enter event index (0-based): 0
-Fetching transaction receipt for transaction 0x420721d7d00130a03c5b525b2dbfd42550906ddb3075e8377f9bb5d1a5992f8e...
-Found log event at index 0: contract=0x1d598672486ecB50685Da5497390571Ac4E93FDc, topics=3
-Created EVM trigger log for transaction 0x420721d7d00130a03c5b525b2dbfd42550906ddb3075e8377f9bb5d1a5992f8e, event 0
-```
-
----
-
-## Security Considerations
-
-**⚠️ Important Notes**
-
-1. **Demo project** – Not production-ready.
-2. **Demo contracts** – Not audited; do not use as-is in production.
-3. **Use your own RPCs** – For stability and performance, prefer private RPCs for deployment and chain writes.
-4. **Secrets hygiene** – Keep real secrets out of version control; use secure secret managers for `.env` values.
-
----
-
-## License
-
-This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file for details.
-
-```
-```
+Hackathon prototype on testnet. Not legal advice, not a credit or solvency assessment, not a sanctions screen. Statutory references are summarized; check the primary sources.
