@@ -105,7 +105,29 @@ First CRE writes (`cre workflow simulate --broadcast`, live sources, 2026-10-14)
 
 Read back with `cast call 0xE1e4…1897 "getLatest(bytes32)" <entityId>`; the forwarder does not revert when a receiver fails, so success is confirmed from registry state, not only the transaction status.
 
-Note: Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth_estimateGas`), so contracts are compiled with `via_ir` and `optimizer_runs = 1` to fit in one transaction.
+### Loan scenario (fictional borrower DM000001)
+
+A facility for a **fictional** company, fed by [`demo/scenario-server.ts`](demo/scenario-server.ts) (Gazette- and Companies House-shaped JSON), run with [`demo/run-demo.sh`](demo/run-demo.sh) on 2026-10-15. Terms: 30-day petition carve-out counted from presentation. Every CRE step is `cre workflow simulate --broadcast`.
+
+| Contract | Address |
+|---|---|
+| LoanFacility | [`0x1652af1a405f7d73ded60f684d64c7313f4c71ec`](https://sepolia.etherscan.io/address/0x1652af1a405f7d73ded60f684d64c7313f4c71ec) |
+| MockUSDC | [`0x658b728a1e100dd5bac2f69a2135950e399b952e`](https://sepolia.etherscan.io/address/0x658b728a1e100dd5bac2f69a2135950e399b952e) |
+
+| Step | What happened | CRE attestation |
+|---|---|---|
+| 1 | Clean record (cron) → `NORMAL` | [`0xe582da43…`](https://sepolia.etherscan.io/tx/0xe582da43783294210b2d3b67c0c4021df77c7249c4d9c315564d167bad1e4f6e) |
+| 2 | Borrower requests 10,000 ([`0xc1b0333b…`](https://sepolia.etherscan.io/tx/0xc1b0333b5a208c4fc83daa8f7764417dde612746191aa06c555e08718be28a6a)) → log trigger → fresh check → drawdown executed | [`0x22ae41a5…`](https://sepolia.etherscan.io/tx/0x22ae41a5c7f7028bcedc66afc3bf6245809a1dc24be30a29668fc989f4373f0b) |
+| 3 | Petition advertised (presented 12 days earlier) → `PETITION_PENDING` | [`0x22e187ba…`](https://sepolia.etherscan.io/tx/0x22e187bab6d04512681d711be7ae0f38d349851c8898156c36f218a9a517ef65) |
+| 4 | Second request → fresh check → `executeDrawdown` reverts `DrawdownsBlocked` | [`0x2ae4a2c1…`](https://sepolia.etherscan.io/tx/0x2ae4a2c140f532fc1a98312bd295501ca98ce94c99d138860818d5be147b5426) |
+| 5 | Borrower repays 5,000 → held in suspense, not passed to lender | — |
+| 6 | Dismissal (2461, same court case) → `NORMAL`; `releaseSuspense` pays the lender | [`0xacc82140…`](https://sepolia.etherscan.io/tx/0xacc8214034186b1d6c4219dc47a62536582f321e0b7e866e0e398e9b1c2487a0) |
+
+Final state read back from chain: drawdown 0 executed, drawdown 1 not executed, repayment 0 flagged `heldInSuspense`, suspense 0, lender holds 5,000 mUSDC. Full log: [`demo/sepolia-run.log`](demo/sepolia-run.log).
+
+### Sepolia gas notes (measured October 2026)
+
+Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth_estimateGas`), so contracts are compiled with `via_ir` and `optimizer_runs = 1` to fit in one transaction (`LoanFacility` needs ~15.9M of the 16.77M per-transaction cap). Creating a new account costs ~204,600 gas while `eth_estimateGas` returns 21,000 for a plain transfer, so new accounts are funded with an explicit gas limit. Forge's local gas estimates are too low; deployments use `--skip-simulation` so the node estimates.
 
 ## Disclaimer
 

@@ -2,7 +2,7 @@
   "schedule": "0 */10 * * * *",
   "chainSelectorName": "ethereum-testnet-sepolia",
   "registryAddress": "0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897",
-  "facilityAddress": "0x85887c404b6b823aa98f8b66810bbe48721b1e30",
+  "facilityAddress": "0x1652af1a405f7d73ded60f684d64c7313f4c71ec",
   "gasLimit": "6000000",
   "maxAgeSeconds": 86400,
   "maxEntitiesPerRun": 1,
