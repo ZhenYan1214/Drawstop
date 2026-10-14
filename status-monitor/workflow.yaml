@@ -32,3 +32,21 @@ production-settings:
     workflow-path: "./main.ts"
     config-path: "./config.production.json"
     secrets-path: "../secrets.yaml"
+# ==========================================================================
+# Loan scenario demo: fictional company DM000001 served by demo/scenario-server.ts
+demo-settings:
+  user-workflow:
+    workflow-name: "uk-insolvency-drawstop-demo"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.demo.json"
+    secrets-path: "../secrets.yaml"
+
+# Local rehearsal of the demo against an anvil fork of Sepolia (anvil --fork-url <sepolia> --port 8546)
+rehearsal-settings:
+  user-workflow:
+    workflow-name: "uk-insolvency-drawstop-rehearsal"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.demo.json"
+    secrets-path: "../secrets.yaml"

@@ -1,16 +1,28 @@
 import {
 	bytesToHex,
 	consensusIdenticalAggregation,
+	encodeCallMsg,
+	LATEST_BLOCK_NUMBER,
 	type CronPayload,
 	cre,
 	getNetwork,
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { type Address, encodeAbiParameters, type Hex, keccak256, parseAbiParameters, toHex, zeroAddress } from 'viem'
+import {
+	type Address,
+	decodeFunctionResult,
+	encodeAbiParameters,
+	encodeFunctionData,
+	type Hex,
+	keccak256,
+	parseAbiParameters,
+	toHex,
+	zeroAddress,
+} from 'viem'
 import { z } from 'zod'
 import { type DecodedLog, type DrawdownRequestedDecoded, LoanFacility } from '../contracts/evm/ts/generated/LoanFacility'
-import { StatusRegistry } from '../contracts/evm/ts/generated/StatusRegistry'
+import { StatusRegistry, StatusRegistryABI } from '../contracts/evm/ts/generated/StatusRegistry'
 import {
 	type CompaniesHouseResult,
 	crossCheck,
@@ -40,6 +52,10 @@ export const configSchema = z.object({
 	companiesHouseSecretId: z.string(),
 	/** Used only when registryAddress is the zero address: check these entities and log the report without writing. */
 	previewEntities: z.array(z.object({ companyNumber: z.string(), lei: z.string() })).default([]),
+	/** Optional allow-list of company numbers (e.g. the demo target must not query its mirror for real companies). */
+	monitorOnly: z.array(z.string()).default([]),
+	/** Cron interval in seconds, used to rotate through entities when there are more than maxEntitiesPerRun. */
+	rotationIntervalSeconds: z.number().int().positive().default(600),
 })
 
 export type Config = z.infer<typeof configSchema>
@@ -236,6 +252,27 @@ const attestAndWrite = (runtime: Runtime<Config>, entity: Entity, requestId: Hex
 	return txHash
 }
 
+/**
+ * Reads the monitored list at the LATEST block (the generated binding uses the finalized block, ~15 minutes behind
+ * on Sepolia, which would leave a newly bound borrower unmonitored). A reorged registration costs at most one extra
+ * check, and the registry rejects reports for unknown entities.
+ */
+const readMonitored = (runtime: Runtime<Config>): Entity[] => {
+	const data = encodeFunctionData({ abi: StatusRegistryABI, functionName: 'getMonitored' })
+	const result = evmClientFor(runtime.config)
+		.callContract(runtime, {
+			call: encodeCallMsg({ from: zeroAddress, to: runtime.config.registryAddress as Address, data }),
+			blockNumber: LATEST_BLOCK_NUMBER,
+		})
+		.result()
+	const [ids, numbers, leis] = decodeFunctionResult({
+		abi: StatusRegistryABI,
+		functionName: 'getMonitored',
+		data: bytesToHex(result.data),
+	})
+	return ids.map((entityId, i) => ({ entityId, companyNumber: numbers[i], lei: leis[i] }))
+}
+
 // ─── Handlers ───────────────────────────────────────────────────────────
 
 /** H2: periodic monitoring of every entity registered by a bound facility. */
@@ -249,14 +286,23 @@ export const onCron = (runtime: Runtime<Config>, _payload: CronPayload): string 
 			lei: e.lei,
 		}))
 	} else {
-		const registry = new StatusRegistry(evmClientFor(cfg), cfg.registryAddress as Address)
-		const [ids, numbers, leis] = registry.getMonitored(runtime)
-		entities = ids.map((entityId, i) => ({ entityId, companyNumber: numbers[i], lei: leis[i] }))
+		entities = readMonitored(runtime)
 	}
-	runtime.log(`Monitoring ${entities.length} entities, up to ${cfg.maxEntitiesPerRun} this run`)
+	if (cfg.monitorOnly.length > 0) {
+		const allowed = cfg.monitorOnly.map(normalizeCompanyNumber)
+		entities = entities.filter((e) => allowed.includes(normalizeCompanyNumber(e.companyNumber)))
+	}
+	const batch = selectBatch(entities, cfg.maxEntitiesPerRun, Math.floor(runtime.now().getTime() / 1000 / cfg.rotationIntervalSeconds))
+	runtime.log(`Monitoring ${entities.length} entities; this run: ${batch.map((e) => e.companyNumber).join(', ')}`)
 
-	const results = entities.slice(0, cfg.maxEntitiesPerRun).map((e) => attestAndWrite(runtime, e, ZERO_BYTES32))
-	return results.join(',')
+	return batch.map((e) => attestAndWrite(runtime, e, ZERO_BYTES32)).join(',')
+}
+
+/** Rotates through entities so every one is checked when there are more than fit in one run (HTTP quota). */
+export const selectBatch = <T>(entities: T[], size: number, round: number): T[] => {
+	if (entities.length <= size) return entities
+	const start = (round * size) % entities.length
+	return Array.from({ length: size }, (_, i) => entities[(start + i) % entities.length])
 }
 
 /** H3: a borrower asked to draw funds; check now so the facility can decide on fresh evidence. */

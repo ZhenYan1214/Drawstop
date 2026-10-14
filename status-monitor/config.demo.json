@@ -1,0 +1,18 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainSelectorName": "ethereum-testnet-sepolia",
+  "registryAddress": "0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897",
+  "facilityAddress": "0x85887c404b6b823aa98f8b66810bbe48721b1e30",
+  "gasLimit": "6000000",
+  "maxAgeSeconds": 86400,
+  "maxEntitiesPerRun": 1,
+  "maxNoticeConfirmations": 4,
+  "gazetteBaseUrl": "http://localhost:8787",
+  "companiesHouseBaseUrl": "http://localhost:8787",
+  "gleifBaseUrl": "https://api.gleif.org",
+  "companiesHouseSecretId": "COMPANIES_HOUSE_API_KEY",
+  "previewEntities": [],
+  "monitorOnly": [
+    "DM000001"
+  ]
+}
