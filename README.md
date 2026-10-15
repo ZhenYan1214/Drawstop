@@ -132,3 +132,7 @@ Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth
 ## Disclaimer
 
 Hackathon prototype on testnet. Not legal advice, not a credit or solvency assessment, not a sanctions screen. Statutory references are summarized; check the primary sources.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Vendored Chainlink `ReceiverTemplate` and OpenZeppelin `Ownable`/`Context` are MIT-licensed by their authors.
