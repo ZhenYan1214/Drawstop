@@ -1,6 +1,6 @@
 # Drawstop 交接文件（給下一台電腦／下一個 AI）
 
-> 這份文件在 repo 裡（公開），clone 就有。`.env` 與研究報告（`BLI/reports`、`BLI/research_notes`）不在 repo，要另外帶。
+> 這份文件與研究報告（`docs/research/`）都在 repo 裡（公開），clone 就有。只有 `.env` 不在 repo，要另外帶。
 > 寫於 2026-10-15，之後有更新請以 `git log` 為準。已推到 https://github.com/ZhenYan1214/Drawstop （public，MIT）。
 > 給 AI 的提醒：**請用繁體中文回覆使用者**；任何送上鏈、推送、公開發布的動作，先列清楚內容與費用，**等使用者同意再做**。
 
@@ -45,7 +45,7 @@
 
 ## 3. 為什麼是這個題目（研究結論）
 
-完整報告在 repo 外：`BLI/reports/`（三份）與 `BLI/research_notes/`（原始筆記）。
+完整報告在 `docs/research/reports/`（三份）與 `docs/research/notes/`（原始筆記）。
 
 ### 3.1 法律依據（一手資料）
 - **Insolvency Act 1986 s.129(2)**：法院清算「視為自聲請提出時開始」。
@@ -324,10 +324,10 @@ counterparty-monitor/
 
 ---
 
-## 13. 研究報告索引（在 repo 外，`BLI/` 資料夾；另有 `BLI/drawstop-handoff.zip`）
+## 13. 研究報告索引（`docs/research/`）
 | 檔案 | 內容 |
 |---|---|
-| `reports/BLI 黑客松選題研究.md` | 第一輪：加密法規、KOL 喊單、AI agent 責任、Chainlink CRE、過往得獎、競品；推薦過 CallProof（已放棄） |
-| `reports/Chainlink CRE 選題研究.md` | 第二輪：2026 產業現況、Chainlink 採用與策略、事故與監控缺口、真實需求、法律資料源；六個候選評分 |
-| `reports/英國破產事件監控需求驗證.md` | 第三輪：s.127／LMA 法律依據、鏈上信貸案例、現有監控工具、定位、七項設計修正、英文問題陳述 |
-| `research_notes/<主題>/*.md` | 三輪研究共 15 份原始筆記（含來源連結） |
+| `docs/research/reports/BLI 黑客松選題研究.md` | 第一輪：加密法規、KOL 喊單、AI agent 責任、Chainlink CRE、過往得獎、競品；推薦過 CallProof（已放棄） |
+| `docs/research/reports/Chainlink CRE 選題研究.md` | 第二輪：2026 產業現況、Chainlink 採用與策略、事故與監控缺口、真實需求、法律資料源；六個候選評分 |
+| `docs/research/reports/英國破產事件監控需求驗證.md` | 第三輪：s.127／LMA 法律依據、鏈上信貸案例、現有監控工具、定位、七項設計修正、英文問題陳述 |
+| `docs/research/notes/<主題>/*.md` | 三輪研究共 15 份原始筆記（含來源連結） |

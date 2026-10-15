@@ -136,3 +136,7 @@ Hackathon prototype on testnet. Not legal advice, not a credit or solvency asses
 ## License
 
 MIT, see [LICENSE](LICENSE). Vendored Chainlink `ReceiverTemplate` and OpenZeppelin `Ownable`/`Context` are MIT-licensed by their authors.
+
+## Research
+
+Topic-selection research (in Traditional Chinese): [docs/research](docs/research).
