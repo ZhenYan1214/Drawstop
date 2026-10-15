@@ -1,7 +1,7 @@
 # Drawstop 交接文件（給下一台電腦／下一個 AI）
 
 > 這份文件在 repo 裡（公開），clone 就有。`.env` 與研究報告（`BLI/reports`、`BLI/research_notes`）不在 repo，要另外帶。
-> 寫於 2026-10-15。最後一個 commit：`134bfbd Add MIT license`，已推到 https://github.com/ZhenYan1214/Drawstop （public，MIT）。
+> 寫於 2026-10-15，之後有更新請以 `git log` 為準。已推到 https://github.com/ZhenYan1214/Drawstop （public，MIT）。
 > 給 AI 的提醒：**請用繁體中文回覆使用者**；任何送上鏈、推送、公開發布的動作，先列清楚內容與費用，**等使用者同意再做**。
 
 ---
@@ -214,3 +214,120 @@ counterparty-monitor/
 - CRE 文件：https://docs.chain.link/cre ；Bootcamp（AI 預測市場，架構最接近）：https://smartcontractkit.github.io/cre-bootcamp-2026/
 - Companies House 開發者：https://developer.company-information.service.gov.uk/ （REST key、Live 環境，key 是 36 字元 UUID 格式）
 - Gazette 資料：OGL 授權；公司破產類別 `categorycode=G205010000`；公告 linked data：`/notice/{id}/data.json?view=linked-data`
+
+---
+
+## 10. 補充：定位與 pitch 素材
+
+### 10.1 一句話與問題陳述
+- 中文：當英國借款人出現法定破產公告，代幣化貸款合約在下一次撥款前就知道，並依協議條款暫停撥款、計算寬限期、把有風險的還款暫收、留下人工覆核紀錄。
+- 英文：*A consensus-verified drawstop for tokenized loans to UK companies: statutory insolvency notices in, LMA-style pause-and-review out.*
+- 英文問題陳述（約 190 字）已在 README「The problem」段，可直接用於 DoraHacks 描述與影片開場。
+- 痛點一句話：s.127 風險從聲請日開始，公開卻至少晚 7 個營業日（真實案例晚 49 天）；合約裡唯一的通知管道是借款人自己；agent 沒有查核義務；鏈上合約只能等治理投票（實例延遲 53 天到 3 個月）。
+
+### 10.2 目標使用者（假說，未訪談）
+1. 鏈上貸款的 **facility agent / pool delegate**（主要）：依 *Torre*，agent 職責是機械性的、沒有查核義務；本工具把「知悉」變成有時間戳、可稽核的事件，並自動檢查撥款前提。
+2. **放款方與代幣持有人**：承擔損失，要預警，不要自動加速到期。
+3. **發起人、服務商、破產隔離 SPV**：鏈上倉儲融資常透過英國 SPV（例：Kraken × Maple 的倉儲融資）。
+- 真實的英國 × 鏈上信貸交集：Wintermute Trading Ltd（倫敦，Clearpool 借款人約 83M）、Fasanara Capital 的代幣化基金。找不到以英國法、直接在鏈上發給英國營運公司的公司定期貸款（研究範圍內未找到）。
+
+### 10.3 為什麼是現在、為什麼是英國
+- 現在：清算聲請 2025 年 7,049 件（三年高點，業界媒體轉述司法部資料）；Property (Digital Assets etc) Act 2025 於 2025/12/2 御准；HSBC Orion（2026/7）與 ClearToken（2026/9）通過 Digital Securities Sandbox Gate 2；FCA PS26/7（基金代幣化）2026/4/30 生效；Chainlink Fulcrum 2026/9/30 上線（CRE 執行融資條款）；LMA 把代幣化列為 2025 年重點。
+- 英國：法律上精確的風險起點（s.129 聲請日）＋法定強制的公開管道（r.7.10 刊登 Gazette）＋免費機器可讀資料（OGL 授權的 Gazette linked data、Companies House API）＋LMA 英國法合約的樞紐地位。聲請不在 Companies House 登記，所以單看一個來源必然漏接，「多來源」有實質理由。
+- 評審最可能的質疑：「Creditsafe 加一個人不就好了？」答案：鏈下貸款確實如此；但當撥款由合約執行、出資人分散、資訊管道掌握在利害關係人手上時，drawstop 必須放在錢移動的地方，而且「無法查核」必須和「沒事」區分。s.127 暫收只有代幣化情境才會出現。
+
+### 10.4 Chainlink 選題時的六個候選（加權評分，滿分 40）
+| 候選 | 分數 | 結果 |
+|---|---|---|
+| C1 法律地位證明（後來演變成 Drawstop） | 35 | 採用，之後依外部審稿縮小範圍 |
+| C3 事故證據與凍結請求包 | 31 | 需求證據最強，但鏈上產出是證據雜湊，會和 EvidenceTrail、BLI 第一屆 ProofVault 撞題 |
+| C2 協議條款黃金紀錄（多模型抽取條款） | 30 | 賣點是 LLM 共識，但模擬只跑單節點看不出來；10 秒逾時風險 |
+| C5 DAO 里程碑驗證撥款 | 28 | 託管／里程碑類在 Convergence 已飽和 |
+| C4 Agent 付費法律預檢（x402） | 26 | x402 每月實際金流約 $1M，需求證據弱；與 PocketChange、CRE Risk Router 重疊 |
+| C6 不透明擔保品監控（Stream 類事件） | 26 | PoR／SentinelFi 類已多 |
+- Convergence（554 件 CRE 作品）已飽和：KYC／AML 證明、AI 仲裁、託管、PoR、參數型保險、x402 agent、DeFi 守護。空白：KYB／GLEIF、法院與破產登記事件 oracle、牌照查核。
+
+### 10.5 外部審稿兩輪（使用者貼來的意見，都已採納）
+- 第一輪：LEI LAPSED 只是未續期 → 只當觀察；查不到 ≠ 沒有 → 證明寫「截至 T、在來源 S、未發現事件 E」；多節點一致 ≠ 來源正確；公司與錢包對應是核心缺口 → 限定「已知、放款方已 KYB 的借款人」；EDGAR 不是公司存續資料庫 → 移除；制裁要嘛做要嘛不提 → 不提。
+- 第二輪：簽名只代表雙方承認綁定（EIP-712 含 chainId、合約地址、借款人、LEI、公司編號、nonce、deadline）；「無法取得」「證明過期」要獨立處置、不能當成破產；來源更新時間與查詢時間分開；人工推翻保留原始事件、另記覆核人／原因／期限。
+
+### 10.6 需求驗證後的七項設計修正（已全部實作）
+1. 寬限期依協議設定天數與起算點（聲請日／公告日／偵測日）；偵測時已過期直接 REVIEW_REQUIRED。
+2. 分級：聲請給寬限；清算命令、決議、清算人／管理人任命直接人工覆核；合約不自動執行擔保。
+3. 2461 駁回要用法院案號與 2450 配對；2461 之後若有 2452 以 2452 為準。
+4. GLEIF 降為交叉核對（SOURCE_CONFLICT → WATCH），不觸發暫停。
+5. 新增 `repay()` 與 s.127 暫收；覆核不能釋出暫收。
+6. README 說明暫停撥款對應 LMA 第 4.2 條與 s.127 的意義。
+7. 「未找到」只代表 Gazette 截至查詢時沒有公告。
+- 另外兩項：`acknowledge()` 記錄知悉時間；Part A1 暫停期列為未來工作。
+
+---
+
+## 11. 補充：實作細節
+
+### 11.1 CRE 限制與預算
+- 每次執行：HTTP 15 次、回應 250 KB、連線逾時 10 秒、共識 observation 25 KB、報告 50 KB、執行 5 分鐘、secrets 讀取 5 次；cron 最快 30 秒。Confidential HTTP 另有額度（回應 500 KB、逾時 90 秒）。
+- TypeScript 跑在 QuickJS（WASM），不能用 Node 內建套件；`Buffer` 可用。時間只能用 `runtime.now()`。
+- 每家公司：Gazette 搜尋 1 次 + 確認公告最多 4 次（只確認相關代碼、最新的優先）+ CH 1 次 + GLEIF 0–1 次 ≤ 7；每次最多 2 家（≤ 14）。實測回應：GLEIF 約 3 KB、Gazette 單家查詢約 3 KB、CH 約 1.5 KB，延遲 0.4–3.5 秒。
+
+### 11.2 Workflow 設定（`status-monitor/config.*.json`）
+- `registryAddress` 設為零地址 → **預覽模式**：用 `previewEntities` 查詢並印出報告，不寫鏈。
+- `facilityAddress` 不是零地址才會註冊 H3（DrawdownRequested log trigger）。
+- `monitorOnly`：只監控這些公司編號（demo 用，避免用模擬資料源查真實公司）。
+- `rotationIntervalSeconds`：公司數超過每次上限時輪流查。
+- `maxNoticeConfirmations`（1–4）、`maxEntitiesPerRun`（1–2）、`maxAgeSeconds`（證明有效期，預設 86400）、`gasLimit`（6,000,000）。
+- 四個 target：`staging-settings`／`production-settings`（真實資料源）、`demo-settings`（模擬資料源 + Sepolia）、`rehearsal-settings`（模擬資料源 + 本機 anvil fork 8546）。
+- 模擬 log trigger：`cre workflow simulate status-monitor --target demo-settings --non-interactive --broadcast --trigger-index 1 --evm-tx-hash <DrawdownRequested 交易> --evm-event-index 0`。
+
+### 11.3 資料源細節
+- Gazette 搜尋：`/insolvency/notice/data.json?results-page-size=20&categorycode=G205010000&text=<公司編號>`。text 搜尋可能命中其他公告，所以每則都要用 `/notice/{id}/data.json?view=linked-data` 確認 `companyNumber`。linked data 有 `dateOfPetitionPresentation`（聲請）或 `datePetitionFiled`（命令）、`hasCourtCase.caseNumber`（格式不一：`CR-2026-006286` 或 `006286`）＋`caseYear`，正規化成 `2026/006286`。
+- Gazette 總公告流含**個人破產公告**（姓名、出生日期），只能用公司編號查公司破產類別；不存全文、不存官員姓名。測試 fixtures 已移除姓名、電話、內文。
+- 公告代碼標籤都用真實資料驗證過；2451 在 600 則樣本中沒出現（推測是合夥清算聲請），仍納入聲請代碼。
+- Companies House：Basic auth（key 當帳號、密碼空白）；Live 環境的 REST key 是 36 字元 UUID（第一次貼錯成 44 字元會 401）；`/company/{n}/insolvency` 無紀錄回 404。
+- GLEIF：免金鑰；`entity.status`（ACTIVE/INACTIVE）、`registration.status`（ISSUED/LAPSED…）、`registration.lastUpdateDate`、`entity.registeredAs`（英國公司編號）。
+
+### 11.4 模擬資料源（`demo/scenario-server.ts`）
+- 虛構公司 `DM000001`「DEMO BORROWER LTD (FICTIONAL)」；情境 `clean`／`petition`／`dismissed`／`order`，用 `curl "http://localhost:8787/_scenario?set=petition"` 切換。
+- 聲請日期固定為「切換情境時的 12 天前提出、1 小時前刊登」；Companies House 在所有情境都維持 `active`（對應 AMS 實際觀察到的延遲）。
+- CRE 模擬器可以呼叫 `http://localhost`（已驗證）；正式部署的 DON 不行，所以這只用於 demo。
+
+---
+
+## 12. 補充：提交與時程
+
+### 12.1 Demo 影片三幕（3–4 分鐘）
+1. **時間線**：AMS 真實案例（聲請 8/11 → 刊登 9/29 → 命令 10/7 → Companies House 仍 active），說明 s.127 與 LMA 寬限的錯位。
+2. **合約反應**：`run-demo.sh` 的畫面——撥款觸發 CRE 即時查核 → 核准；聲請出現 → 撥款被擋；還款進暫收；駁回 → 恢復並釋出。切到 Etherscan 看交易與 `getLatest`。
+3. **誠實限制**：無法查核 ≠ 沒事（UNVERIFIED）、不比商業供應商快、模擬單節點、沒有使用者訪談。結尾：「這是條款執行工具，不是法律意見。」
+
+### 12.2 DoraHacks 表單
+- 名稱 Drawstop；一句話用 10.1；描述用 README 問題陳述＋新與不新＋限制；bounty 申請 Chainlink「Best workflow with CRE」（可另考慮是否申請 RYO-CHAN，目前不建議，題目不符）；repo 連結；影片連結；聯絡方式必填 Discord／WhatsApp／WeChat 其中一個（使用者需先準備）。
+
+### 12.3 Chainlink 評審額外資訊（ETHGlobal 2026 同名獎項說明）
+- 只讀 Data Feeds 的前端「不算」；用到多種 Chainlink 服務會加分；Functions 與 Automation 即將淘汰（我們沒用）。
+- ETHGlobal 時 Chainlink 團隊曾代為把模擬的 workflow 部署到正式網路，可在 Discord 詢問。
+
+### 12.4 建議時程（截止 11/01 09:01 台灣時間）
+| 日期 | 事項 |
+|---|---|
+| 10/16–10/20 | 影片腳本 → 錄影 → 剪輯 |
+| 10/21–10/24 | DoraHacks 表單草稿、README 最後潤飾；（可選）Confidential HTTP、H1 |
+| 10/25–10/28 | 從乾淨 clone 重跑一次全部測試與模擬，確認評審可重現 |
+| 10/29–10/30 | 送出 DoraHacks BUIDL 並申請 Chainlink bounty |
+| 10/31 | 緩衝 |
+
+### 12.5 還沒驗證的事
+- Covenant Sentinel、SentinelFi 的 repo 沒讀過（只讀過展示頁）；本屆 DoraHacks 最新作品沒再掃過。
+- Squire Patton Boggs〈lenders and winding-up petitions〉PDF 無法擷取文字，沒讀。
+- EDGAR 上 7／10／60 天協議只讀過搜尋摘要；Hanwha 日期來自 Centrifuge 論壇引用 ASIC。
+- Sepolia 模擬 forwarder 是否驗簽名查不到原始碼。
+
+---
+
+## 13. 研究報告索引（在 repo 外，`BLI/` 資料夾；另有 `BLI/drawstop-handoff.zip`）
+| 檔案 | 內容 |
+|---|---|
+| `reports/BLI 黑客松選題研究.md` | 第一輪：加密法規、KOL 喊單、AI agent 責任、Chainlink CRE、過往得獎、競品；推薦過 CallProof（已放棄） |
+| `reports/Chainlink CRE 選題研究.md` | 第二輪：2026 產業現況、Chainlink 採用與策略、事故與監控缺口、真實需求、法律資料源；六個候選評分 |
+| `reports/英國破產事件監控需求驗證.md` | 第三輪：s.127／LMA 法律依據、鏈上信貸案例、現有監控工具、定位、七項設計修正、英文問題陳述 |
+| `research_notes/<主題>/*.md` | 三輪研究共 15 份原始筆記（含來源連結） |
