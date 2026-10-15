@@ -12,8 +12,8 @@ interface IERC20Minimal {
 /// @title LoanFacility
 /// @notice Bilateral testnet credit facility for a known, lender-verified UK borrower, modelled on LMA-style terms:
 ///         - drawstop (cf. LMA cl. 4.2): no new drawdown while an insolvency event is known or the evidence is stale;
-///         - petition carve-out (cf. LMA cl. 23.7): a winding-up petition gets the agreement's grace window, counted
-///           from the agreed anchor (presentation / publication / detection);
+///         - petition carve-out (cf. LMA cl. 23.7): the agreement's window for a petition to be discharged, counted
+///           from presentation ("commencement") and, where the agreement says so, ending early on advertisement;
 ///         - Insolvency Act 1986 s.127: repayments received while a petition is pending are held in suspense instead
 ///           of being passed on, because they are void if a winding-up order follows.
 ///         Default, acceleration and enforcement are never automatic.
@@ -24,18 +24,19 @@ contract LoanFacility {
         UNBOUND, // binding not confirmed by both parties
         STALE, // no attestation, or latest attestation expired -> re-check required
         UNVERIFIED, // a required source could not be checked -> re-check required, not an adverse finding
-        PETITION_PENDING, // winding-up petition advertised, agreement's grace window still running
+        PETITION_PENDING, // winding-up petition advertised, agreement's carve-out window still open
         REVIEW_REQUIRED, // insolvency proceeding, or petition past its grace window: human decision required
         WATCH, // watch-only signal (LEI lapsed, insolvency history, source conflict); drawdowns allowed
         NORMAL,
         DEFAULTED
     }
 
-    /// @notice From when the petition grace window is counted.
-    enum ClockAnchor {
-        PRESENTATION, // date the petition was presented (LMA "commencement")
-        PUBLICATION, // date the petition was advertised in The Gazette
-        DETECTION // first attestation that found it
+    /// @notice How the agreement bounds the petition carve-out window. Both forms count from presentation, the
+    ///         LMA "commencement" of the winding-up step. The carve-out also requires the petition to be frivolous or
+    ///         vexatious; that is a human determination (recordReview), not something this contract can decide.
+    enum CarveOutWindow {
+        PRESENTATION, // ends `petitionGracePeriod` after presentation (e.g. "within 30 days of commencement")
+        PRESENTATION_OR_ADVERTISEMENT // ends at that time or, if earlier, when the petition is advertised
     }
 
     struct Drawdown {
@@ -59,14 +60,15 @@ contract LoanFacility {
         uint64 expiresAt;
     }
 
-    uint32 public constant HARD_MASK = (1 << 0) | (1 << 3); // CH status adverse, Gazette insolvency proceeding
-    uint32 public constant PETITION_MASK = 1 << 2; // Gazette petition pending
-    uint32 public constant WATCH_MASK = (1 << 1) | (1 << 5) | (1 << 6); // insolvency history, LEI lapsed, conflict
-    uint32 public constant REQUIRED_SOURCES = (1 << 0) | (1 << 1); // Companies House + Gazette; GLEIF is cross-check only
+    uint32 private constant HARD_MASK = (1 << 0) | (1 << 3); // CH status adverse, Gazette insolvency proceeding
+    uint32 private constant PETITION_MASK = 1 << 2; // Gazette petition pending
+    uint32 private constant WATCH_MASK = (1 << 1) | (1 << 5) | (1 << 6); // insolvency history, LEI lapsed, conflict
+    uint32 private constant REQUIRED_SOURCES = (1 << 0) | (1 << 1); // Companies House + Gazette; GLEIF is cross-check only
+    uint64 private constant OFFICE_HOLDER_DELAY = 2 days; // a nomination is public this long before suspense can move
 
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 public constant BINDING_TYPEHASH =
+    bytes32 private constant BINDING_TYPEHASH =
         keccak256("Binding(address borrower,string lei,string companyNumber,uint256 nonce,uint256 deadline)");
     uint256 private constant SECP256K1_HALF_N = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
 
@@ -76,7 +78,7 @@ contract LoanFacility {
     address public immutable borrower;
     address public immutable arbiter;
     uint64 public immutable petitionGracePeriod;
-    ClockAnchor public immutable clockAnchor;
+    CarveOutWindow public immutable carveOutWindow;
     bytes32 public immutable entityId;
     string public companyNumber;
     string public lei;
@@ -85,6 +87,8 @@ contract LoanFacility {
     bool public defaulted;
     uint256 public bindingNonce;
     uint256 public suspenseBalance;
+    address public officeHolder; // liquidator, Official Receiver or administrator nominated by the arbiter
+    uint64 public officeHolderFrom; // when the nominated office-holder may receive suspense
     Drawdown[] public drawdowns;
     Repayment[] public repayments;
     Review[] public reviews;
@@ -96,6 +100,7 @@ contract LoanFacility {
     event DrawdownExecuted(uint256 indexed drawdownId, uint256 attestationId, uint256 amount);
     event Repaid(uint256 indexed repaymentId, uint256 amount, bool heldInSuspense, Status status);
     event SuspenseReleased(address indexed to, uint256 amount, bytes32 reasonHash, address by);
+    event OfficeHolderNominated(address indexed officeHolder, uint64 effectiveAt, bytes32 evidenceHash);
     event Acknowledged(address indexed by, uint256 indexed attestationId, bytes32 noteHash);
     event ReviewRecorded(
         uint256 indexed reviewId, address indexed reviewer, uint32 coveredBits, uint256 attestationId, bytes32 reasonHash, uint64 expiresAt
@@ -119,6 +124,8 @@ contract LoanFacility {
     error DefaultNotAllowed(Status status);
     error SuspenseNotReleasable(Status status);
     error NothingInSuspense();
+    error InvalidRecipient(address to);
+    error NoProceedingKnown();
     error TransferFailed();
 
     constructor(
@@ -130,7 +137,7 @@ contract LoanFacility {
         string memory companyNumber_,
         string memory lei_,
         uint64 petitionGracePeriod_,
-        ClockAnchor clockAnchor_
+        CarveOutWindow carveOutWindow_
     ) {
         registry = registry_;
         token = token_;
@@ -140,7 +147,7 @@ contract LoanFacility {
         companyNumber = companyNumber_;
         lei = lei_;
         petitionGracePeriod = petitionGracePeriod_;
-        clockAnchor = clockAnchor_;
+        carveOutWindow = carveOutWindow_;
         entityId = registry_.entityIdFor(companyNumber_);
     }
 
@@ -242,11 +249,26 @@ contract LoanFacility {
     }
 
     /// @notice Human resolution of suspense, e.g. return to the liquidator after a winding-up order, or release to
-    ///         the lender under a court validation order. Requires a written reason.
+    ///         the lender under a court validation order. Requires a written reason. The arbiter decides, but can
+    ///         only pay the lender, the borrower, or an office-holder nominated publicly beforehand.
     function resolveSuspense(address to, bytes32 reasonHash) external {
         if (msg.sender != arbiter) revert OnlyArbiter();
         if (reasonHash == bytes32(0)) revert InvalidReview();
+        bool officeHolderReady = to == officeHolder && to != address(0) && block.timestamp >= officeHolderFrom;
+        if (to != lender && to != borrower && !officeHolderReady) revert InvalidRecipient(to);
         _payOutSuspense(to, reasonHash);
+    }
+
+    /// @notice Arbiter names the insolvency office-holder (e.g. the Official Receiver) who may receive suspense. Only
+    ///         while an order, resolution, appointment or adverse registry status is known, and effective only after
+    ///         OFFICE_HOLDER_DELAY, so the nomination is on-chain before any money moves.
+    function nominateOfficeHolder(address who, bytes32 evidenceHash) external {
+        if (msg.sender != arbiter) revert OnlyArbiter();
+        if (who == address(0) || evidenceHash == bytes32(0)) revert InvalidRecipient(who);
+        if (registry.getLatest(entityId).activeBits & HARD_MASK == 0) revert NoProceedingKnown();
+        officeHolder = who;
+        officeHolderFrom = uint64(block.timestamp) + OFFICE_HOLDER_DELAY;
+        emit OfficeHolderNominated(who, officeHolderFrom, evidenceHash);
     }
 
     /// @notice Sum of repayments already passed to the lender at or after `since` (e.g. the petition presentation
@@ -317,31 +339,38 @@ contract LoanFacility {
         if (a.id == 0 || block.timestamp > a.validUntil) return Status.STALE;
 
         uint64[] memory firstSeen = registry.getFirstSeen(entityId);
-        uint32 uncovered = a.activeBits & ~coveredBits(firstSeen);
+        uint32 uncovered = a.activeBits & ~_coveredBits(firstSeen);
 
         // Winding-up order, resolution, liquidator/administrator appointment, or adverse CH status: no grace.
         if (uncovered & HARD_MASK != 0) return Status.REVIEW_REQUIRED;
+        // Petition: drawdowns stop either way (a potential Event of Default is a Default, cf. LMA cl. 4.2).
         if (uncovered & PETITION_MASK != 0) {
-            return block.timestamp < uint256(graceStart(a, firstSeen)) + petitionGracePeriod
-                ? Status.PETITION_PENDING
-                : Status.REVIEW_REQUIRED;
+            return block.timestamp < _petitionWindowEnd(a) ? Status.PETITION_PENDING : Status.REVIEW_REQUIRED;
         }
         if (a.unavailableBits & REQUIRED_SOURCES != 0) return Status.UNVERIFIED;
         if (uncovered & WATCH_MASK != 0) return Status.WATCH;
         return Status.NORMAL;
     }
 
-    /// @notice Start of the petition grace window per the agreed anchor; falls back to the next later known time.
-    function graceStart(StatusRegistry.Attestation memory a, uint64[] memory firstSeen) public view returns (uint64) {
-        uint64 detected = firstSeen[2];
-        if (clockAnchor == ClockAnchor.PRESENTATION && a.petitionPresentedAt != 0) return a.petitionPresentedAt;
-        if (clockAnchor != ClockAnchor.DETECTION && a.petitionPublishedAt != 0) return a.petitionPublishedAt;
-        return detected;
+    /// @notice End of the petition carve-out window. 0 when the presentation date is unknown: the window cannot be
+    ///         computed, so the petition goes to human review. With PRESENTATION_OR_ADVERTISEMENT the window has
+    ///         always closed by the time a Gazette notice is seen; only a faster source could catch it open.
+    function petitionWindowEnd() external view returns (uint64) {
+        return _petitionWindowEnd(registry.getLatest(entityId));
+    }
+
+    function _petitionWindowEnd(StatusRegistry.Attestation memory a) private view returns (uint64 end) {
+        if (a.petitionPresentedAt == 0) return 0;
+        end = a.petitionPresentedAt + petitionGracePeriod;
+        if (
+            carveOutWindow == CarveOutWindow.PRESENTATION_OR_ADVERTISEMENT && a.petitionPublishedAt != 0
+                && a.petitionPublishedAt < end
+        ) end = a.petitionPublishedAt;
     }
 
     /// @notice Bits neutralized by active reviews. A review covers an occurrence only if it began before the
     ///         review was recorded; a new occurrence of the same event is not covered.
-    function coveredBits(uint64[] memory firstSeen) public view returns (uint32 covered) {
+    function _coveredBits(uint64[] memory firstSeen) private view returns (uint32 covered) {
         for (uint256 i = 0; i < reviews.length; i++) {
             Review memory r = reviews[i];
             if (block.timestamp >= r.expiresAt) continue;

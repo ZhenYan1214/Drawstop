@@ -1,12 +1,12 @@
-# Counterparty Status Monitor — Design
+# Drawstop — Design
 
-Working name. A Chainlink CRE workflow that turns UK statutory insolvency notices into a consensus-verified drawstop for tokenized loans to a **known, lender-verified UK borrower**: the loan contract pauses new drawdowns, runs the agreement's petition grace window, holds at-risk repayments in suspense and records human review.
+A Chainlink CRE workflow that turns UK statutory insolvency notices into a consensus-verified drawstop for tokenized loans to a **known, lender-verified UK borrower**: the loan contract pauses new drawdowns, runs the agreement's petition carve-out window, holds at-risk repayments in suspense and records human review.
 
 ## 0. Problem
 
 Under English insolvency law a compulsory winding-up is deemed to start when the petition is **presented** (Insolvency Act 1986 s.129(2)). If a winding-up order follows, payments the company made after that date are void unless the court validates them (s.127), and the payee's good faith is not enough (*Express Electrical Distributors v Beavis* [2016] EWCA Civ 765). But the petition only becomes public when it is advertised in The Gazette, at least seven business days after service (Insolvency (England and Wales) Rules 2016 r.7.10). Petitions are never filed at Companies House; the register changes only after an order.
 
-LMA-style facility agreements already treat a pending petition as a Default that stops new drawdowns (cf. cl. 4.2), with a short carve-out for petitions dismissed within an agreed number of days (cf. cl. 23.7; 7–60 days in real agreements). Lenders learn of it only if the borrower self-reports (cl. 20.5) or someone checks, and a facility agent has no duty to look (*Torre Asset Funding v RBS* [2013] EWHC 2670 (Ch)). On-chain credit has repeated the pattern: Centrifuge token holders learned of a borrower's court-ordered liquidation 53 days after the order.
+LMA-style facility agreements already treat a pending petition as a Default that stops new drawdowns (cf. cl. 4.2), with a short carve-out for frivolous or vexatious petitions discharged within an agreed number of days (cf. cl. 23.7; 7–60 days in real agreements). Lenders learn of it only if the borrower self-reports (cl. 20.5) or someone checks; the facility agent may assume that no Default has occurred unless it is told (*Torre Asset Funding v RBS* [2013] EWHC 2670 (Ch)). Off-chain, banks usually freeze a company's accounts once a petition is advertised; nobody freezes a borrower's stablecoin wallet. On-chain credit has repeated the pattern: Centrifuge token holders learned of a borrower's court-ordered liquidation 53 days after the order.
 
 **Real public example (checked 2026-10-14), AMS FACILITIES (SW) LTD, company 11877818:**
 
@@ -18,9 +18,9 @@ LMA-style facility agreements already treat a pending petition as a Default that
 | 2026-10-14 | Order advertised (Gazette notice 5229442, code 2452) | Gazette |
 | 2026-10-14 | Companies House still shows **"Active"** | — |
 
-A 30-day carve-out counted from presentation had already expired 19 days before the petition appeared in any free public source (paid court-data vendors may see petitions earlier). A lender watching only Companies House would still have seen nothing on 2026-10-14, one week after the order. This is one case observed at one point in time, not a measured lag statistic.
+A 30-day carve-out counted from presentation had already expired 19 days before the petition appeared in any free public source (paid court-data vendors may see petitions earlier). A lender watching only Companies House would still have seen nothing on 2026-10-14, one week after the order. This is one case observed at one point in time, not a measured lag statistic. Drawstop reads the same public notices and could not have seen the petition earlier; it changes what happens once a notice is public.
 
-**What is not new (stated in README):** Companies House / Gazette monitoring exists (Creditsafe, Red Flag Alert, Company Watch; Red Flag Alert claims court-sourced petition alerts up to seven weeks before the Gazette). Chainlink hackathon projects (Covenant Sentinel, SentinelFi) already gate tokens on CRE-monitored financial covenants. We do not claim to be faster or broader.
+**What is not new (stated in README):** Companies House / Gazette monitoring exists (Creditsafe, Red Flag Alert, Company Watch; Red Flag Alert claims court-sourced petition alerts up to seven weeks before the Gazette). Chainlink hackathon projects (Covenant Sentinel, SentinelFi) already gate loans and tokens on CRE-monitored financial covenants, from mocked data. We do not claim to be faster or broader, and we do not see petitions before they are advertised.
 
 **What is new:** statutory insolvency notices turned into a consensus-verified, time-stamped, three-state attestation (found / not found / could not be checked), driving LMA-structured responses inside the contract that moves the money — including s.127 suspense for repayments, which only arises when repayments are distributed to many token holders.
 
@@ -56,6 +56,10 @@ A 30-day carve-out counted from presentation had already expired 19 days before 
 | The lender has completed KYB off-chain and chose to bind this borrower wallet to this company. | Independent proof that the wallet belongs to the company. |
 | Both parties acknowledge the binding: borrower EIP-712 signature + lender transaction. | A legal identity credential (future: vLEI, Chainlink ACE/CCID). |
 | CRE nodes fetched and normalized the source data independently and agreed on the result. | Correctness or timeliness of the registries themselves. |
+| The registry owner keeps the forwarder and workflow pinning honest. | Protection against that owner: it can repoint the forwarder and write any attestation. |
+| The arbiter judges reviews and suspense in good faith. | Protection against a partial arbiter beyond limiting where suspense can be paid (§5). |
+
+Production roles: the registry owner is neither lender nor borrower (a multisig behind a timelock, or renounced after pinning the production `KeystoneForwarder` and workflow ID); the arbiter is independent of the lender (agent, trustee or security agent). The Sepolia deployment does not meet this: the registry owner is the demo lender's test wallet. Drawdowns blocked by an outage (`STALE`, `UNVERIFIED`) put outage risk on the borrower; the agreement must make a valid attestation a drawdown condition and provide a manual fallback.
 
 The binding signature covers `chainId`, facility address (`verifyingContract`), borrower address, LEI, company number, `nonce` and `deadline`, so it cannot be replayed on another chain, facility or borrower.
 
@@ -89,7 +93,12 @@ Notice codes and labels verified against live Gazette data on 2026-10-14. Case r
 
 ## 4. Facility status (computed, not stored)
 
-Agreement terms set at deployment: `petitionGracePeriod` (e.g. 14 or 30 days) and `clockAnchor` ∈ {PRESENTATION (LMA "commencement"), PUBLICATION, DETECTION}.
+Agreement terms set at deployment: `petitionGracePeriod` (e.g. 7, 14 or 30 days) and `carveOutWindow`:
+
+- `PRESENTATION`: the window ends `petitionGracePeriod` after presentation, the LMA "commencement" (Carlsberg cl. 21.5(b): "discharged or dismissed within 30 days of commencement").
+- `PRESENTATION_OR_ADVERTISEMENT`: it ends then or, if earlier, when the petition is advertised (GasLog cl. 28.10.2: "within seven days of commencement or, if earlier, the date on which it is advertised"). Advertisement closes the window, so a Gazette-sourced attestation always finds it closed; only a faster source could catch it open.
+
+Neither real agreement counts from advertisement or detection, so the contract offers neither. Unknown presentation date → the window cannot be computed → `REVIEW_REQUIRED`. Both carve-outs also require the petition to be "frivolous or vexatious"; that is a human determination (§6), and a creditor such as HMRC will rarely meet it, so the window only times the drawstop.
 
 | Condition (in order) | Status | New drawdowns | Meaning |
 |---|---|---|---|
@@ -97,8 +106,8 @@ Agreement terms set at deployment: `petitionGracePeriod` (e.g. 14 or 30 days) an
 | Binding not confirmed | `UNBOUND` | blocked | |
 | No attestation, or `now > validUntil` | `STALE` | blocked | Re-check required. **Not** an adverse finding |
 | Uncovered hard bit (0, 3) | `REVIEW_REQUIRED` | blocked | Order / resolution / appointment: no grace. Contract never enforces security (administration moratorium, Sch B1 para 43) |
-| Uncovered petition bit (2), `now < anchor + grace` | `PETITION_PENDING` | blocked | Drawstop; carve-out window running |
-| Uncovered petition bit, window elapsed (possibly before detection) | `REVIEW_REQUIRED` | blocked | Lender **may** declare default |
+| Uncovered petition bit (2), `now < petitionWindowEnd` | `PETITION_PENDING` | blocked | Drawstop: a potential Event of Default is a Default (cl. 4.2); carve-out window open |
+| Uncovered petition bit, window closed (often before detection) or presentation date unknown | `REVIEW_REQUIRED` | blocked | Lender **may** declare default |
 | Companies House or Gazette unavailable | `UNVERIFIED` | blocked | Re-check required. **Not** an adverse finding |
 | Uncovered watch bit (1, 5, 6) | `WATCH` | allowed | Human attention |
 | Otherwise | `NORMAL` | allowed | |
@@ -110,13 +119,15 @@ GLEIF is cross-check only: its outage never blocks.
 - `repay()` always accepts funds.
 - If a petition or proceeding is known (active bits 2 or 0/3, **regardless of reviews** — s.127 risk is legal, not a matter of the parties' tolerance), the repayment is held in **suspense** instead of passed to the lender.
 - Suspense does **not** make a payment valid: the transfer into the facility is itself the disposition. It keeps the money undistributed and returnable to a liquidator, instead of spread across many token holders.
+- Not implemented, needs agreement wording: hold suspense on trust for the borrower, with the debt discharged only on release, so the money stays company property until then and the disposition happens at release (cf. [Pinsent Masons](https://www.pinsentmasons.com/out-law/guides/how-lenders-can-protect-against-winding-up-petition-risk) on credit balances). Untested for a smart contract.
 - `releaseSuspense()` (anyone): only when status is NORMAL/WATCH **and** no petition/proceeding is active, e.g. after a 2461 dismissal.
-- `resolveSuspense(to, reasonHash)` (arbiter): human resolution, e.g. return to the Official Receiver after an order, or release under a validation order.
+- `resolveSuspense(to, reasonHash)` (arbiter): human resolution, e.g. return to the Official Receiver after an order, or release under a validation order. The arbiter can pay only the lender, the borrower, or a nominated office-holder.
+- `nominateOfficeHolder(who, evidenceHash)` (arbiter): names the liquidator, Official Receiver or administrator, only while an order, resolution, appointment or adverse registry status is known, and effective only 2 days later, so the nomination is on-chain before any money moves.
 - `repaidSincePetitionPresented()`: repayments already passed to the lender after the presentation date — exposed to s.127 if an order follows, even though nobody could have known.
 
 ## 6. Human acknowledgement and review
 
-- `acknowledge(attestationId, noteHash)` (lender/arbiter): records when a party became aware (cf. *Torre*: the agent's duty to notify arises on actual knowledge).
+- `acknowledge(attestationId, noteHash)` (lender/arbiter): records when a party became aware (cf. *Torre*: the agent may assume no Default until it is told, and must notify once it actually knows).
 - `recordReview(coveredBits, attestationId, reasonHash, expiresAt)` (arbiter): append-only. Never edits an attestation. Neutralizes only `coveredBits`, only occurrences that began before the review (`firstSeen[bit] <= createdAt`), and only until `expiresAt`. A review may let drawdowns resume but cannot release s.127 suspense while a petition is live.
 - `declareDefault()` (lender): only in `REVIEW_REQUIRED`; moves no funds.
 
@@ -141,12 +152,13 @@ Honest limits of the demo: `cre workflow simulate` runs consensus on a single no
 ## 8. Contracts (Sepolia)
 
 - `StatusRegistry` (CRE receiver via `ReceiverTemplate`): latest attestation per entity, `firstSeen`, monitored list; every attestation emitted as an event.
-- `LoanFacility`: binding, drawstop, petition grace window, s.127 suspense, acknowledgement, review, human default.
+- `LoanFacility`: binding, drawstop, petition carve-out window, s.127 suspense, acknowledgement, review, human default.
 - `MockUSDC`: test stablecoin.
 
 ## 9. Open items
 
-- Companies House key returns 401 (user re-checking key type/environment).
 - No user interviews: demand is argued from statute, case law, LMA structure and on-chain incidents; stated as a hypothesis.
 - LMA Leveraged "14 days" comes from the ACT/Slaughter and May borrower's guide, not the (members-only) form text.
-- s.127 treatment of new advances (as opposed to repayments) has no direct authority; README marks it as inference.
+- New advances after presentation: blocked as a credit risk under the drawdown condition (cl. 4.2), not as an s.127 disposition (cf. *Coutts & Co v Stock* [2000]: a lender's advance out of an overdrawn account is not a disposition of the company's property).
+- No direct authority on a smart-contract suspense account under s.127; §5 is our reading of *Re Gray's Inn Construction* [1980] and *Hollicourt*.
+- Petitions never advertised (withdrawn before advertisement, IR 2016 r.7.13; advertisement restrained by the court) never appear in the Gazette.

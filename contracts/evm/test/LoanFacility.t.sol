@@ -32,6 +32,8 @@ contract LoanFacilityTest {
     uint64 private constant PRESENTED = 1786406400; // 2026-08-11 00:00 UTC, petition presented by HMRC
     uint64 private constant PUBLISHED = 1790674208; // 2026-09-29 09:30:08 UTC, 2450 advertised in The Gazette
     uint64 private constant ORDER_PUBLISHED = 1791986414; // 2026-10-14 14:00:14 UTC, 2452 winding-up order notice
+    // Hypothetical petition advertised 12 days after presentation, so a 30-day window is still open when it is seen
+    uint64 private constant FRESH_PRESENTED = PUBLISHED - 12 days;
 
     uint32 private constant CH_ADVERSE = 1 << 0;
     uint32 private constant PETITION = 1 << 2;
@@ -54,7 +56,7 @@ contract LoanFacilityTest {
         borrower = vm.addr(BORROWER_PK);
         registry = new StatusRegistry(FORWARDER);
         usdc = new MockUSDC();
-        facility = _newFacility(LoanFacility.ClockAnchor.PRESENTATION);
+        facility = _newFacility(LoanFacility.CarveOutWindow.PRESENTATION);
         usdc.mint(address(facility), 1_000_000e6);
         usdc.mint(borrower, 1_000_000e6);
     }
@@ -68,8 +70,8 @@ contract LoanFacilityTest {
     }
 
 
-    function _newFacility(LoanFacility.ClockAnchor anchor) private returns (LoanFacility f) {
-        f = new LoanFacility(registry, IERC20Minimal(address(usdc)), LENDER, borrower, ARBITER, CH, LEI, GRACE, anchor);
+    function _newFacility(LoanFacility.CarveOutWindow window) private returns (LoanFacility f) {
+        f = new LoanFacility(registry, IERC20Minimal(address(usdc)), LENDER, borrower, ARBITER, CH, LEI, GRACE, window);
         registry.setRegistrar(address(f), true);
         vm.prank(borrower);
         usdc.approve(address(f), type(uint256).max);
@@ -151,7 +153,7 @@ contract LoanFacilityTest {
     }
 
     function testBindingSignatureIsScopedToFacility() public {
-        LoanFacility other = _newFacility(LoanFacility.ClockAnchor.PRESENTATION);
+        LoanFacility other = _newFacility(LoanFacility.CarveOutWindow.PRESENTATION);
         uint256 deadline = t + 1 hours;
         bytes memory sigForOther = _sign(BORROWER_PK, other.bindingDigest(0, deadline));
         vm.prank(LENDER);
@@ -214,22 +216,39 @@ contract LoanFacilityTest {
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "grace from presentation already elapsed");
     }
 
-    function testPublicationAnchorGivesGraceWindow() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
+    /// e.g. Carlsberg cl. 21.5(b): "discharged or dismissed within 30 days of commencement".
+    function testCarveOutCountsFromPresentation() public {
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
-        _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "within grace from publication");
-        _warp(PUBLISHED + GRACE);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
-        _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "grace elapsed");
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "window from presentation still open");
+        _warp(FRESH_PRESENTED + GRACE);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "window elapsed");
+    }
+
+    /// e.g. GasLog cl. 28.10.2: "within seven days of commencement or, if earlier, the date on which it is advertised".
+    /// Advertisement closes the window, so a Gazette-sourced attestation always finds it closed.
+    function testAdvertisementEndsCarveOutEarly() public {
+        facility = _newFacility(LoanFacility.CarveOutWindow.PRESENTATION_OR_ADVERTISEMENT);
+        _bind(facility);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        require(facility.petitionWindowEnd() == PUBLISHED, "ends on advertisement");
+        _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "closed when seen");
+    }
+
+    function testUnknownPresentationDateGoesToReview() public {
+        _bind(facility);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, 0, PUBLISHED);
+        _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "window cannot be computed");
     }
 
     function testWindingUpOrderGoesStraightToReview() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
         _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "petition pending");
         _warp(ORDER_PUBLISHED + 1 hours);
         _attest(PROCEEDING, 0); // 2452 supersedes the petition; CH still "active" (true on 2026-10-14)
@@ -240,23 +259,20 @@ contract LoanFacilityTest {
     }
 
     function testDrawdownBlockedWhilePetitionPending() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
-        usdc.mint(address(facility), 1_000e6);
         _bind(facility);
         _warp(PUBLISHED);
         vm.prank(borrower);
         uint256 id = facility.requestDrawdown(100e6);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
         vm.expectRevert(abi.encodeWithSelector(LoanFacility.DrawdownsBlocked.selector, LoanFacility.Status.PETITION_PENDING));
         facility.executeDrawdown(id);
     }
 
     function testDefaultNotAllowedDuringGrace() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
         vm.prank(LENDER);
         vm.expectRevert(abi.encodeWithSelector(LoanFacility.DefaultNotAllowed.selector, LoanFacility.Status.PETITION_PENDING));
         facility.declareDefault();
@@ -277,10 +293,9 @@ contract LoanFacilityTest {
     // ------------------------------------------------------------------ s.127 repayments
 
     function testRepaymentHeldInSuspenseThenReleasedOnDismissal() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
 
         vm.prank(borrower);
         facility.repay(50e6);
@@ -308,15 +323,42 @@ contract LoanFacilityTest {
 
         address liquidator = address(0x11D);
         vm.prank(ARBITER);
+        facility.nominateOfficeHolder(liquidator, keccak256("Official Receiver appointment"));
+        vm.prank(ARBITER);
+        vm.expectRevert(abi.encodeWithSelector(LoanFacility.InvalidRecipient.selector, liquidator));
+        facility.resolveSuspense(liquidator, keccak256("returned to Official Receiver")); // nomination not yet effective
+
+        _warp(t + 2 days); // OFFICE_HOLDER_DELAY
+        vm.prank(ARBITER);
         facility.resolveSuspense(liquidator, keccak256("returned to Official Receiver"));
         require(usdc.balanceOf(liquidator) == 50e6, "returned to estate");
     }
 
-    function testReviewCannotReleaseSuspenseWhilePetitionLive() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
+    function testArbiterCannotPaySuspenseToAnyAddress() public {
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
-        _attestPetition(PETITION, 0, PRESENTED, PUBLISHED);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        vm.prank(borrower);
+        facility.repay(50e6);
+
+        address stranger = address(0xBAD);
+        vm.prank(ARBITER);
+        vm.expectRevert(abi.encodeWithSelector(LoanFacility.InvalidRecipient.selector, stranger));
+        facility.resolveSuspense(stranger, keccak256("x"));
+
+        vm.prank(ARBITER);
+        vm.expectRevert(LoanFacility.NoProceedingKnown.selector); // a petition alone has no office-holder
+        facility.nominateOfficeHolder(stranger, keccak256("x"));
+
+        vm.prank(ARBITER);
+        facility.resolveSuspense(borrower, keccak256("validation refused, returned to company"));
+        require(usdc.balanceOf(borrower) == 1_000_000e6, "returned to borrower");
+    }
+
+    function testReviewCannotReleaseSuspenseWhilePetitionLive() public {
+        _bind(facility);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
         vm.prank(borrower);
         facility.repay(50e6);
         uint256 attId = registry.getLatest(facility.entityId()).id;
@@ -329,7 +371,6 @@ contract LoanFacilityTest {
     }
 
     function testRepaymentsBeforeDetectionAreFlagged() public {
-        facility = _newFacility(LoanFacility.ClockAnchor.PUBLICATION);
         _bind(facility);
         _warp(PRESENTED + 10 days); // petition presented but not yet advertised: invisible
         _attest(0, 0);

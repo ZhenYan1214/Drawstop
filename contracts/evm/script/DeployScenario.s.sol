@@ -15,9 +15,9 @@ interface Vm {
 }
 
 /// @notice Loan scenario for the FICTIONAL company DM000001 (served by demo/scenario-server.ts).
-/// @dev Lender and arbiter are the deployer for the demo; in a real facility they are different parties.
+/// @dev The arbiter is a separate address from the lender, as it would be in a real facility (e.g. agent or trustee).
 ///      Agreement terms: 30-day petition carve-out counted from presentation (LMA "commencement").
-///      Env: CRE_ETH_PRIVATE_KEY (lender/arbiter), DEMO_BORROWER_PRIVATE_KEY, REGISTRY.
+///      Env: CRE_ETH_PRIVATE_KEY (lender), DEMO_BORROWER_PRIVATE_KEY, DEMO_ARBITER_ADDRESS, REGISTRY.
 contract DeployScenario {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
@@ -30,11 +30,12 @@ contract DeployScenario {
         StatusRegistry registry = StatusRegistry(vm.envAddress("REGISTRY"));
         address lender = vm.addr(lenderKey);
         address borrower = vm.addr(borrowerKey);
+        address arbiter = vm.envAddress("DEMO_ARBITER_ADDRESS");
 
         vm.startBroadcast(lenderKey);
         usdc = new MockUSDC();
         facility = new LoanFacility(
-            registry, IERC20Minimal(address(usdc)), lender, borrower, lender, COMPANY, "", GRACE, LoanFacility.ClockAnchor.PRESENTATION
+            registry, IERC20Minimal(address(usdc)), lender, borrower, arbiter, COMPANY, "", GRACE, LoanFacility.CarveOutWindow.PRESENTATION
         );
         registry.setRegistrar(address(facility), true);
         usdc.mint(address(facility), 1_000_000e6); // facility commitment

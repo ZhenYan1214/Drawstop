@@ -52,7 +52,9 @@
 - **s.127**：若後來下清算命令，聲請日之後公司對財產的處分（包括還款給債權人）無效，除非法院追認。*Express Electrical v Beavis* [2016] EWCA Civ 765：收款人善意不知情也不夠。*Bank of Ireland v Hollicourt* [2001]：責任在收款人，放款方就是收款人。
 - **IR 2016 r.7.10**：聲請要在送達後至少 7 個營業日才刊登 Gazette。聲請**不會**送到 Companies House；清算命令才會（s.130）。
 - **LMA 標準貸款合約**：第 4.2 條 drawstop（有持續中的違約就不得撥款）；第 23.7 條清算聲請寬限（範本留白，Leveraged 版指南建議 14 天；真實協議 Carlsberg 30 天、GasLog 7 天或以公告日為準、Atlatsa 10 天、另有 60 天）；第 20.5 條借款人自行通報。
-- *Torre Asset Funding v RBS* [2013]：facility agent 沒有主動查核違約的義務，只在知悉後須通知。
+- *Torre Asset Funding v RBS* [2013]：依協議條款，facility agent 可以假設沒有 Default，除非被告知；知悉後須通知。（這是契約解釋，不是一般規則；措辭用「may assume no Default」，不要說「no duty to look」。）
+- *Coutts & Co v Stock* [2000]：放款本身不是公司財產的處分 → 擋新撥款的理由是信用風險與第 4.2 條，不是 s.127。*Re Gray's Inn Construction* [1980]：付進放款方控制的合約仍算處分 → s.127 暫收不會讓還款有效，價值在於錢不散出去、可原封返還。
+- 刊登後銀行通常會凍結公司帳戶（Gazette 官方說明），但沒有人凍結借款人的穩定幣錢包 → 這是「為什麼要寫在合約裡」最強的論點。
 
 ### 3.2 真實案例（2026-10-14 實際查到）
 AMS FACILITIES (SW) LTD，公司編號 **11877818**：
@@ -63,12 +65,12 @@ AMS FACILITIES (SW) LTD，公司編號 **11877818**：
 - 2026-10-14 Companies House API 仍回傳 `active`、`has_insolvency_history: false`。
 - 若合約寬限 30 天、從聲請日起算，寬限在聲請出現在任何免費公開來源之前 19 天就過期了。（只是一個案例、一個時間點，不是統計。）
 
-鏈上案例：Centrifuge 的 Hanwha AUS（澳洲）在法院下令清算 **53 天後**代幣持有人才被通知；MakerDAO 對 Harbor Trade 違約花 3 個月才投票停止放款。**沒有找到英國借款人的鏈上違約**，要照實講。
+鏈上案例：Centrifuge 的 Hanwha AUS（澳洲）在法院下令清算 **53 天後**代幣持有人才被通知；（MakerDAO 對 Harbor Trade 違約是到期約 3 個月後才投票，但來源沒寫 Maker 何時知情，**不要拿來說明「警示太慢」**。）**沒有找到英國借款人的鏈上違約**，要照實講。
 
 ### 3.3 哪些不新、哪些新（pitch 必須照實講）
 - **不新**：監控 Companies House／Gazette（Creditsafe、Red Flag Alert、Company Watch；Red Flag Alert 宣稱比 Gazette 早最多 7 週）。Chainlink 黑客松已有 Covenant Sentinel、SentinelFi（CRE 監控財務條款、鏈上阻擋）。**絕不宣稱比商業供應商快。**
 - **新**：(1) 法定破產公告 → 三態證明（找到／未找到／無法查核），查詢時間與來源更新時間分開、有有效期限；(2) 處置直接對應 LMA 條款、在移動資金的合約裡執行；(3) **s.127 還款暫收**（只有代幣化、分給很多持有人時才會出現的問題，最難被說成為做而做）；(4) 違約、加速、執行擔保永遠由人決定。
-- 為什麼用區塊鏈：只有當撥款由合約執行時才成立；email 警示送到人手上還要再發多簽交易（Harbor Trade 花了 3 個月）；多個出資人需要同一份防竄改時間線；「無法查核」要和「沒事」區分。
+- 為什麼用區塊鏈：只有當撥款由合約執行時才成立；email 警示送到人手上還要再發交易；鏈上沒有銀行替你凍結穩定幣錢包；多個出資人需要同一份防竄改時間線；「無法查核」要和「沒事」區分。
 
 ### 3.4 被否決的方向（不要重做）
 - CallProof（KOL 喊單存證，投 RYO-CHAN）：使用者決定主攻 Chainlink 後放棄；而且 EvidenceTrail 已做雜湊鏈推理軌跡。
@@ -104,8 +106,8 @@ event (H3)      identical 共識     └─ GLEIF：LEI ↔ 公司編號交叉�
 ### 4.2 `LoanFacility.status()`（依序判斷）
 DEFAULTED → UNBOUND → STALE（無證明或過期，需重查，**不是**不利發現）→ hard 位元未被覆核 → REVIEW_REQUIRED（不給寬限）→ 聲請位元：寬限內 PETITION_PENDING、過期 REVIEW_REQUIRED → CH 或 Gazette 無法查核 → UNVERIFIED → watch 位元 → WATCH（可撥款）→ NORMAL。
 
-- 寬限期與起算點（PRESENTATION／PUBLICATION／DETECTION）在部署時依協議設定。
-- `repay()`：有聲請或破產程序時，還款進 `suspenseBalance`（不論有無覆核，因為 s.127 風險是法律上的）。`releaseSuspense()` 只在 NORMAL/WATCH 且沒有聲請或程序時才能用。`resolveSuspense(to, reasonHash)` 由仲裁人決定（例如退給清算人）。`repaidSincePetitionPresented()` 列出聲請日後已轉給放款方的還款。
+- 寬限天數與窗口形式（`CarveOutWindow`）在部署時依協議設定，兩種都從聲請日起算：`PRESENTATION`（Carlsberg 式，聲請日起 N 天）、`PRESENTATION_OR_ADVERTISEMENT`（GasLog 式，N 天或刊登日，取較早者）。原本的 PUBLICATION／DETECTION 是誤讀，已在 2026-10-15 移除：兩份真實協議都沒有從刊登日或偵測日起算。聲請日不明 → `REVIEW_REQUIRED`。豁免另需聲請「frivolous or vexatious」，由人判斷。
+- `repay()`：有聲請或破產程序時，還款進 `suspenseBalance`（不論有無覆核，因為 s.127 風險是法律上的）。`releaseSuspense()` 只在 NORMAL/WATCH 且沒有聲請或程序時才能用。`resolveSuspense(to, reasonHash)` 由仲裁人決定，但只能付給放款方、借款人，或事先提名的清算人／管理人（`nominateOfficeHolder`：只在已知清算命令、決議、任命或登記狀態不利時可提名，2 天後才生效）。`repaidSincePetitionPresented()` 列出聲請日後已轉給放款方的還款。
 - `recordReview`：只增不改；只覆蓋覆核前就已存在的事件；有期限；不能釋出暫收。
 - `acknowledge`：記錄何時「知悉」（呼應 *Torre*）。
 - `declareDefault`：只在 REVIEW_REQUIRED 時由放款方手動宣告，不移動資金。
@@ -113,13 +115,13 @@ DEFAULTED → UNBOUND → STALE（無證明或過期，需重查，**不是**不
 
 ### 4.3 檔案地圖
 ```
-counterparty-monitor/
+Drawstop/
 ├─ README.md            給評審看的英文說明（問題、真實案例、新與不新、限制、重跑、部署紀錄）
 ├─ DESIGN.md            完整規格
 ├─ HANDOFF.md           本文件
 ├─ contracts/evm/
 │  ├─ src/StatusRegistry.sol, LoanFacility.sol, MockUSDC.sol, ReceiverTemplate.sol（已修 64-byte metadata）
-│  ├─ test/LoanFacility.t.sol   27 個測試（含 AMS 真實時間線、正式格式 metadata）
+│  ├─ test/LoanFacility.t.sol   29 個測試（含 AMS 真實時間線、兩種寬限窗口、正式格式 metadata）
 │  ├─ script/DeployMonitor.s.sol, DeployScenario.s.sol
 │  ├─ src/abi/*.abi + ts/generated/*（cre generate-bindings 產生）
 │  └─ foundry.toml      via_ir + optimizer_runs=1（為了塞進單筆交易）
@@ -145,12 +147,12 @@ counterparty-monitor/
 | LoanFacility（DM000001） | `0x1652af1a405f7d73ded60f684d64c7313f4c71ec` |
 | MockUSDC | `0x658b728a1e100dd5bac2f69a2135950e399b952e` |
 
-- 錢包：放款方／仲裁人（使用者測試錢包）`0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d`，剩約 1.89 Sepolia ETH；demo 借款人 `0xa0401d2E0671527e20489ffa059A4C3a4541cF3a`。
+- 錢包：放款方（10/15 的 demo 中也兼任仲裁人；之後的 demo 改用獨立仲裁人地址）（使用者測試錢包）`0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d`，剩約 1.89 Sepolia ETH；demo 借款人 `0xa0401d2E0671527e20489ffa059A4C3a4541cF3a`。
 - Registry 目前 7 筆證明：#1 AMS（bit3，tx `0x5bc10a05…`）、#2 Tesco（乾淨，tx `0x46f6e23d…`），#3–#7 為 demo 情境。所有交易連結都在 README。
 - 驗證成功要讀合約狀態（`getLatest`），因為 **forwarder 在接收合約失敗時不會 revert**。
 
 ### Sepolia gas 實測（2026-10，踩過的坑）
-- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）。
+- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）；10/15 修正後約 **16.33M**（餘裕約 2.7%，用 `cast estimate --create` 對 Sepolia 實測）。再加功能前先量，超過上限就部署不了。常數改為 private、`coveredBits`／`petitionWindowEnd` 改為內部函式就是為了省空間。
 - 建立新帳戶約 **204,600 gas**，但 `eth_estimateGas` 對轉帳回傳 21,000 → 轉 ETH 給新帳戶要手動 `--gas-limit 300000`。
 - Forge 本機估算偏低 → 部署一律 `--slow --skip-simulation`（讓節點估算）。
 - 寫入儲存也貴（登記一家公司約 47 萬 gas、寫一筆證明約 54–85 萬）→ workflow `gasLimit` 設 6,000,000。
@@ -168,13 +170,14 @@ counterparty-monitor/
    ```
    CRE_ETH_PRIVATE_KEY=...        # 使用者測試錢包（放款方/仲裁人/部署者）
    CH_API_KEY_VAR=...             # Companies House REST key（Live）
+   DEMO_ARBITER_ADDRESS=...       # demo 仲裁人（獨立於放款方的地址；demo 流程不需要它的私鑰）
    DEMO_BORROWER_PRIVATE_KEY=...  # demo 借款人
    ```
 4. `cre login`（CRE 帳號 pigpigyyy030@gmail.com，org `org_u0AxV9oLMZppo0qy`，需 2FA）。
 5. 安裝依賴：`bun install --cwd status-monitor`、`bun install --cwd contracts`。
 6. 驗證：
    ```bash
-   cd contracts/evm && forge test        # 27 passed
+   cd contracts/evm && forge test        # 29 passed
    cd ../../status-monitor && bun test && bun x tsc --noEmit   # 20 passed, tsc 0
    cd .. && cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0   # 不加 --broadcast 只模擬
    ```
@@ -201,7 +204,11 @@ counterparty-monitor/
 - Sepolia 寫入經過模擬 forwarder，展示的是流程，不是報告真實性；正式版要用 `setExpectedAuthor/Id` 鎖定 workflow。
 - 「未找到」只代表截至查詢時 Gazette 沒有公告，不排除已提出未刊登的聲請。
 - 不宣稱比 Creditsafe／Red Flag Alert 快；不是法律意見；不做制裁篩查；不證明錢包屬於該公司；抓不到沒有公開法律事件的詐欺。
-- s.127 對「新撥款」的處理沒有直接判例（對「還款」有）；LMA「14 天」出自 ACT/Slaughter and May 指南，不是範本原文。
+- **Registry owner 是信任點**：可以換 forwarder、改 expected workflow，等於能寫入任何證明（例如假的聲請來擋撥款）。Sepolia 上 owner 是使用者測試錢包，也就是 demo 放款方。正式版 owner 應是雙方以外的 multisig + timelock，或鎖定正式 forwarder 與 workflow ID 後放棄 owner。
+- **仲裁人是信任點**：應獨立於放款方（agent、trustee）。demo 已改用獨立地址（`.env` 的 `DEMO_ARBITER_ADDRESS`）。
+- **資料源中斷會擋撥款**（STALE／UNVERIFIED），等於把中斷風險轉給借款人；協議必須明定「有效證明」是撥款前提並有人工備援，原型沒有備援。
+- Drawstop 看不到刊登前的聲請；刊登前就撤回（r.7.13）或法院禁止刊登的聲請永遠不會出現在 Gazette。聲請日到刊登日之間的還款擋不住，只能事後標記。
+- 新撥款：擋下的理由是信用風險與第 4.2 條撥款前提，不是 s.127（*Coutts v Stock*）；LMA「14 天」出自 ACT/Slaughter and May 指南，不是範本原文。
 - 合約沒有本金、利息、額度上限（刻意的範圍限制）。
 - pitch 不要用的數字：「約一半聲請沒變成清算命令」（粗略推算）、GLEIF「66–98% 過期率」（來源不清）。
 
@@ -223,10 +230,10 @@ counterparty-monitor/
 - 中文：當英國借款人出現法定破產公告，代幣化貸款合約在下一次撥款前就知道，並依協議條款暫停撥款、計算寬限期、把有風險的還款暫收、留下人工覆核紀錄。
 - 英文：*A consensus-verified drawstop for tokenized loans to UK companies: statutory insolvency notices in, LMA-style pause-and-review out.*
 - 英文問題陳述（約 190 字）已在 README「The problem」段，可直接用於 DoraHacks 描述與影片開場。
-- 痛點一句話：s.127 風險從聲請日開始，公開卻至少晚 7 個營業日（真實案例晚 49 天）；合約裡唯一的通知管道是借款人自己；agent 沒有查核義務；鏈上合約只能等治理投票（實例延遲 53 天到 3 個月）。
+- 痛點一句話：s.127 風險從聲請日開始，公開卻至少晚 7 個營業日（真實案例晚 49 天）；合約裡唯一的通知管道是借款人自己；agent 可以假設沒有 Default；鏈上沒有銀行凍結錢包，還款會照常分給持有人；鏈上合約只能等治理投票（Centrifuge 實例延遲 53 天）。Drawstop 也看不到刊登前的聲請，價值在刊登之後：下一次查核就反應、回溯標記聲請日後的還款、之後的還款進暫收。
 
 ### 10.2 目標使用者（假說，未訪談）
-1. 鏈上貸款的 **facility agent / pool delegate**（主要）：依 *Torre*，agent 職責是機械性的、沒有查核義務；本工具把「知悉」變成有時間戳、可稽核的事件，並自動檢查撥款前提。
+1. 鏈上貸款的 **facility agent / pool delegate**（主要）：依 *Torre*，agent 職責是機械性的、可以假設沒有 Default；本工具把「知悉」變成有時間戳、可稽核的事件，並自動檢查撥款前提。
 2. **放款方與代幣持有人**：承擔損失，要預警，不要自動加速到期。
 3. **發起人、服務商、破產隔離 SPV**：鏈上倉儲融資常透過英國 SPV（例：Kraken × Maple 的倉儲融資）。
 - 真實的英國 × 鏈上信貸交集：Wintermute Trading Ltd（倫敦，Clearpool 借款人約 83M）、Fasanara Capital 的代幣化基金。找不到以英國法、直接在鏈上發給英國營運公司的公司定期貸款（研究範圍內未找到）。
@@ -234,7 +241,7 @@ counterparty-monitor/
 ### 10.3 為什麼是現在、為什麼是英國
 - 現在：清算聲請 2025 年 7,049 件（三年高點，業界媒體轉述司法部資料）；Property (Digital Assets etc) Act 2025 於 2025/12/2 御准；HSBC Orion（2026/7）與 ClearToken（2026/9）通過 Digital Securities Sandbox Gate 2；FCA PS26/7（基金代幣化）2026/4/30 生效；Chainlink Fulcrum 2026/9/30 上線（CRE 執行融資條款）；LMA 把代幣化列為 2025 年重點。
 - 英國：法律上精確的風險起點（s.129 聲請日）＋法定強制的公開管道（r.7.10 刊登 Gazette）＋免費機器可讀資料（OGL 授權的 Gazette linked data、Companies House API）＋LMA 英國法合約的樞紐地位。聲請不在 Companies House 登記，所以單看一個來源必然漏接，「多來源」有實質理由。
-- 評審最可能的質疑：「Creditsafe 加一個人不就好了？」答案：鏈下貸款確實如此；但當撥款由合約執行、出資人分散、資訊管道掌握在利害關係人手上時，drawstop 必須放在錢移動的地方，而且「無法查核」必須和「沒事」區分。s.127 暫收只有代幣化情境才會出現。
+- 評審最可能的質疑：「Creditsafe 加一個人不就好了？」答案：鏈下貸款確實如此；但當撥款由合約執行、出資人分散、資訊管道掌握在利害關係人手上時，drawstop 必須放在錢移動的地方，而且「無法查核」必須和「沒事」區分；鏈下有銀行凍結帳戶，鏈上沒有人凍結穩定幣錢包。s.127 暫收只有代幣化情境才會出現。另一個必答題：「你的 AMS 例子不也是 49 天後才看到？」答：對，Drawstop 讀同樣的公開公告，不宣稱更早；它改變的是刊登之後發生什麼，且資料源可替換，更早的法院資料可以接進來。
 
 ### 10.4 Chainlink 選題時的六個候選（加權評分，滿分 40）
 | 候選 | 分數 | 結果 |
@@ -252,7 +259,7 @@ counterparty-monitor/
 - 第二輪：簽名只代表雙方承認綁定（EIP-712 含 chainId、合約地址、借款人、LEI、公司編號、nonce、deadline）；「無法取得」「證明過期」要獨立處置、不能當成破產；來源更新時間與查詢時間分開；人工推翻保留原始事件、另記覆核人／原因／期限。
 
 ### 10.6 需求驗證後的七項設計修正（已全部實作）
-1. 寬限期依協議設定天數與起算點（聲請日／公告日／偵測日）；偵測時已過期直接 REVIEW_REQUIRED。
+1. 寬限期依協議設定天數與窗口形式（從聲請日起算；GasLog 式在刊登日提早結束）；偵測時已過期直接 REVIEW_REQUIRED。（原本的「公告日／偵測日起算」於 10/15 更正。）
 2. 分級：聲請給寬限；清算命令、決議、清算人／管理人任命直接人工覆核；合約不自動執行擔保。
 3. 2461 駁回要用法院案號與 2450 配對；2461 之後若有 2452 以 2452 為準。
 4. GLEIF 降為交叉核對（SOURCE_CONFLICT → WATCH），不觸發暫停。

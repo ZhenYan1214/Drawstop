@@ -5,7 +5,7 @@
 #   2. bash demo/run-demo.sh rehearsal            (anvil --fork-url <sepolia> --port 8546)
 #      bash demo/run-demo.sh demo                 (Ethereum Sepolia)
 #
-# Needs .env: CRE_ETH_PRIVATE_KEY (lender/arbiter), DEMO_BORROWER_PRIVATE_KEY, CH_API_KEY_VAR.
+# Needs .env: CRE_ETH_PRIVATE_KEY (lender), DEMO_BORROWER_PRIVATE_KEY, DEMO_ARBITER_ADDRESS, CH_API_KEY_VAR.
 # Each step prints the facility status. Status codes: 0 UNBOUND 1 STALE 2 UNVERIFIED 3 PETITION_PENDING
 # 4 REVIEW_REQUIRED 5 WATCH 6 NORMAL 7 DEFAULTED.
 set -euo pipefail
@@ -22,9 +22,15 @@ case "$MODE" in
 	*) echo "usage: $0 rehearsal|demo"; exit 1 ;;
 esac
 
-env_get() { grep "^$1=" "$ROOT/.env" | cut -d= -f2- | tr -d '\r'; }
+env_get() {
+	local v
+	v=$(grep "^$1=" "$ROOT/.env" | cut -d= -f2- | tr -d '\r') || true
+	[ -n "$v" ] || { echo "missing $1 in .env" >&2; exit 1; }
+	printf '%s' "$v"
+}
 LENDER_KEY=$(env_get CRE_ETH_PRIVATE_KEY)
 BORROWER_KEY=$(env_get DEMO_BORROWER_PRIVATE_KEY)
+ARBITER=$(env_get DEMO_ARBITER_ADDRESS) # separate from the lender, as in a real facility
 LENDER=$($CAST wallet address --private-key "$LENDER_KEY")
 BORROWER=$($CAST wallet address --private-key "$BORROWER_KEY")
 STATUS_NAMES=(UNBOUND STALE UNVERIFIED PETITION_PENDING REVIEW_REQUIRED WATCH NORMAL DEFAULTED)
@@ -56,12 +62,12 @@ if [ "$($CAST balance "$BORROWER" --rpc-url "$RPC")" = "0" ]; then # gas for the
 	$CAST send --private-key "$LENDER_KEY" --rpc-url "$RPC" --value 0.02ether --gas-limit 300000 "$BORROWER" >/dev/null && echo "   funded borrower with 0.02 test ETH"
 fi
 DEPLOY_FLAGS=(--broadcast --slow --skip-simulation) # node estimates gas: Sepolia charges ~1,570 gas per deployed byte
-(cd "$ROOT/contracts/evm" && CRE_ETH_PRIVATE_KEY=$LENDER_KEY DEMO_BORROWER_PRIVATE_KEY=$BORROWER_KEY REGISTRY=$REGISTRY \
+(cd "$ROOT/contracts/evm" && CRE_ETH_PRIVATE_KEY=$LENDER_KEY DEMO_BORROWER_PRIVATE_KEY=$BORROWER_KEY DEMO_ARBITER_ADDRESS=$ARBITER REGISTRY=$REGISTRY \
 	forge script script/DeployScenario.s.sol:DeployScenario --rpc-url "$RPC" "${DEPLOY_FLAGS[@]}" >/dev/null)
 RUN="$ROOT/contracts/evm/broadcast/DeployScenario.s.sol/$($CAST chain-id --rpc-url "$RPC")/run-latest.json"
 read -r USDC FACILITY < <(node -e 'const j=require(process.argv[1]);const c=j.transactions.filter(t=>t.transactionType==="CREATE");console.log(c[0].contractAddress,c[1].contractAddress)' "$RUN")
 echo "   MockUSDC $USDC"
-echo "   LoanFacility $FACILITY (borrower $BORROWER, lender/arbiter $LENDER)"
+echo "   LoanFacility $FACILITY (borrower $BORROWER, lender $LENDER, arbiter $ARBITER)"
 node -e 'const fs=require("fs");const f=process.argv[1];const c=JSON.parse(fs.readFileSync(f));c.facilityAddress=process.argv[2];fs.writeFileSync(f,JSON.stringify(c,null,2)+"\n")' \
 	"$ROOT/status-monitor/config.demo.json" "$FACILITY"
 status
