@@ -4,4 +4,3 @@ contracts/evm/out/
 contracts/evm/cache/
 contracts/evm/broadcast/
 .cre_build_tmp.js
-HANDOFF.md
