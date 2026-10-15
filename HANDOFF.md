@@ -121,14 +121,14 @@ Drawstop/
 ├─ HANDOFF.md           本文件
 ├─ contracts/evm/
 │  ├─ src/StatusRegistry.sol, LoanFacility.sol, MockUSDC.sol, ReceiverTemplate.sol（已修 64-byte metadata）
-│  ├─ test/LoanFacility.t.sol   29 個測試（含 AMS 真實時間線、兩種寬限窗口、正式格式 metadata）
+│  ├─ test/LoanFacility.t.sol   40 個測試（含 AMS 真實時間線、兩種寬限窗口、正式格式 metadata、10/15 稽核發現的攻擊情境）
 │  ├─ script/DeployMonitor.s.sol, DeployScenario.s.sol
 │  ├─ src/abi/*.abi + ts/generated/*（cre generate-bindings 產生）
 │  └─ foundry.toml      via_ir + optimizer_runs=1（為了塞進單筆交易）
 ├─ status-monitor/       CRE workflow（TypeScript）
 │  ├─ sources.ts        三個來源的抓取與正規化（node mode）
 │  ├─ workflow.ts       handler、共識、報告編碼、寫入
-│  ├─ sources.test.ts, workflow.test.ts   20 個測試；fixtures/ 是 2026-10-14 錄的真實回應（已移除個資）
+│  ├─ sources.test.ts, workflow.test.ts   24 個測試（sources 22 + workflow 2；sources.test.ts 不需安裝依賴即可用 `bun test sources.test.ts` 跑）；fixtures/ 是 2026-10-14 錄的真實回應（已移除個資）
 │  └─ config.staging.json / config.production.json（真實資料）, config.demo.json（模擬資料源）
 ├─ demo/
 │  ├─ scenario-server.ts   虛構公司 DM000001 的模擬資料源（localhost:8787）
@@ -152,7 +152,7 @@ Drawstop/
 - 驗證成功要讀合約狀態（`getLatest`），因為 **forwarder 在接收合約失敗時不會 revert**。
 
 ### Sepolia gas 實測（2026-10，踩過的坑）
-- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）；10/15 修正後約 **16.33M**（餘裕約 2.7%，用 `cast estimate --create` 對 Sepolia 實測）。再加功能前先量，超過上限就部署不了。常數改為 private、`coveredBits`／`petitionWindowEnd` 改為內部函式就是為了省空間。
+- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）；10/15 兩輪修正後約 **16.48M**（餘裕約 1.75%，用 `cast estimate --create` 對 Sepolia 實測）。中途曾到 16.94M 超過上限。**再加功能前先量**，超過上限就部署不了。常數改為 private、`coveredBits`／`petitionWindowEnd` 改為內部函式、`companyNumber`／`lei` getter 改 private（可用 registry.getEntity 讀），都是為了省空間。StatusRegistry 約 15.49M。
 - 建立新帳戶約 **204,600 gas**，但 `eth_estimateGas` 對轉帳回傳 21,000 → 轉 ETH 給新帳戶要手動 `--gas-limit 300000`。
 - Forge 本機估算偏低 → 部署一律 `--slow --skip-simulation`（讓節點估算）。
 - 寫入儲存也貴（登記一家公司約 47 萬 gas、寫一筆證明約 54–85 萬）→ workflow `gasLimit` 設 6,000,000。
@@ -177,7 +177,7 @@ Drawstop/
 5. 安裝依賴：`bun install --cwd status-monitor`、`bun install --cwd contracts`。
 6. 驗證：
    ```bash
-   cd contracts/evm && forge test        # 29 passed
+   cd contracts/evm && forge test        # 40 passed
    cd ../../status-monitor && bun test && bun x tsc --noEmit   # 20 passed, tsc 0
    cd .. && cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0   # 不加 --broadcast 只模擬
    ```
@@ -206,6 +206,8 @@ Drawstop/
 - 不宣稱比 Creditsafe／Red Flag Alert 快；不是法律意見；不做制裁篩查；不證明錢包屬於該公司；抓不到沒有公開法律事件的詐欺。
 - **Registry owner 是信任點**：可以換 forwarder、改 expected workflow，等於能寫入任何證明（例如假的聲請來擋撥款）。Sepolia 上 owner 是使用者測試錢包，也就是 demo 放款方。正式版 owner 應是雙方以外的 multisig + timelock，或鎖定正式 forwarder 與 workflow ID 後放棄 owner。
 - **仲裁人是信任點**：應獨立於放款方（agent、trustee）。demo 已改用獨立地址（`.env` 的 `DEMO_ARBITER_ADDRESS`）。
+- **Sepolia 上的 StatusRegistry 與 LoanFacility 都是 10/15 修正前的舊版**；要讓鏈上與原始碼一致，就要重新部署兩者（需徵求同意）。`contracts/evm/ts/generated/` 的 binding 也還是舊的，要用 `cre generate-bindings` 從更新後的 `src/abi/*.abi` 重新產生。
+- 「沒看到≠已解決」的代價：沒有刊登的駁回會讓 facility 停在 REVIEW_REQUIRED，要仲裁人覆核；同一份報告裡一件聲請駁回、另一件剛好掉出搜尋結果，會兩件一起清掉（未處理）。Companies House 狀態在 bit 0 持續期間改變（administration → liquidation）偵測不到。
 - **資料源中斷會擋撥款**（STALE／UNVERIFIED），等於把中斷風險轉給借款人；協議必須明定「有效證明」是撥款前提並有人工備援，原型沒有備援。
 - Drawstop 看不到刊登前的聲請；刊登前就撤回（r.7.13）或法院禁止刊登的聲請永遠不會出現在 Gazette。聲請日到刊登日之間的還款擋不住，只能事後標記。
 - 新撥款：擋下的理由是信用風險與第 4.2 條撥款前提，不是 s.127（*Coutts v Stock*）；LMA「14 天」出自 ACT/Slaughter and May 指南，不是範本原文。

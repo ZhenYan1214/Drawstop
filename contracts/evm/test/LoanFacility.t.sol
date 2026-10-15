@@ -408,24 +408,207 @@ contract LoanFacilityTest {
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "review expired, original evidence governs");
     }
 
-    function testReviewDoesNotCoverNewOccurrenceOrOtherBits() public {
+    function testReviewDoesNotCoverOtherBits() public {
         _bind(facility);
         _attest(CH_ADVERSE, 0);
         uint256 attId = registry.getLatest(facility.entityId()).id;
         _warp(t + 1 hours);
         vm.prank(ARBITER);
         facility.recordReview(CH_ADVERSE, attId, keccak256("reason"), uint64(t + 30 days));
-
         _warp(t + 1 hours);
         _attest(CH_ADVERSE | PROCEEDING, 0);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "other bit not covered");
+    }
 
+    function testReviewDoesNotCoverNewOccurrence() public {
+        _bind(facility);
+        _attest(CH_ADVERSE, 0);
+        uint256 attId = registry.getLatest(facility.entityId()).id;
+        _warp(t + 1 hours);
+        vm.prank(ARBITER);
+        facility.recordReview(CH_ADVERSE, attId, keccak256("reason"), uint64(t + 30 days));
         _warp(t + 1 hours);
         _attest(0, 0);
         _eq(facility.status(), LoanFacility.Status.NORMAL, "clear");
         _warp(t + 1 hours);
         _attest(CH_ADVERSE, 0);
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "new occurrence not covered");
+    }
+
+    function testReviewOfOnePetitionDoesNotCoverTheNext() public {
+        _bind(facility);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED); // petition A
+        uint256 attId = registry.getLatest(facility.entityId()).id;
+        _warp(t + 1 hours);
+        vm.prank(ARBITER);
+        facility.recordReview(PETITION, attId, keccak256("petition A frivolous"), uint64(t + 30 days));
+        _eq(facility.status(), LoanFacility.Status.NORMAL, "A covered");
+
+        _warp(t + 1 days); // petition B: different presentation date and court case, bit 2 never went low
+        bytes memory report = abi.encode(
+            StatusRegistry.Report({
+                entityId: facility.entityId(),
+                checkedAt: uint64(t),
+                validUntil: uint64(t) + MAX_AGE,
+                eventBits: PETITION,
+                unavailableBits: 0,
+                chUpdatedAt: 0,
+                gazetteUpdatedAt: uint64(t - 1 hours),
+                gleifUpdatedAt: 0,
+                petitionPresentedAt: uint64(t - 8 days),
+                petitionPublishedAt: uint64(t - 1 hours),
+                petitionCaseRef: keccak256("2026/009999"),
+                evidenceHash: bytes32(uint256(1)),
+                requestId: bytes32(0)
+            })
+        );
+        vm.prank(FORWARDER);
+        registry.onReport("", report);
+        _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "B not covered by the review of A");
+    }
+
+    function testReviewMustCoverWhatTheLatestAttestationShows() public {
+        _bind(facility);
+        _attest(0, 0);
+        uint256 attId = registry.getLatest(facility.entityId()).id;
+        vm.prank(ARBITER);
+        vm.expectRevert(LoanFacility.InvalidReview.selector); // nothing active to review: no pre-emptive cover
+        facility.recordReview(PETITION, attId, keccak256("x"), uint64(t + 7 days));
+
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        vm.prank(ARBITER);
+        vm.expectRevert(LoanFacility.InvalidReview.selector); // must name the attestation it looked at
+        facility.recordReview(PETITION, attId, keccak256("x"), uint64(t + 7 days));
+    }
+
+    // ------------------------------------------------------------------ drawdown limits
+
+    function testDrawdownCannotSpendSuspense() public {
+        LoanFacility f = _newFacility(LoanFacility.CarveOutWindow.PRESENTATION);
+        facility = f;
+        usdc.mint(address(f), 100e6); // the only lender funds
+        _bind(f);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        vm.prank(borrower);
+        f.repay(50e6); // held in suspense
+        uint256 attId = registry.getLatest(f.entityId()).id;
+        _warp(t + 1 hours);
+        vm.prank(ARBITER);
+        f.recordReview(PETITION, attId, keccak256("petition frivolous"), uint64(t + 7 days));
+        _eq(f.status(), LoanFacility.Status.NORMAL, "drawdowns may resume");
+
+        vm.prank(borrower);
+        uint256 id = f.requestDrawdown(150e6); // more than the lender's 100: would take the suspense
+        _warp(t + 60);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        vm.expectRevert(LoanFacility.FundsReserved.selector);
+        f.executeDrawdown(id);
+        require(usdc.balanceOf(address(f)) == 150e6 && f.suspenseBalance() == 50e6, "suspense intact");
+    }
+
+    function testDrawdownRequestLapses() public {
+        _bind(facility);
+        vm.prank(borrower);
+        uint256 id = facility.requestDrawdown(100e6);
+        _warp(t + 2 days);
+        _attest(0, 0);
+        vm.expectRevert(abi.encodeWithSelector(LoanFacility.RequestExpired.selector, id));
+        facility.executeDrawdown(id);
+    }
+
+    function testOrderStaysActiveSoOfficeHolderCanBePaid() public {
+        _bind(facility);
+        _warp(ORDER_PUBLISHED);
+        _attest(PROCEEDING, 0);
+        vm.prank(borrower);
+        facility.repay(50e6);
+        address liquidator = address(0x11D);
+        vm.prank(ARBITER);
+        facility.nominateOfficeHolder(liquidator, keccak256("Official Receiver"));
+        uint256 attId = registry.getLatest(facility.entityId()).id;
+        _warp(t + 1 hours);
+        vm.prank(ARBITER);
+        facility.recordReview(PROCEEDING, attId, keccak256("order rescinded"), uint64(t + 30 days));
+        _warp(t + 3 days);
+        _attest(DISMISSED, 0); // no proceeding in the latest evidence... but it stays active until reviewed
+        require(registry.getLatest(facility.entityId()).activeBits & PROCEEDING != 0, "order is sticky");
+        vm.prank(ARBITER);
+        facility.resolveSuspense(liquidator, keccak256("returned to Official Receiver"));
+        require(usdc.balanceOf(liquidator) == 50e6, "paid while proceeding known");
+    }
+
+    // ------------------------------------------------------------------ absence is not resolution
+
+    function testPetitionMissingFromResultsIsNotResolved() public {
+        _bind(facility);
+        _warp(PUBLISHED + 1 hours);
+        _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
+        vm.prank(borrower);
+        facility.repay(50e6);
+
+        _warp(t + 1 hours);
+        _attest(0, 0); // Gazette answered but the notice dropped out of the results: no dismissal seen
+        StatusRegistry.Attestation memory a = registry.getLatest(facility.entityId());
+        require(a.activeBits & PETITION != 0, "petition still active");
+        require(a.petitionPresentedAt == FRESH_PRESENTED, "its details kept");
+        _eq(facility.status(), LoanFacility.Status.PETITION_PENDING, "drawstop stays");
+        vm.expectRevert();
+        facility.releaseSuspense();
+
+        _warp(t + 1 hours);
+        _attest(DISMISSED, 0); // matched 2461
+        _eq(facility.status(), LoanFacility.Status.NORMAL, "dismissal resolves it");
+    }
+
+    function testProceedingNeverClearsOnItsOwn() public {
+        _bind(facility);
+        _warp(ORDER_PUBLISHED + 1 hours);
+        _attestPetition(PROCEEDING, 0, PRESENTED, 0);
+        _warp(t + 1 hours);
+        _attest(0, 0);
+        StatusRegistry.Attestation memory a = registry.getLatest(facility.entityId());
+        require(a.activeBits & PROCEEDING != 0, "order still active");
+        require(a.petitionPresentedAt == PRESENTED, "presentation date kept for s.127 exposure");
+        _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "only a human clears an order");
+    }
+
+    // ------------------------------------------------------------------ report validation
+
+    function testRegistryRejectsFutureOrOverlongReports() public {
+        _bind(facility);
+        StatusRegistry.Report memory r = StatusRegistry.Report({
+            entityId: facility.entityId(),
+            checkedAt: uint64(t + 30 days),
+            validUntil: uint64(t + 31 days),
+            eventBits: 0,
+            unavailableBits: 0,
+            chUpdatedAt: 0,
+            gazetteUpdatedAt: 0,
+            gleifUpdatedAt: 0,
+            petitionPresentedAt: 0,
+            petitionPublishedAt: 0,
+            petitionCaseRef: bytes32(0),
+            evidenceHash: bytes32(0),
+            requestId: bytes32(0)
+        });
+        vm.prank(FORWARDER);
+        vm.expectRevert(abi.encodeWithSelector(StatusRegistry.InvalidWindow.selector, r.checkedAt, r.validUntil));
+        registry.onReport("", abi.encode(r)); // checked in the future: would freeze later reports
+
+        r.checkedAt = uint64(t);
+        r.validUntil = uint64(t + 365 days);
+        vm.prank(FORWARDER);
+        vm.expectRevert(abi.encodeWithSelector(StatusRegistry.InvalidWindow.selector, r.checkedAt, r.validUntil));
+        registry.onReport("", abi.encode(r)); // valid for a year
+    }
+
+    function testSecondFacilityMustBindSameLei() public {
+        _bind(facility);
+        vm.expectRevert(abi.encodeWithSelector(StatusRegistry.LeiMismatch.selector, facility.entityId()));
+        registry.registerEntity(CH, "2138002P5RNKC5W2JZ46");
     }
 
     function testOnlyArbiterReviewsAndOnlyPartiesAcknowledge() public {

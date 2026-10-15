@@ -100,7 +100,10 @@ describe('Gazette', () => {
 		const r = fetchGazette(requester, { baseUrl: 'https://gz', companyNumber: '11877818', maxConfirmations: 4 })
 		expect(r.ok).toBe(true)
 		expect(r.eventBits).toBe(EV_GZ_INSOLVENCY_PROCEEDING)
-		expect(r.petitionPresentedAt).toBe(0)
+		// s.127 exposure still runs from the presentation date of the petition the order was made on
+		expect(r.petitionPresentedAt).toBe(utc('2026-08-11T00:00:00Z'))
+		expect(r.petitionPublishedAt).toBe(utc('2026-09-29T09:30:08Z'))
+		expect(r.petitionCaseRef).toBe('2026/006286')
 		expect(r.updatedAt).toBe(utc('2026-10-14T14:00:14Z'))
 		expect(r.notices).toBe('2450:5219886:2026/006286,2452:5229442:2026/006286')
 		expect(calls.length).toBe(3) // search + 2 confirmations
@@ -110,6 +113,7 @@ describe('Gazette', () => {
 	test('real timeline as of 2026-09-29: petition pending with its presentation date', () => {
 		const searchBeforeOrder = {
 			...gazetteSearch,
+			'f:total': '1',
 			entry: (gazetteSearch as any).entry.filter((e: any) => e['f:notice-code'] === '2450'),
 		}
 		const { requester } = fakeRequester({
@@ -131,6 +135,30 @@ describe('Gazette', () => {
 		fetchGazette(requester, { baseUrl: 'https://gz', companyNumber: '11877818', maxConfirmations: 1 })
 		expect(calls.length).toBe(2)
 		expect(calls[1].url).toContain('5229442') // newest first
+	})
+
+	test('a search with more results than one page is an error, not a clean result', () => {
+		const { requester } = fakeRequester({
+			'insolvency/notice/data.json': { body: { ...gazetteSearch, 'f:total': '25' } },
+			'notice/5219886/': { body: petitionNotice },
+			'notice/5229442/': { body: orderNotice },
+		})
+		expect(() => fetchGazette(requester, { baseUrl: 'https://gz', companyNumber: '11877818', maxConfirmations: 4 })).toThrow(
+			'Gazette search incomplete: 2 of 25 results',
+		)
+	})
+
+	test('unconfirmed older notices are an error unless a proceeding was confirmed', () => {
+		const searchPetitionOnly = { ...gazetteSearch, entry: [...(gazetteSearch as any).entry] }
+		// Order notice not served: the newest relevant notice confirms as nothing, the petition stays unconfirmed.
+		searchPetitionOnly.entry[1] = { ...searchPetitionOnly.entry[1], 'f:notice-code': '2450' }
+		const { requester } = fakeRequester({
+			'insolvency/notice/data.json': { body: searchPetitionOnly },
+			'notice/5229442/': { body: { result: { primaryTopic: {} } } }, // not about this company
+		})
+		expect(() => fetchGazette(requester, { baseUrl: 'https://gz', companyNumber: '11877818', maxConfirmations: 1 })).toThrow(
+			'Gazette: 2 relevant notices, only 1 confirmable in one run',
+		)
 	})
 
 	test('a failing search is an error, not a clean result', () => {
@@ -155,6 +183,21 @@ describe('Gazette', () => {
 			notice({ id: '11', code: '2461', caseRef: '2026/000001' }),
 		])
 		expect(r.eventBits).toBe(EV_GZ_PETITION_DISMISSED)
+	})
+
+	test('an order whose petition notice was not confirmed still carries the presentation date', () => {
+		const r = classifyNotices([notice({ id: '20', code: '2452', caseRef: '2026/000001', presentedAt: 100, publishedAt: 300 })])
+		expect(r.eventBits).toBe(EV_GZ_INSOLVENCY_PROCEEDING)
+		expect(r.petitionPresentedAt).toBe(100)
+		expect(r.petitionPublishedAt).toBe(0) // the petition's own advertisement was not seen
+	})
+
+	test('a dismissed petition carries no presentation date', () => {
+		const r = classifyNotices([
+			notice({ id: '10', code: '2450', caseRef: '2026/000001', presentedAt: 100 }),
+			notice({ id: '11', code: '2461', caseRef: '2026/000001' }),
+		])
+		expect(r.petitionPresentedAt).toBe(0)
 	})
 
 	test('administration appointment is a proceeding', () => {

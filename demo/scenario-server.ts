@@ -79,6 +79,7 @@ Bun.serve({
 			const text = url.searchParams.get('text') ?? ''
 			const entries = text.toUpperCase() === DEMO_COMPANY ? noticesFor(scenario) : []
 			return json({
+				'f:total': String(entries.length),
 				entry: entries.map((n) => ({
 					id: `https://www.thegazette.co.uk/id/notice/${n.id}`,
 					'f:notice-code': n.code,

@@ -87,7 +87,15 @@ Notice codes and labels verified against live Gazette data on 2026-10-14. Case r
 
 `unavailableBits`: one bit per source (0 = Companies House, 1 = Gazette, 2 = GLEIF) — request failed, non-2xx, malformed, or nodes did not agree.
 
-"Active" bits: for a checked source, what it reported; for a source that could not be checked, its last known bits **and petition details** are carried forward. An outage never erases a known adverse event and never creates one. The registry keeps `firstSeen[bit]`, the start of each bit's current continuous run.
+"Active" bits: for a checked source, what it reported; for a source that could not be checked, its last known bits **and petition details** are carried forward. An outage never erases a known adverse event and never creates one. The registry keeps `firstSeen[bit]`, the start of each bit's current occurrence.
+
+**Absence is not resolution.** A known petition (bit 2) clears only when the same report shows a matched dismissal (bit 4) or a proceeding (bit 3); a known proceeding (bit 3) never clears on its own, only a human review covers it. A notice that drops out of a search result therefore cannot reopen drawdowns or release suspense, and its petition details are kept. Trade-offs: a dismissal that is never advertised leaves the facility in review until the arbiter covers it; a dismissal of one petition reported while another drops out of the results would clear both (not handled).
+
+**New occurrences.** `firstSeen` restarts, so an earlier review no longer covers the bit, when a petition with a different court case or presentation date replaces the known one, or when a newer Gazette notice appears while a proceeding is active (e.g. administration followed by a winding-up order). A change of Companies House status while bit 0 stays set (administration → liquidation) is not detected, because the status itself is not stored on-chain.
+
+**Report validation.** The registry rejects a report checked more than 10 minutes in the future, valid for more than 7 days, or carrying petition dates after its check time. Without this, one bad report would freeze the entity (later reports are out of order) or stay valid indefinitely.
+
+After a winding-up order the workflow still reports the presentation date of the petition the order was made on, so s.127 exposure (`repaidSincePetitionPresented`) survives the order.
 
 `evidenceHash` = keccak256 of the canonical normalized per-source results (never raw responses).
 
@@ -128,7 +136,8 @@ GLEIF is cross-check only: its outage never blocks.
 ## 6. Human acknowledgement and review
 
 - `acknowledge(attestationId, noteHash)` (lender/arbiter): records when a party became aware (cf. *Torre*: the agent may assume no Default until it is told, and must notify once it actually knows).
-- `recordReview(coveredBits, attestationId, reasonHash, expiresAt)` (arbiter): append-only. Never edits an attestation. Neutralizes only `coveredBits`, only occurrences that began before the review (`firstSeen[bit] <= createdAt`), and only until `expiresAt`. A review may let drawdowns resume but cannot release s.127 suspense while a petition is live.
+- `recordReview(coveredBits, attestationId, reasonHash, expiresAt)` (arbiter): append-only. Never edits an attestation. Must name the latest attestation and can only cover bits it shows as active, so there is no pre-emptive cover. Neutralizes only occurrences that had begun by that attestation (`firstSeen[bit] <= asOf`), and only until `expiresAt`. A review may let drawdowns resume but cannot release s.127 suspense while a petition is live.
+- Drawdowns: a request lapses after 1 day, and a drawdown can only use funds beyond the suspense balance, so a review that reopens drawdowns cannot pay suspense out to the borrower.
 - `declareDefault()` (lender): only in `REVIEW_REQUIRED`; moves no funds.
 
 ## 7. CRE workflow

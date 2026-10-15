@@ -38,7 +38,8 @@ Drawstop could not have seen this petition earlier either: it reads the same pub
    - Petition carve-out window counted from presentation, optionally ending early on advertisement, as real agreements word it (cf. cl. 23.7; Carlsberg "within 30 days of commencement", GasLog "within seven days of commencement or, if earlier, the date on which it is advertised"). Whether a petition is "frivolous or vexatious", which the carve-out also requires, is left to human review.
    - Winding-up orders, resolutions and appointments go straight to human review; a matched dismissal (2461) lets the facility resume.
 3. **s.127 suspense.** Repayments received while a petition or proceeding is known are held instead of being distributed to token holders. This does not make them valid: paying into a contract the lender controls is still a disposition (cf. *Re Gray's Inn Construction* [1980]). It keeps the money in one place, returnable to a liquidator or releasable after a dismissal or validation order, instead of spread across many holders it could never be recovered from. Repayments already passed through after the presentation date are surfaced (`repaidSincePetitionPresented`).
-4. **Human decisions stay human.** Default, acceleration and enforcement are never automatic. Reviews are append-only, expire, and cannot cover a new occurrence or release s.127 suspense.
+4. **Human decisions stay human.** Default, acceleration and enforcement are never automatic. Reviews are append-only, expire, apply only to what the latest attestation shows, and cannot cover a new occurrence or release s.127 suspense.
+5. **Absence is not resolution.** A petition that drops out of the Gazette results stays active until a matched dismissal or a winding-up order; an order clears only by human review. A Gazette search with more results than one page, or more notices than one run can confirm, is "could not be checked", never "not found".
 
 **Why it has to live in the contract:** an alert reaches a person, who must then send a pause transaction; the drawstop belongs where the money moves. There is no bank to freeze a stablecoin wallet. Many investors need one tamper-evident timeline that no single operator controls (which holds only once the registry owner is not a party; see the trust model below). And "could not be checked" must stay distinct from "clean". For a single off-chain loan, a commercial alert and a person are enough.
 
@@ -86,8 +87,8 @@ Full specification: [DESIGN.md](DESIGN.md).
 Requirements: [CRE CLI](https://docs.chain.link/cre/getting-started/cli-installation) (v1.38.0), Bun ≥ 1.3, Foundry, a [Companies House API key](https://developer.company-information.service.gov.uk/) (REST, Live).
 
 ```bash
-cd contracts/evm && forge test                 # 29 contract tests, incl. the real AMS timeline
-cd ../../status-monitor && bun install && bun test   # 20 workflow tests on recorded real responses
+cd contracts/evm && forge test                 # 40 contract tests, incl. the real AMS timeline
+cd ../../status-monitor && bun install && bun test   # 24 workflow tests on recorded real responses
 ```
 
 `.env` (never committed):
@@ -123,7 +124,7 @@ Read back with `cast call 0xE1e4…1897 "getLatest(bytes32)" <entityId>`; the fo
 
 A facility for a **fictional** company, fed by [`demo/scenario-server.ts`](demo/scenario-server.ts) (Gazette- and Companies House-shaped JSON), run with [`demo/run-demo.sh`](demo/run-demo.sh) on 2026-10-15. Terms: 30-day petition carve-out counted from presentation. Every CRE step is `cre workflow simulate --broadcast`.
 
-This facility was deployed from commit `c61f0c8`, before the carve-out window and suspense-recipient corrections described in [DESIGN.md](DESIGN.md). The steps below behave the same under the current source, but the deployed bytecode is the older version. In that run the lender's wallet was also the arbiter; `run-demo.sh` now deploys with a separate arbiter.
+The Sepolia `StatusRegistry` and this facility were deployed before the 2026-10-15 corrections described in [DESIGN.md](DESIGN.md) (carve-out window, suspense recipients and reserve, review scope, report validation, "absence is not resolution"). The steps below behave the same under the current source, but the deployed bytecode is the older version. In that run the lender's wallet was also the arbiter; `run-demo.sh` now deploys with a separate arbiter.
 
 | Contract | Address |
 |---|---|
@@ -143,7 +144,7 @@ Final state read back from chain: drawdown 0 executed, drawdown 1 not executed, 
 
 ### Sepolia gas notes (measured October 2026)
 
-Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth_estimateGas`), so contracts are compiled with `via_ir` and `optimizer_runs = 1` to fit in one transaction (`LoanFacility` needs ~16.3M of the 16.77M per-transaction cap, measured with `cast estimate --create`). Creating a new account costs ~204,600 gas while `eth_estimateGas` returns 21,000 for a plain transfer, so new accounts are funded with an explicit gas limit. Forge's local gas estimates are too low; deployments use `--skip-simulation` so the node estimates.
+Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth_estimateGas`), so contracts are compiled with `via_ir` and `optimizer_runs = 1` to fit in one transaction (`LoanFacility` needs ~16.5M of the 16.77M per-transaction cap, measured with `cast estimate --create`; measure again before adding code). Creating a new account costs ~204,600 gas while `eth_estimateGas` returns 21,000 for a plain transfer, so new accounts are funded with an explicit gas limit. Forge's local gas estimates are too low; deployments use `--skip-simulation` so the node estimates.
 
 ## Disclaimer
 

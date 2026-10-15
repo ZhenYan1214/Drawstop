@@ -56,7 +56,7 @@ contract LoanFacility {
         uint32 coveredBits;
         uint256 attestationId; // attestation the reviewer looked at (audit trail)
         bytes32 reasonHash; // hash of the off-chain written reason
-        uint64 createdAt;
+        uint64 asOf; // checkedAt of the reviewed attestation: occurrences that began later are not covered
         uint64 expiresAt;
     }
 
@@ -65,6 +65,7 @@ contract LoanFacility {
     uint32 private constant WATCH_MASK = (1 << 1) | (1 << 5) | (1 << 6); // insolvency history, LEI lapsed, conflict
     uint32 private constant REQUIRED_SOURCES = (1 << 0) | (1 << 1); // Companies House + Gazette; GLEIF is cross-check only
     uint64 private constant OFFICE_HOLDER_DELAY = 2 days; // a nomination is public this long before suspense can move
+    uint64 private constant REQUEST_TTL = 1 days; // a drawdown request lapses if not executed within this time
 
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
@@ -80,8 +81,8 @@ contract LoanFacility {
     uint64 public immutable petitionGracePeriod;
     CarveOutWindow public immutable carveOutWindow;
     bytes32 public immutable entityId;
-    string public companyNumber;
-    string public lei;
+    string private companyNumber; // readable via registry.getEntity(entityId)
+    string private lei;
 
     bool public bound;
     bool public defaulted;
@@ -126,6 +127,8 @@ contract LoanFacility {
     error NothingInSuspense();
     error InvalidRecipient(address to);
     error NoProceedingKnown();
+    error RequestExpired(uint256 drawdownId);
+    error FundsReserved();
     error TransferFailed();
 
     constructor(
@@ -207,12 +210,15 @@ contract LoanFacility {
         if (drawdownId >= drawdowns.length) revert NoSuchDrawdown(drawdownId);
         Drawdown storage d = drawdowns[drawdownId];
         if (d.executed) revert AlreadyExecuted(drawdownId);
+        if (block.timestamp > uint256(d.requestedAt) + REQUEST_TTL) revert RequestExpired(drawdownId);
 
         StatusRegistry.Attestation memory a = registry.getLatest(entityId);
         if (a.checkedAt < d.requestedAt) revert AttestationNotFresh(a.checkedAt, d.requestedAt);
         Status s = status();
         if (s != Status.NORMAL && s != Status.WATCH) revert DrawdownsBlocked(s);
 
+        // Suspense belongs to no one yet: a drawdown may only use the facility's other funds.
+        if (token.balanceOf(address(this)) < suspenseBalance + d.amount) revert FundsReserved();
         d.executed = true;
         if (!token.transfer(borrower, d.amount)) revert TransferFailed();
         emit DrawdownExecuted(drawdownId, a.id, d.amount);
@@ -254,7 +260,8 @@ contract LoanFacility {
     function resolveSuspense(address to, bytes32 reasonHash) external {
         if (msg.sender != arbiter) revert OnlyArbiter();
         if (reasonHash == bytes32(0)) revert InvalidReview();
-        bool officeHolderReady = to == officeHolder && to != address(0) && block.timestamp >= officeHolderFrom;
+        bool officeHolderReady =
+            to == officeHolder && to != address(0) && block.timestamp >= officeHolderFrom && _insolvencyEventKnown();
         if (to != lender && to != borrower && !officeHolderReady) revert InvalidRecipient(to);
         _payOutSuspense(to, reasonHash);
     }
@@ -296,14 +303,19 @@ contract LoanFacility {
         emit Acknowledged(msg.sender, attestationId, noteHash);
     }
 
-    /// @notice Records an arbiter review. Never edits the attestation; neutralizes only `coveredBits` occurrences
-    ///         that already existed at review time, and only until `expiresAt`.
+    /// @notice Records an arbiter review of the latest attestation. Never edits it; neutralizes only `coveredBits`
+    ///         occurrences that attestation shows, and only until `expiresAt`.
     function recordReview(uint32 coveredBits, uint256 attestationId, bytes32 reasonHash, uint64 expiresAt)
         external
         returns (uint256 reviewId)
     {
         if (msg.sender != arbiter) revert OnlyArbiter();
-        if (coveredBits == 0 || expiresAt <= block.timestamp || reasonHash == bytes32(0)) revert InvalidReview();
+        // The reviewer must be looking at the latest attestation, and can only cover events it actually shows.
+        StatusRegistry.Attestation memory a = registry.getLatest(entityId);
+        if (
+            coveredBits == 0 || coveredBits & ~a.activeBits != 0 || attestationId != a.id || expiresAt <= block.timestamp
+                || reasonHash == bytes32(0)
+        ) revert InvalidReview();
         reviewId = reviews.length;
         reviews.push(
             Review({
@@ -311,7 +323,7 @@ contract LoanFacility {
                 coveredBits: coveredBits,
                 attestationId: attestationId,
                 reasonHash: reasonHash,
-                createdAt: uint64(block.timestamp),
+                asOf: a.checkedAt,
                 expiresAt: expiresAt
             })
         );
@@ -355,28 +367,28 @@ contract LoanFacility {
     /// @notice End of the petition carve-out window. 0 when the presentation date is unknown: the window cannot be
     ///         computed, so the petition goes to human review. With PRESENTATION_OR_ADVERTISEMENT the window has
     ///         always closed by the time a Gazette notice is seen; only a faster source could catch it open.
-    function petitionWindowEnd() external view returns (uint64) {
+    function petitionWindowEnd() external view returns (uint256) {
         return _petitionWindowEnd(registry.getLatest(entityId));
     }
 
-    function _petitionWindowEnd(StatusRegistry.Attestation memory a) private view returns (uint64 end) {
+    function _petitionWindowEnd(StatusRegistry.Attestation memory a) private view returns (uint256 end) {
         if (a.petitionPresentedAt == 0) return 0;
-        end = a.petitionPresentedAt + petitionGracePeriod;
+        end = uint256(a.petitionPresentedAt) + petitionGracePeriod;
         if (
             carveOutWindow == CarveOutWindow.PRESENTATION_OR_ADVERTISEMENT && a.petitionPublishedAt != 0
                 && a.petitionPublishedAt < end
         ) end = a.petitionPublishedAt;
     }
 
-    /// @notice Bits neutralized by active reviews. A review covers an occurrence only if it began before the
-    ///         review was recorded; a new occurrence of the same event is not covered.
+    /// @notice Bits neutralized by active reviews. A review covers an occurrence only if it had begun by the
+    ///         attestation the reviewer looked at; a new occurrence of the same event is not covered.
     function _coveredBits(uint64[] memory firstSeen) private view returns (uint32 covered) {
         for (uint256 i = 0; i < reviews.length; i++) {
             Review memory r = reviews[i];
             if (block.timestamp >= r.expiresAt) continue;
             for (uint8 bit = 0; bit < 7; bit++) {
                 uint32 mask = uint32(1) << bit;
-                if (r.coveredBits & mask != 0 && firstSeen[bit] != 0 && firstSeen[bit] <= r.createdAt) covered |= mask;
+                if (r.coveredBits & mask != 0 && firstSeen[bit] != 0 && firstSeen[bit] <= r.asOf) covered |= mask;
             }
         }
     }

@@ -81,6 +81,10 @@ contract StatusRegistry is ReceiverTemplate {
     error UnknownEntity(bytes32 entityId);
     error StaleReport(bytes32 entityId, uint64 checkedAt, uint64 latestCheckedAt);
     error InvalidWindow(uint64 checkedAt, uint64 validUntil);
+    error LeiMismatch(bytes32 entityId);
+
+    uint64 public constant MAX_CLOCK_SKEW = 10 minutes; // a report may not claim to be checked in the future
+    uint64 public constant MAX_VALIDITY = 7 days; // nor stay valid longer than this
 
     constructor(address forwarder) ReceiverTemplate(forwarder) {}
 
@@ -93,11 +97,13 @@ contract StatusRegistry is ReceiverTemplate {
         emit RegistrarSet(registrar, allowed);
     }
 
-    /// @notice Adds a company to the monitored set. Called by the owner or an authorized facility.
+    /// @notice Adds a company to the monitored set. Called by the owner or an authorized facility. A second facility
+    ///         for the same company must bind the same LEI, so the GLEIF cross-check serves both.
     function registerEntity(string calldata companyNumber, string calldata lei) external returns (bytes32 entityId) {
         if (msg.sender != owner() && !isRegistrar[msg.sender]) revert NotRegistrar(msg.sender);
         entityId = entityIdFor(companyNumber);
         Entity storage e = s_entities[entityId];
+        if (e.monitored && keccak256(bytes(e.lei)) != keccak256(bytes(lei))) revert LeiMismatch(entityId);
         if (!e.monitored) {
             e.monitored = true;
             e.companyNumber = companyNumber;
@@ -111,15 +117,24 @@ contract StatusRegistry is ReceiverTemplate {
         Report memory r = abi.decode(report, (Report));
 
         if (!s_entities[r.entityId].monitored) revert UnknownEntity(r.entityId);
-        if (r.validUntil <= r.checkedAt) revert InvalidWindow(r.checkedAt, r.validUntil);
+        // Bounded window, no future check times, no petition dates after the check: a single bad report must not
+        // freeze the entity (later reports would be rejected as out of order) or stay valid indefinitely.
+        if (
+            r.validUntil <= r.checkedAt || r.validUntil > r.checkedAt + MAX_VALIDITY
+                || r.checkedAt > block.timestamp + MAX_CLOCK_SKEW || r.petitionPresentedAt > r.checkedAt
+                || r.petitionPublishedAt > r.checkedAt
+        ) revert InvalidWindow(r.checkedAt, r.validUntil);
         Attestation storage prev = s_latest[r.entityId];
         // Receivers must discard out-of-order reports.
         if (prev.id != 0 && r.checkedAt <= prev.checkedAt) revert StaleReport(r.entityId, r.checkedAt, prev.checkedAt);
 
-        uint32 activeBits = _updateFirstSeen(r.entityId, r.checkedAt, r.eventBits, r.unavailableBits, prev.activeBits);
+        uint32 activeBits = _updateFirstSeen(r, prev);
 
-        // If the Gazette could not be checked, the last known petition details are carried forward with its bits.
+        // Petition details are carried forward with their bits: when the Gazette could not be checked, and when it
+        // no longer returns them while a petition or proceeding is still active.
         bool gazetteUnavailable = r.unavailableBits & (uint32(1) << SRC_GAZETTE) != 0;
+        bool keepPetition = gazetteUnavailable
+            || (r.petitionPresentedAt == 0 && r.petitionCaseRef == 0 && activeBits & GAZETTE_ADVERSE != 0);
         Attestation memory a = Attestation({
             id: ++attestationCount,
             checkedAt: r.checkedAt,
@@ -128,11 +143,11 @@ contract StatusRegistry is ReceiverTemplate {
             unavailableBits: r.unavailableBits,
             activeBits: activeBits,
             chUpdatedAt: r.chUpdatedAt,
-            gazetteUpdatedAt: r.gazetteUpdatedAt,
+            gazetteUpdatedAt: gazetteUnavailable ? prev.gazetteUpdatedAt : r.gazetteUpdatedAt,
             gleifUpdatedAt: r.gleifUpdatedAt,
-            petitionPresentedAt: gazetteUnavailable ? prev.petitionPresentedAt : r.petitionPresentedAt,
-            petitionPublishedAt: gazetteUnavailable ? prev.petitionPublishedAt : r.petitionPublishedAt,
-            petitionCaseRef: gazetteUnavailable ? prev.petitionCaseRef : r.petitionCaseRef,
+            petitionPresentedAt: keepPetition ? prev.petitionPresentedAt : r.petitionPresentedAt,
+            petitionPublishedAt: keepPetition ? prev.petitionPublishedAt : r.petitionPublishedAt,
+            petitionCaseRef: keepPetition ? prev.petitionCaseRef : r.petitionCaseRef,
             evidenceHash: r.evidenceHash,
             requestId: r.requestId
         });
@@ -140,20 +155,37 @@ contract StatusRegistry is ReceiverTemplate {
         emit AttestationRecorded(r.entityId, a.id, r.requestId, a);
     }
 
-    /// @dev For a source that could not be checked, the last known state of its events is carried forward:
-    ///      an outage never erases a known adverse event, and never creates one.
-    function _updateFirstSeen(bytes32 entityId, uint64 checkedAt, uint32 eventBits, uint32 unavailableBits, uint32 prevActive)
-        private
-        returns (uint32 activeBits)
-    {
-        uint64[7] storage firstSeen = s_firstSeen[entityId];
+    uint32 private constant PETITION = uint32(1) << EV_GZ_PETITION_PENDING;
+    uint32 private constant PROCEEDING = uint32(1) << EV_GZ_INSOLVENCY_PROCEEDING;
+    uint32 private constant DISMISSED = uint32(1) << EV_GZ_PETITION_DISMISSED;
+    uint32 private constant GAZETTE_ADVERSE = PETITION | PROCEEDING;
+
+    /// @dev Active bits and the start of each bit's current occurrence.
+    ///      - Outage: a source that could not be checked keeps its last known bits. An outage never erases a known
+    ///        adverse event, and never creates one.
+    ///      - Absence is not resolution: a known petition clears only on a matched dismissal (2461) or when a
+    ///        proceeding supersedes it; a known proceeding never clears on its own (human review covers it). A notice
+    ///        that drops out of a search result therefore cannot reopen drawdowns or release suspense.
+    ///      - New occurrence: a petition with a different court case or presentation date, or a newer Gazette notice
+    ///        while a proceeding is active, restarts firstSeen, so a review of the earlier one does not cover it.
+    function _updateFirstSeen(Report memory r, Attestation storage prev) private returns (uint32 activeBits) {
+        uint64[7] storage firstSeen = s_firstSeen[r.entityId];
+        bool gazetteChecked = r.unavailableBits & (uint32(1) << SRC_GAZETTE) == 0;
+        bool newPetition = gazetteChecked && (r.petitionCaseRef != 0 || r.petitionPresentedAt != 0)
+            && (r.petitionCaseRef != prev.petitionCaseRef || r.petitionPresentedAt != prev.petitionPresentedAt);
+        bool newNotice = gazetteChecked && prev.gazetteUpdatedAt != 0 && r.gazetteUpdatedAt > prev.gazetteUpdatedAt;
         for (uint8 bit = 0; bit < EVENT_COUNT; bit++) {
             uint32 mask = uint32(1) << bit;
-            bool sourceUnavailable = unavailableBits & (uint32(1) << sourceOf(bit)) != 0;
-            bool active = sourceUnavailable ? prevActive & mask != 0 : eventBits & mask != 0;
+            bool wasActive = prev.activeBits & mask != 0;
+            bool active = r.unavailableBits & (uint32(1) << sourceOf(bit)) != 0 ? wasActive : r.eventBits & mask != 0;
+            if (!active && wasActive) {
+                if (mask == PROCEEDING) active = true;
+                else if (mask == PETITION) active = r.eventBits & (DISMISSED | PROCEEDING) == 0;
+            }
             if (active) {
                 activeBits |= mask;
-                if (firstSeen[bit] == 0) firstSeen[bit] = checkedAt;
+                bool restart = (mask == PETITION && newPetition) || (mask == PROCEEDING && newNotice);
+                if (firstSeen[bit] == 0 || restart) firstSeen[bit] = r.checkedAt;
             } else {
                 firstSeen[bit] = 0;
             }

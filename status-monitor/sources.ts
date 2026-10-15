@@ -149,28 +149,40 @@ const sameProceeding = (a: GazetteNotice, b: GazetteNotice): boolean =>
 	(a.caseRef !== '' && a.caseRef === b.caseRef) ||
 	(a.presentedAt !== 0 && a.presentedAt === b.presentedAt && (a.caseRef === '' || b.caseRef === ''))
 
-/** Turns confirmed notices into event bits and the details of the earliest still-pending petition. */
+const earlier = (a: GazetteNotice | null, b: GazetteNotice): GazetteNotice =>
+	!a || b.presentedAt < a.presentedAt ? b : a
+
+/**
+ * Turns confirmed notices into event bits and petition details. The details are those of the earliest pending
+ * petition or, when a winding-up order has superseded it, of the petition the order was made on: s.127 exposure
+ * runs from that presentation date, so it must survive the order.
+ */
 export const classifyNotices = (notices: GazetteNotice[]): Omit<GazetteResult, 'ok' | 'error'> => {
 	let eventBits = 0
 	let pending: GazetteNotice | null = null
+	let ordered: GazetteNotice | null = null // petition (or order notice) behind a winding-up order
 	for (const n of notices) {
 		if (PROCEEDING_CODES.includes(n.code)) eventBits |= EV_GZ_INSOLVENCY_PROCEEDING
+		if (n.code === '2452' && n.presentedAt !== 0 && !notices.some((o) => PETITION_CODES.includes(o.code) && sameProceeding(n, o))) {
+			ordered = earlier(ordered, n)
+		}
 		if (!PETITION_CODES.includes(n.code)) continue
 		const resolvedBy = notices.find(
 			(o) => o !== n && (DISMISSAL_CODES.includes(o.code) || o.code === '2452') && sameProceeding(n, o),
 		)
 		if (resolvedBy && DISMISSAL_CODES.includes(resolvedBy.code)) eventBits |= EV_GZ_PETITION_DISMISSED
-		if (resolvedBy) continue // dismissed, or superseded by a winding-up order (already a proceeding)
-		if (!pending || n.presentedAt < pending.presentedAt) pending = n
+		else if (resolvedBy) ordered = earlier(ordered, n) // superseded by a winding-up order (already a proceeding)
+		else pending = earlier(pending, n)
 	}
 	if (pending) eventBits |= EV_GZ_PETITION_PENDING
+	const petition = pending ?? ordered
 	const sorted = [...notices].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
 	return {
 		eventBits,
 		updatedAt: notices.reduce((max, n) => Math.max(max, n.publishedAt), 0),
-		petitionPresentedAt: pending?.presentedAt ?? 0,
-		petitionPublishedAt: pending?.publishedAt ?? 0,
-		petitionCaseRef: pending?.caseRef ?? '',
+		petitionPresentedAt: petition?.presentedAt ?? 0,
+		petitionPublishedAt: petition && PETITION_CODES.includes(petition.code) ? petition.publishedAt : 0,
+		petitionCaseRef: petition?.caseRef ?? '',
 		notices: sorted.map((n) => `${n.code}:${n.id}:${n.caseRef}`).join(','),
 	}
 }
@@ -179,6 +191,9 @@ export const classifyNotices = (notices: GazetteNotice[]): Omit<GazetteResult, '
  * Searches the corporate-insolvency category for the company number, then confirms the newest relevant notices
  * against their linked data (the text search alone can match other notices that mention the number).
  * HTTP calls: 1 + min(relevant notices, maxConfirmations).
+ *
+ * "Not found" is only reported when every result was seen: a search with more results than one page, or more
+ * relevant notices than can be confirmed without finding a proceeding, is an error ("could not be checked").
  */
 export const fetchGazette = (sendRequester: HTTPSendRequester, args: GazetteArgs): GazetteResult => {
 	const number = normalizeCompanyNumber(args.companyNumber)
@@ -187,12 +202,19 @@ export const fetchGazette = (sendRequester: HTTPSendRequester, args: GazetteArgs
 	const search = sendRequester.sendRequest({ url: searchUrl, method: 'GET' }).result()
 	if (search.statusCode !== 200) throw new Error(`Gazette search HTTP ${search.statusCode}`)
 
-	const entries = toArray<any>(readJson(search.body).entry)
+	const page = readJson(search.body)
+	const results = toArray<any>(page.entry)
+	const total = Number(first(page['f:total']))
+	if (Number.isFinite(total) && total > results.length) {
+		throw new Error(`Gazette search incomplete: ${results.length} of ${total} results`)
+	}
+
+	const relevant = results
 		.filter((e) => RELEVANT_CODES.includes(String(e['f:notice-code'])))
 		.map((e) => noticeIdFrom(String(e.id)))
 		.filter((id) => id !== '')
 		.sort((a, b) => Number(b) - Number(a)) // newest first (notice IDs are sequential)
-		.slice(0, args.maxConfirmations)
+	const entries = relevant.slice(0, args.maxConfirmations)
 
 	const notices: GazetteNotice[] = []
 	for (const id of entries) {
@@ -203,7 +225,13 @@ export const fetchGazette = (sendRequester: HTTPSendRequester, args: GazetteArgs
 		const notice = parseNotice(readJson(res.body), number)
 		if (notice) notices.push(notice)
 	}
-	return { ok: true, error: '', ...classifyNotices(notices) }
+	const classified = classifyNotices(notices)
+	// Unconfirmed older notices could hold a pending petition. A confirmed proceeding already sends the facility to
+	// human review, so the result is usable; otherwise a missing petition would read as "not found".
+	if (relevant.length > entries.length && (classified.eventBits & EV_GZ_INSOLVENCY_PROCEEDING) === 0) {
+		throw new Error(`Gazette: ${relevant.length} relevant notices, only ${entries.length} confirmable in one run`)
+	}
+	return { ok: true, error: '', ...classified }
 }
 
 // ─── Companies House ──────────────────────────────────────────────────────
