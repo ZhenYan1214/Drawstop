@@ -283,7 +283,8 @@ Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth
 
 ## Research
 
-Topic-selection research, in Traditional Chinese: [`docs/research`](docs/research).
+- **Petition-lag study** (in progress): how many days pass between a winding-up petition being presented and becoming public, across a full quarter of Gazette notices, and what Companies House shows meanwhile. [`research/petition-lag`](research/petition-lag)
+- Topic-selection research, in Traditional Chinese: [`docs/research`](docs/research)
 
 ## Disclaimer
 

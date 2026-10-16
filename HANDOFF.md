@@ -1,7 +1,7 @@
 # Drawstop 交接文件（給下一台電腦／下一個 AI）
 
 > 這份文件與研究報告（`docs/research/`）都在 repo 裡（公開），clone 就有。只有 `.env` 不在 repo，要另外帶。
-> 寫於 2026-10-15，之後有更新請以 `git log` 為準。已推到 https://github.com/ZhenYan1214/Drawstop （public，MIT）。
+> 寫於 2026-10-15，最後整理 2026-10-16（第 14、15 節是 10/15–10/16 的反思與新計畫）。之後有更新請以 `git log` 為準。已推到 https://github.com/ZhenYan1214/Drawstop （public，MIT）。
 > 給 AI 的提醒：**請用繁體中文回覆使用者**；任何送上鏈、推送、公開發布的動作，先列清楚內容與費用，**等使用者同意再做**。
 
 ---
@@ -12,7 +12,7 @@
 - **主攻**：Chainlink「Best workflow with CRE」bounty（2 × $1,000）。要求：用 CRE workflow 當 orchestration layer，串接至少一條鏈與外部 API／LLM，並以 CLI 模擬成功或實際部署。**這個要求已達成**（Sepolia 上已有多筆 CRE 寫入）。
 - **作品**：**Drawstop**：把英國法定破產公告（The Gazette）、Companies House、GLEIF 的資料，經 CRE 共識後寫成鏈上證明，讓代幣化貸款合約依 LMA 式條款**停止新撥款、計算清算聲請寬限期、把聲請期間的還款放進暫收（s.127）、留下人工覆核紀錄**。
 - **副標題**：*UK insolvency notices in, LMA-style pause-and-review out.*
-- **狀態**：合約、workflow、測試、Sepolia 部署、完整 demo 情境都已完成。**剩下：demo 影片、DoraHacks 提交表單、（可選）CRE 正式部署權限。**
+- **狀態（10/16）**：合約、workflow、測試（合約 42、資料源 22）、Sepolia 部署、demo 情境都已完成，並經過多輪法律修正與對抗性稽核。README 已改版並推到 GitHub。**進行中：英國清算聲請時間差研究（`research/petition-lag/`）。剩下：研究收尾、補環境、重新部署、影片、DoraHacks 表單。** 詳見第 7 與第 15 節。
 
 ---
 
@@ -134,7 +134,13 @@ Drawstop/
 │  ├─ scenario-server.ts   虛構公司 DM000001 的模擬資料源（localhost:8787）
 │  ├─ run-demo.sh          完整貸款情境腳本（rehearsal 或 demo 模式）
 │  └─ sepolia-run.log      Sepolia 實跑紀錄
-├─ project.yaml, secrets.yaml（只有名稱對應）, .env（gitignored）
+├─ research/petition-lag/  清算聲請時間差研究：fetch.ts（Gazette）、ch.ts（Companies House）、analyze.ts、README.md
+├─ docs/
+│  ├─ agreement-rider.md   示範性協議條款與條款對程式對照（非法律意見）
+│  ├─ assets/              README 用的 logo、時間軸、架構圖（SVG）
+│  └─ research/            三輪選題研究
+├─ demo/video-script.md    影片腳本（畫面／英文旁白／中文說明）
+├─ project.yaml, secrets.yaml（只有名稱對應）, .env（gitignored）, .env.example（範本，已 commit）
 ```
 
 ---
@@ -186,13 +192,26 @@ Drawstop/
 
 ---
 
-## 7. 待辦（依建議順序）
+## 7. 待辦（依建議順序，10/16 更新）
 
-1. **Demo 影片（3–4 分鐘）**：AI 寫腳本（畫面／英文旁白／中文說明三欄），使用者錄螢幕。重點：AMS 真實時間線（49 天、Companies House 仍 active）→ CRE 模擬 log → 撥款被擋 → 還款進暫收 → 駁回釋出 → Etherscan 驗證 → 誠實限制。可用 `run-demo.sh demo` 實錄（約 6 分鐘，剪輯加速），或只放現有交易紀錄。
-2. **DoraHacks 提交表單**：使用者自己送出；AI 可先寫所有欄位草稿（名稱、一句話、描述、賽道、bounty 申請 Chainlink、repo、影片、聯絡方式）。建議 10/30 前送出，不要拖到 11/01 早上。
-3. **（可選）** CRE 正式部署權限：`cre whoami` 目前仍「Not enabled」，已申請（用途 Hackathon）。核准後可用 private registry 部署（不用 gas）。也可在 Chainlink Discord 詢問能否代為部署。
-4. **（可選）** Confidential HTTP 隱藏 Companies House key（目前一般 HTTP，節點營運者看得到 key）。
-5. **（可選）** H1 onboarding handler（GLEIF 驗證 LEI ↔ 公司編號）。
+**一定要做（不做等於沒交）**
+1. **時間差研究收尾**（`research/petition-lag/`）：Gazette 抓取完成 → 跑 `ch.ts`（Companies House）→ `analyze.ts` → 把 README 的「一個案例」換成實測分布；README 研究頁的「preliminary」改成正式結果。
+2. **推送到 GitHub**（每次推送前先掃描有沒有私鑰；`.env` 已被 gitignore）。
+3. **Demo 影片 3–5 分鐘**：要實際錄到 `cre workflow simulate` 執行與 Sepolia 交易（Chainlink 慣例）。開場換成研究的數字。腳本在 `demo/video-script.md`，研究完成後要改第一幕。
+4. **DoraHacks 表單**：使用者自己送出，AI 先寫草稿；要準備 Discord／WhatsApp／WeChat 其中一個；勾選 Chainlink bounty 1362；建議 10/30 前送出。
+
+**明顯加分**
+5. **CRE 部署權限**：`cre account access` 越早申請越好。
+6. **補環境**：CRE CLI v1.38.0 + `cre login`、Bun ≥ 1.3、`bun install`、`cre generate-bindings`（ABI 已更新、binding 還是舊的）、`tsc`。`.env` 目前只填了 `CRE_ETH_PRIVATE_KEY`、`CH_API_KEY_VAR`；`DEMO_BORROWER_PRIVATE_KEY`、`DEMO_ARBITER_ADDRESS` 還空著。
+7. **重新部署到 Sepolia**（registry + facility 都是舊版；要徵求同意，花測試 ETH）。`run-demo.sh` 寫死舊 registry 地址，要一起改。
+8. **找 1–2 位真實從業者回饋**（英國破產或銀行律師、鏈上信貸 pool delegate、清算人）：使用者本人聯繫，拿研究結果當開場。這是「沒有使用者訪談」最有效的補法。
+9. Confidential HTTP 保護 Companies House key。
+
+**可選**
+10. Hanwha AUS（Centrifuge 真實損失）回測：查 ASIC 公告日期，可行就加澳洲資料源。
+11. Foundry invariant fuzzing（暫收款永不被撥款動用、資金守恆）當外部裁判。
+12. HTTP trigger 的 onboarding（GLEIF 驗證 LEI ↔ 公司編號）。
+13. GitHub repo 的 About 說明與 topics：草稿已確定（見第 15 節），`gh` 未登入，使用者在網頁設定或先 `gh auth login`。
 
 ---
 
@@ -316,14 +335,18 @@ Drawstop/
 - 只讀 Data Feeds 的前端「不算」；用到多種 Chainlink 服務會加分；Functions 與 Automation 即將淘汰（我們沒用）。
 - ETHGlobal 時 Chainlink 團隊曾代為把模擬的 workflow 部署到正式網路，可在 Discord 詢問。
 
-### 12.4 建議時程（截止 11/01 09:01 台灣時間）
+### 12.4 建議時程（截止 11/01 09:01 台灣時間；10/16 更新）
 | 日期 | 事項 |
 |---|---|
-| 10/16–10/20 | 影片腳本 → 錄影 → 剪輯 |
-| 10/21–10/24 | DoraHacks 表單草稿、README 最後潤飾；（可選）Confidential HTTP、H1 |
-| 10/25–10/28 | 從乾淨 clone 重跑一次全部測試與模擬，確認評審可重現 |
-| 10/29–10/30 | 送出 DoraHacks BUIDL 並申請 Chainlink bounty |
+| 10/16–10/19 | 時間差研究：Gazette + Companies House 抓取、分析、研究頁與 README 改用實測數字 |
+| 10/17 | （可選）Foundry invariant fuzzing |
+| 10/20 | 評估 Hanwha／ASIC 回測可行性 |
+| 10/20–10/23 | 拿研究結果聯繫 2–3 位從業者；申請 CRE 部署權限 |
+| 10/24–10/27 | 補環境、重新部署 Sepolia、重錄 demo、剪影片 |
+| 10/28–10/30 | DoraHacks 表單送出並申請 Chainlink bounty |
 | 10/31 | 緩衝 |
+
+研究最多花 3 天；做不完就以目前版本交件（現況已可交）。
 
 ### 12.5 還沒驗證的事
 - Covenant Sentinel、SentinelFi 的 repo 沒讀過（只讀過展示頁）；本屆 DoraHacks 最新作品沒再掃過。
@@ -340,3 +363,54 @@ Drawstop/
 | `docs/research/reports/Chainlink CRE 選題研究.md` | 第二輪：2026 產業現況、Chainlink 採用與策略、事故與監控缺口、真實需求、法律資料源；六個候選評分 |
 | `docs/research/reports/英國破產事件監控需求驗證.md` | 第三輪：s.127／LMA 法律依據、鏈上信貸案例、現有監控工具、定位、七項設計修正、英文問題陳述 |
 | `docs/research/notes/<主題>/*.md` | 三輪研究共 15 份原始筆記（含來源連結） |
+
+---
+
+## 14. 10/15–10/16 的反思與修正紀錄
+
+### 14.1 法律與敘事修正（commit d466667）
+- **寬限期起算是誤讀**：GasLog 原文是「seven days of commencement or, if earlier, the date on which it is advertised」，刊登日讓窗口**提早結束**；Carlsberg 只從聲請日起算。PUBLICATION／DETECTION 選項已移除，改為 `CarveOutWindow`：`PRESENTATION`、`PRESENTATION_OR_ADVERTISEMENT`。豁免另需「frivolous **and** vexatious」，由人判斷。
+- *Torre* 改說「agent may assume no Default」；擋新撥款的理由是信用風險與第 4.2 條（*Coutts v Stock*），不是 s.127；暫收不讓還款有效（*Re Gray's Inn*），價值是錢不散出去。
+- 主動承認看不到刊登前的聲請；新增「鏈上沒有銀行替你凍結穩定幣錢包」這個最強論點。
+- Harbor Trade「3 個月」不再使用（來源沒寫 Maker 何時知情）。
+
+### 14.2 對抗性稽核（commit acfa011、d82257d）
+子代理以 PoC 重現 9 個問題，全部確認後修正：撥款可能動用暫收款（高）；一件聲請的覆核蓋掉下一件；可預先覆核；未來時間的報告凍結 registry；乾淨報告不需駁回就釋出暫收；清算命令後 s.127 曝險歸零；溢位；過期撥款請求；第二個 facility 的 LEI 被忽略。另外自己發現：Gazette 搜尋超過一頁或確認預算不足時會誤報「未找到」；未撥出的承諾額度永遠拿不回（新增 `cancelUndrawn`）。
+- 「沒看到 ≠ 已解決」：聲請只有配對的駁回或清算命令能清除；清算命令只有人工覆核能清除。
+- 合約大小：LoanFacility 約 16.51M／16.78M gas（Sepolia 每 byte 約 1,380–1,570 gas）。**加任何程式前先量**；optimizer 在 `optimizer_runs=1` 下不是單調的，改錯誤參數反而變大。
+
+### 14.3 評審視角的判斷（10/16）
+- **Chainlink bounty（2 × $1,000）有實際機會**：目前 DoraHacks 上公開作品只有 PocketChange（申請的是 RYO-CHAN），沒人申請 CRE；但 BLI 宣稱 100+ 件，最後幾天常湧入。決定成敗的是**交件完整**：公開 repo、架構文件、3–5 分鐘影片（BLI 10/11 文章與 Chainlink 慣例）、README 列出所有用到 Chainlink 的檔案（已補）。
+- **原創性**：Convergence 554 件沒有法律、破產或登記類；最像的 Covenant Sentinel、SentinelFi 用假資料且沒得獎。
+- **主獎**：獎池「仍在發展」，Q&A 全部沒回，不要指望。RYO-CHAN 題目不合，不硬套。
+- **不做**：加 LLM（公告代碼是結構化資料，加了就是為加而加）、多鏈寫入、ACE 整合。
+
+### 14.4 寫程式解決不了的概念限制（要照實講）
+1. 英國法、直接在鏈上撥款給英國營運公司的代幣化貸款還不存在 → 定位是「為正在形成的市場準備的控制機制」＋「任何鏈上放款方都能讀的 registry」。
+2. 最危險的「聲請到刊登」期間 Drawstop 一樣看不到；價值在刊登之後。
+3. demo 沒有真正展示信任模型（registry owner = 放款方、模擬 forwarder、單節點共識）。
+4. 沒有使用者驗證。
+5. 法律分析只涵蓋英格蘭與威爾斯；蘇格蘭、北愛爾蘭有自己的破產規則。
+6. demo 只有一個放款方地址；s.127 暫收的論述在「金庫分給很多持有人」時最成立。
+
+## 15. 用「野心」重新規劃（10/16）
+
+使用者讀了 Felix Rieseberg〈How to be more ambitious〉後要求重新審視。文章把野心分成 Speed、Altitude（目標背後的目標）、Depth（用專家的原始材料與方法、產出新知識、要有外部裁判）、Range（引入其他領域）。
+
+**反省**：之前的工作都停在 Speed（把交辦的事做好）。最大弱點「一個案例、不是統計」被寫成限制，而不是去量測；三輪稽核都是模型檢查模型，沒有外部裁判。
+
+**新方向**
+- **Altitude**：從「拿 bounty」往上一層到「讓錢移動的地方知道交易對手已進入破產程序」，再上一層到「讓 s.127 的時間差被量化、被看見」。目前查不到任何公開的時間差基準，這可能才是作品真正的貢獻。
+- **Depth**：時間差研究（`research/petition-lag/`）。從每則 Gazette 公告的 linked data 出發，量出聲請到刊登的分布、各種寬限天數在公開前就過期的比例、聲請結果、Companies House 的落後程度，並回測 Drawstop 比只看 Companies House 早幾天。
+  - **初步結果**（前 132 則有聲請日的公告，主要是 9 月下旬）：中位數 42 天、範圍 4.5–99 天；94% 在 14 天窗口關閉後才刊登，80% 在 30 天窗口關閉後才刊登。AMS 的 49 天是常態，不是特例。
+  - AMS 在 10/16（清算命令 9 天後）Companies House 仍是 `active`、沒有任何 insolvency filing。
+  - 抓取規模：Q3 聲請 1,680、7/1–10/15 清算命令 1,100、駁回 97、2451 共 3 則；每則 1 次請求、間隔 1.5 秒、全部快取（快取放在 AI 的 scratchpad，不在 repo）。曾因 Gazette 暫時錯誤中斷一次，已改為退避重試並記錄失敗、不中止。
+- **Range**：
+  - **清算人／破產管理人是新的使用者**：s.127 追回是他們的工作，`repaidSincePetitionPresented` 和鏈上還款紀錄就是現成的追回清單與證據，而且今天在鏈下就有需求。
+  - 統計／資料新聞（研究）、信用風險（時間差 × 額度 = 預期曝險）、紅隊（借款人故意讓資料源中斷、債權人提出無理聲請擋撥款）。
+- **最有野心但未確認可行**：回測真實的鏈上損失 Hanwha AUS（Centrifuge，持有人在清算命令 86 天後才知道），需要 ASIC 公告日期。
+- **外部裁判**：研究資料本身、Foundry invariant fuzzing、Slither（需安裝、需同意）、真實從業者。
+
+**GitHub About（已定稿，尚未設定）**
+- Description：Chainlink CRE workflow that turns UK Gazette insolvency notices into on-chain attestations, so a tokenized loan can stop drawdowns, hold s.127 repayments and call for human review. Testnet prototype.
+- Topics：chainlink, chainlink-cre, oracle, smart-contracts, solidity, tokenization, rwa, private-credit, legal-tech, insolvency, uk-law, sepolia
