@@ -234,7 +234,6 @@ contract LoanFacilityTest {
         _bind(facility);
         _warp(PUBLISHED + 1 hours);
         _attestPetition(PETITION, 0, FRESH_PRESENTED, PUBLISHED);
-        require(facility.petitionWindowEnd() == PUBLISHED, "ends on advertisement");
         _eq(facility.status(), LoanFacility.Status.REVIEW_REQUIRED, "closed when seen");
     }
 
@@ -540,6 +539,36 @@ contract LoanFacilityTest {
         require(usdc.balanceOf(liquidator) == 50e6, "paid while proceeding known");
     }
 
+    function testUndrawnCommitmentCanBeCancelled() public {
+        LoanFacility f = _newFacility(LoanFacility.CarveOutWindow.PRESENTATION);
+        facility = f;
+        usdc.mint(address(f), 100e6);
+        _bind(f);
+        _warp(ORDER_PUBLISHED);
+        _attest(PROCEEDING, 0);
+        vm.prank(borrower);
+        f.repay(30e6); // held in suspense
+
+        vm.prank(LENDER);
+        vm.expectRevert(LoanFacility.OnlyParty.selector); // lender must declare default first
+        f.cancelUndrawn();
+
+        vm.prank(LENDER);
+        f.declareDefault();
+        vm.prank(LENDER);
+        f.cancelUndrawn();
+        require(usdc.balanceOf(LENDER) == 100e6, "undrawn commitment returned");
+        require(usdc.balanceOf(address(f)) == 30e6 && f.suspenseBalance() == 30e6, "suspense untouched");
+    }
+
+    function testBorrowerCanCancelVoluntarily() public {
+        _bind(facility);
+        uint256 before = usdc.balanceOf(address(facility));
+        vm.prank(borrower);
+        facility.cancelUndrawn();
+        require(usdc.balanceOf(LENDER) == before, "returned to lender");
+    }
+
     // ------------------------------------------------------------------ absence is not resolution
 
     function testPetitionMissingFromResultsIsNotResolved() public {
@@ -680,7 +709,7 @@ contract LoanFacilityTest {
         vm.expectRevert(); // AttestationNotFresh
         facility.executeDrawdown(id);
         _warp(t + 60);
-        bytes memory report = _report(0, 0, 0, 0, facility.requestId(id));
+        bytes memory report = _report(0, 0, 0, 0, keccak256(abi.encode(address(facility), id)));
         vm.prank(FORWARDER);
         registry.onReport("", report);
         facility.executeDrawdown(id);

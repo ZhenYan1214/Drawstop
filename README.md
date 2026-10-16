@@ -10,7 +10,7 @@ hold at-risk repayments and call for human review when a statutory insolvency no
 
 [![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE%20v1.38-375BD2?logo=chainlink&logoColor=white)](https://docs.chain.link/cre)
 [![Network](https://img.shields.io/badge/network-Ethereum%20Sepolia-6b7280)](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897)
-[![Tests](https://img.shields.io/badge/tests-40%20contract%20%C2%B7%2024%20workflow-2ea44f)](#getting-started)
+[![Tests](https://img.shields.io/badge/tests-42%20contract%20%C2%B7%2024%20workflow-2ea44f)](#getting-started)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Facility states](#how-the-facility-responds) · [Trust model](#trust-model-and-honest-limits) · [Chainlink usage](#where-chainlink-is-used) · [Getting started](#getting-started) · [Demo on Sepolia](#demo-on-sepolia)
@@ -63,12 +63,13 @@ Drawstop turns statutory insolvency notices into a **consensus-verified, three-s
 | **Drawstop** | No drawdown while a Default, including a potential Event of Default, is continuing (cf. LMA cl. 4.2). |
 | **Petition carve-out** | Times the agreement's window for a petition to be discharged, counted from presentation and optionally ending early on advertisement (cf. cl. 23.7). Whether a petition is "frivolous or vexatious" is left to human review. |
 | **s.127 suspense** | Holds repayments received while a petition or proceeding is known, instead of spreading them across token holders, and surfaces repayments already passed on since presentation. |
-| **Human decisions stay human** | Orders, resolutions and appointments go straight to review. Default, acceleration and enforcement are never automatic. |
+| **Human decisions stay human** | Orders, resolutions and appointments go straight to review. Default, acceleration and enforcement are never automatic. The undrawn commitment can be cancelled by the borrower at any time, or by the lender once it has declared default. |
 | **Absence is not resolution** | A petition that drops out of the Gazette results stays active until a matched dismissal (2461) or a winding-up order. An incomplete search is "could not be checked", never "not found". |
 
 <details>
 <summary><b>Legal notes</b></summary>
 
+- **One lender or many.** The prototype pays a single lender address. In a pool that address would be a vault contract distributing to token holders, which is where suspense matters most: money spread across many holders is hard to recover.
 - **New advances** are a credit risk rather than an s.127 disposition of the company's property (cf. *Coutts & Co v Stock* [2000]); the agreement's drawdown condition is what blocks them.
 - **Carve-out wording** follows real agreements: Carlsberg "within 30 days of commencement"; GasLog "within seven days of commencement or, if earlier, the date on which it is advertised". Neither counts from advertisement or detection, so the contract offers neither.
 - **Suspense does not make a repayment valid:** paying into a contract the lender controls is still a disposition (cf. *Re Gray's Inn Construction* [1980]). It keeps the money in one place, returnable to a liquidator or releasable after a dismissal or validation order, instead of spread across many holders it could never be recovered from (`repaidSincePetitionPresented` lists what already went out).
@@ -159,6 +160,7 @@ Companies House adverse status (liquidation, administration, dissolved, …) is 
 
 **What it cannot do**
 
+- **The legal analysis is English law.** Statute, rules and cases cited are those of England and Wales. Scotland and Northern Ireland have their own insolvency rules; companies registered there are monitored through the same sources, but their procedure and notice timing are not analysed.
 - **It does not see a petition before it is advertised.** "Not found" never excludes a petition presented but not yet advertised, and some petitions are never advertised at all: they can be withdrawn before advertisement ([IR 2016 r.7.13](https://www.legislation.gov.uk/uksi/2016/1024/rule/7.13)), or the court can restrain advertisement. Repayments made between presentation and advertisement cannot be stopped, only surfaced afterwards.
 - **Consensus is not correctness.** CRE consensus proves the nodes fetched and normalized the same data; it cannot fix a registry that is late or wrong.
 - **Single-node simulation.** `cre workflow simulate` runs consensus on one node; multi-node agreement is designed, not demonstrated. Sepolia writes go through Chainlink's simulation forwarder, whose signature checking we have not verified: they demonstrate the flow, not report authenticity.
@@ -192,7 +194,7 @@ Companies House adverse status (liquidation, administration, dissolved, …) is 
 **Quick check, no keys or accounts needed:**
 
 ```bash
-cd contracts/evm && forge test                        # 40 contract tests, incl. the real AMS timeline
+cd contracts/evm && forge test                        # 42 contract tests, incl. the real AMS timeline
 cd ../../status-monitor && bun test sources.test.ts   # 22 source tests on real responses recorded 2026-10-14
 ```
 
@@ -217,7 +219,7 @@ cre workflow simulate status-monitor --target staging-settings --non-interactive
 contracts/evm/
   src/StatusRegistry.sol      CRE receiver: attestations, firstSeen, report validation
   src/LoanFacility.sol        drawstop, carve-out window, s.127 suspense, reviews
-  test/LoanFacility.t.sol     40 tests, incl. the real AMS timeline and audit scenarios
+  test/LoanFacility.t.sol     42 tests, incl. the real AMS timeline and audit scenarios
   script/                     deployment scripts
 status-monitor/
   sources.ts                  Gazette, Companies House and GLEIF fetch + normalization

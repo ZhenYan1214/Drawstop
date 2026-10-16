@@ -139,6 +139,7 @@ GLEIF is cross-check only: its outage never blocks.
 - `recordReview(coveredBits, attestationId, reasonHash, expiresAt)` (arbiter): append-only. Never edits an attestation. Must name the latest attestation and can only cover bits it shows as active, so there is no pre-emptive cover. Neutralizes only occurrences that had begun by that attestation (`firstSeen[bit] <= asOf`), and only until `expiresAt`. A review may let drawdowns resume but cannot release s.127 suspense while a petition is live.
 - Drawdowns: a request lapses after 1 day, and a drawdown can only use funds beyond the suspense balance, so a review that reopens drawdowns cannot pay suspense out to the borrower.
 - `declareDefault()` (lender): only in `REVIEW_REQUIRED`; moves no funds.
+- `cancelUndrawn()`: returns the undrawn commitment (balance above suspense) to the lender. The borrower may call it at any time (voluntary cancellation); the lender only after declaring default. Without it, an undrawn commitment would be locked in the contract forever.
 
 ## 7. CRE workflow
 
@@ -165,6 +166,9 @@ Honest limits of the demo: `cre workflow simulate` runs consensus on a single no
 - `MockUSDC`: test stablecoin.
 
 ## 9. Open items
+
+- **Scope:** the legal analysis is English law (England and Wales). Scotland and Northern Ireland have their own insolvency rules, not analysed.
+- **Production cadence and gas:** demo configs check every 10 minutes and write every result. The Gazette publishes daily; production would check hourly or daily and write only on change plus a heartbeat before expiry, as Chainlink data feeds do. Not implemented.
 
 - No user interviews: demand is argued from statute, case law, LMA structure and on-chain incidents; stated as a hypothesis.
 - LMA Leveraged "14 days" comes from the ACT/Slaughter and May borrower's guide, not the (members-only) form text.

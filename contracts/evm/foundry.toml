@@ -7,3 +7,6 @@ remappings = ["@openzeppelin/contracts/=src/vendor/openzeppelin/"]
 optimizer = true
 optimizer_runs = 1
 via_ir = true
+# No CBOR metadata or bytecode hash: ~50 bytes (~80k gas) smaller. Verify on Etherscan with the same settings.
+cbor_metadata = false
+bytecode_hash = "none"

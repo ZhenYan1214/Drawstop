@@ -15,6 +15,7 @@ The Law Commission concluded that existing law can accommodate smart legal contr
 | "Frivolous or vexatious" determination | 3.2 | `recordReview` by the Arbiter |
 | Suspense for repayments | 4 | `repay`, `suspenseBalance`, `releaseSuspense`, `resolveSuspense`, `nominateOfficeHolder` |
 | No automatic acceleration | 5 | `declareDefault` only by the Lender, only in `REVIEW_REQUIRED`, moves no funds |
+| Cancellation of the undrawn commitment | 5.2 | `cancelUndrawn`: the Borrower at any time, the Lender after `declareDefault` |
 | Knowledge | 6 | `acknowledge` |
 
 ## Rider
@@ -52,6 +53,8 @@ The Law Commission concluded that existing law can accommodate smart legal contr
 **5. No automatic acceleration**
 
 5.1 No Attestation, status or operation of the Facility Contract accelerates any amount, enforces any security or terminates any Commitment. Those remedies remain exercisable only by notice under clause [25] (*Acceleration*).
+
+5.2 The Borrower may cancel the undrawn Commitment at any time, and the Lender may cancel it after a notice under clause [25]; in either case the undrawn amount held by the Facility Contract (excluding the Suspense Account) is returned to the Lender.
 
 **6. Knowledge**
 

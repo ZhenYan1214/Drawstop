@@ -86,7 +86,6 @@ contract LoanFacility {
 
     bool public bound;
     bool public defaulted;
-    uint256 public bindingNonce;
     uint256 public suspenseBalance;
     address public officeHolder; // liquidator, Official Receiver or administrator nominated by the arbiter
     uint64 public officeHolderFrom; // when the nominated office-holder may receive suspense
@@ -102,6 +101,7 @@ contract LoanFacility {
     event Repaid(uint256 indexed repaymentId, uint256 amount, bool heldInSuspense, Status status);
     event SuspenseReleased(address indexed to, uint256 amount, bytes32 reasonHash, address by);
     event OfficeHolderNominated(address indexed officeHolder, uint64 effectiveAt, bytes32 evidenceHash);
+    event UndrawnCancelled(address indexed by, uint256 amount);
     event Acknowledged(address indexed by, uint256 indexed attestationId, bytes32 noteHash);
     event ReviewRecorded(
         uint256 indexed reviewId, address indexed reviewer, uint32 coveredBits, uint256 attestationId, bytes32 reasonHash, uint64 expiresAt
@@ -115,7 +115,6 @@ contract LoanFacility {
     error AlreadyBound();
     error NotBound();
     error BindingExpired();
-    error BadNonce(uint256 expected, uint256 got);
     error BadSignature();
     error NoSuchDrawdown(uint256 drawdownId);
     error AlreadyExecuted(uint256 drawdownId);
@@ -158,7 +157,7 @@ contract LoanFacility {
     // Binding
     // ---------------------------------------------------------------------
 
-    function domainSeparator() public view returns (bytes32) {
+    function _domainSeparator() private view returns (bytes32) {
         return keccak256(
             abi.encode(DOMAIN_TYPEHASH, keccak256("CounterpartyStatusMonitor"), keccak256("1"), block.chainid, address(this))
         );
@@ -170,7 +169,7 @@ contract LoanFacility {
                 BINDING_TYPEHASH, borrower, keccak256(bytes(lei)), keccak256(bytes(companyNumber)), nonce, deadline
             )
         );
-        return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
+        return keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
     }
 
     /// @notice Lender confirms the binding with the borrower's EIP-712 signature. The lender's transaction is the
@@ -179,10 +178,8 @@ contract LoanFacility {
         if (msg.sender != lender) revert OnlyLender();
         if (bound) revert AlreadyBound();
         if (block.timestamp > deadline) revert BindingExpired();
-        if (nonce != bindingNonce) revert BadNonce(bindingNonce, nonce);
         if (_recover(bindingDigest(nonce, deadline), borrowerSignature) != borrower) revert BadSignature();
 
-        bindingNonce = nonce + 1;
         bound = true;
         registry.registerEntity(companyNumber, lei);
         emit Bound(borrower, entityId, companyNumber, lei, nonce);
@@ -192,7 +189,7 @@ contract LoanFacility {
     // Drawdowns (drawstop)
     // ---------------------------------------------------------------------
 
-    function requestId(uint256 drawdownId) public view returns (bytes32) {
+    function _requestId(uint256 drawdownId) private view returns (bytes32) {
         return keccak256(abi.encode(address(this), drawdownId));
     }
 
@@ -202,7 +199,7 @@ contract LoanFacility {
         if (!bound) revert NotBound();
         drawdownId = drawdowns.length;
         drawdowns.push(Drawdown({amount: amount, requestedAt: uint64(block.timestamp), executed: false}));
-        emit DrawdownRequested(drawdownId, requestId(drawdownId), entityId, companyNumber, lei, amount);
+        emit DrawdownRequested(drawdownId, _requestId(drawdownId), entityId, companyNumber, lei, amount);
     }
 
     /// @notice Releases funds once an attestation made after the request allows it. Callable by anyone.
@@ -280,7 +277,7 @@ contract LoanFacility {
 
     /// @notice Sum of repayments already passed to the lender at or after `since` (e.g. the petition presentation
     ///         date). These may be void under s.127 if a winding-up order follows.
-    function repaidToLenderSince(uint64 since) public view returns (uint256 total) {
+    function _repaidToLenderSince(uint64 since) private view returns (uint256 total) {
         for (uint256 i = 0; i < repayments.length; i++) {
             if (!repayments[i].heldInSuspense && repayments[i].at >= since) total += repayments[i].amount;
         }
@@ -289,7 +286,7 @@ contract LoanFacility {
     /// @notice Convenience view: repayments passed to the lender since the pending petition was presented.
     function repaidSincePetitionPresented() external view returns (uint256) {
         uint64 presentedAt = registry.getLatest(entityId).petitionPresentedAt;
-        return presentedAt == 0 ? 0 : repaidToLenderSince(presentedAt);
+        return presentedAt == 0 ? 0 : _repaidToLenderSince(presentedAt);
     }
 
     // ---------------------------------------------------------------------
@@ -330,6 +327,15 @@ contract LoanFacility {
         emit ReviewRecorded(reviewId, msg.sender, coveredBits, attestationId, reasonHash, expiresAt);
     }
 
+    /// @notice Cancels the undrawn commitment and returns it to the lender: by the borrower at any time (voluntary
+    ///         cancellation), or by the lender once it has declared default. Suspense is never touched.
+    function cancelUndrawn() external {
+        if (msg.sender != borrower && !(msg.sender == lender && defaulted)) revert OnlyParty();
+        uint256 amount = token.balanceOf(address(this)) - suspenseBalance;
+        if (!token.transfer(lender, amount)) revert TransferFailed();
+        emit UndrawnCancelled(msg.sender, amount);
+    }
+
     /// @notice Lender may declare default only in REVIEW_REQUIRED, on fresh evidence. Moves no funds.
     function declareDefault() external {
         if (msg.sender != lender) revert OnlyLender();
@@ -367,10 +373,6 @@ contract LoanFacility {
     /// @notice End of the petition carve-out window. 0 when the presentation date is unknown: the window cannot be
     ///         computed, so the petition goes to human review. With PRESENTATION_OR_ADVERTISEMENT the window has
     ///         always closed by the time a Gazette notice is seen; only a faster source could catch it open.
-    function petitionWindowEnd() external view returns (uint256) {
-        return _petitionWindowEnd(registry.getLatest(entityId));
-    }
-
     function _petitionWindowEnd(StatusRegistry.Attestation memory a) private view returns (uint256 end) {
         if (a.petitionPresentedAt == 0) return 0;
         end = uint256(a.petitionPresentedAt) + petitionGracePeriod;
@@ -391,18 +393,6 @@ contract LoanFacility {
                 if (r.coveredBits & mask != 0 && firstSeen[bit] != 0 && firstSeen[bit] <= r.asOf) covered |= mask;
             }
         }
-    }
-
-    function drawdownCount() external view returns (uint256) {
-        return drawdowns.length;
-    }
-
-    function repaymentCount() external view returns (uint256) {
-        return repayments.length;
-    }
-
-    function reviewCount() external view returns (uint256) {
-        return reviews.length;
     }
 
     /// @dev Known petition or proceeding in the latest attestation, regardless of reviews (s.127 risk is legal,

@@ -121,7 +121,7 @@ Drawstop/
 ├─ HANDOFF.md           本文件
 ├─ contracts/evm/
 │  ├─ src/StatusRegistry.sol, LoanFacility.sol, MockUSDC.sol, ReceiverTemplate.sol（已修 64-byte metadata）
-│  ├─ test/LoanFacility.t.sol   40 個測試（含 AMS 真實時間線、兩種寬限窗口、正式格式 metadata、10/15 稽核發現的攻擊情境）
+│  ├─ test/LoanFacility.t.sol   42 個測試（含 AMS 真實時間線、兩種寬限窗口、正式格式 metadata、10/15 稽核發現的攻擊情境）
 │  ├─ script/DeployMonitor.s.sol, DeployScenario.s.sol
 │  ├─ src/abi/*.abi + ts/generated/*（cre generate-bindings 產生）
 │  └─ foundry.toml      via_ir + optimizer_runs=1（為了塞進單筆交易）
@@ -152,7 +152,7 @@ Drawstop/
 - 驗證成功要讀合約狀態（`getLatest`），因為 **forwarder 在接收合約失敗時不會 revert**。
 
 ### Sepolia gas 實測（2026-10，踩過的坑）
-- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）；10/15 兩輪修正後約 **16.48M**（餘裕約 1.75%，用 `cast estimate --create` 對 Sepolia 實測）。中途曾到 16.94M 超過上限。**再加功能前先量**，超過上限就部署不了。常數改為 private、`coveredBits`／`petitionWindowEnd` 改為內部函式、`companyNumber`／`lei` getter 改 private（可用 registry.getEntity 讀），都是為了省空間。StatusRegistry 約 15.49M。
+- 部署每 byte 約 **1,570 gas**；單筆交易上限 16,777,216。未最佳化的合約塞不進去 → `via_ir` + `optimizer_runs = 1`。LoanFacility 約 15.9M（餘裕約 5%）；10/16 加入 `cancelUndrawn` 後約 **16.51M**（餘裕約 1.6%；為此移除了未使用的 count getter、`bindingNonce`（綁定本來就只能一次）、`requestId`／`petitionWindowEnd` 改內部，並在 foundry.toml 關閉 CBOR metadata 與 bytecode hash）。10/15 兩輪修正後約 16.48M（餘裕約 1.75%，用 `cast estimate --create` 對 Sepolia 實測）。中途曾到 16.94M 超過上限。**再加功能前先量**，超過上限就部署不了。常數改為 private、`coveredBits`／`petitionWindowEnd` 改為內部函式、`companyNumber`／`lei` getter 改 private（可用 registry.getEntity 讀），都是為了省空間。StatusRegistry 約 15.49M。
 - 建立新帳戶約 **204,600 gas**，但 `eth_estimateGas` 對轉帳回傳 21,000 → 轉 ETH 給新帳戶要手動 `--gas-limit 300000`。
 - Forge 本機估算偏低 → 部署一律 `--slow --skip-simulation`（讓節點估算）。
 - 寫入儲存也貴（登記一家公司約 47 萬 gas、寫一筆證明約 54–85 萬）→ workflow `gasLimit` 設 6,000,000。
@@ -177,7 +177,7 @@ Drawstop/
 5. 安裝依賴：`bun install --cwd status-monitor`、`bun install --cwd contracts`。
 6. 驗證：
    ```bash
-   cd contracts/evm && forge test        # 40 passed
+   cd contracts/evm && forge test        # 42 passed
    cd ../../status-monitor && bun test && bun x tsc --noEmit   # 20 passed, tsc 0
    cd .. && cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0   # 不加 --broadcast 只模擬
    ```
