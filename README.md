@@ -13,7 +13,7 @@ hold at-risk repayments and call for human review when a statutory insolvency no
 [![Tests](https://img.shields.io/badge/tests-42%20contract%20%C2%B7%2024%20workflow-2ea44f)](#getting-started)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Facility states](#how-the-facility-responds) · [Trust model](#trust-model-and-honest-limits) · [Chainlink usage](#where-chainlink-is-used) · [Getting started](#getting-started) · [Demo on Sepolia](#demo-on-sepolia)
+[Problem](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Facility states](#how-the-facility-responds) · [Trust model](#trust-model-and-honest-limits) · [Chainlink usage](#where-chainlink-is-used) · [Getting started](#getting-started) · [Demo on Sepolia](#demo-on-sepolia)
 
 <sub>Built for BLI Legal Tech Hackathon 2 · Chainlink "Best workflow with CRE" bounty · Testnet only · Not legal advice</sub>
 
@@ -48,7 +48,23 @@ The risk starts on one date. The world finds out weeks later:
 | 2026‑10‑14 | Order advertised, [Gazette notice 5229442](https://www.thegazette.co.uk/notice/5229442) | Gazette |
 | 2026‑10‑14 | Companies House API still returns `company_status: active`, `has_insolvency_history: false` | — |
 
-A 30-day carve-out counted from presentation had expired 19 days before the petition appeared in any free public source. A lender watching only Companies House would still have seen nothing a week after the order. (One case at one point in time, not a lag statistic.)
+A 30-day carve-out counted from presentation had expired 19 days before the petition appeared in any free public source. A lender watching only Companies House would still have seen nothing a week after the order.
+
+### It is not one case: a quarter of petitions, measured
+
+We pulled every corporate winding-up petition advertised in The Gazette in Q3 2026 and checked each company on Companies House ([full study](research/petition-lag), data and scripts included).
+
+| Measured, Q3 2026 | |
+|---|---|
+| Petitions advertised (with a presentation date) | 1,683 (1,594) |
+| Median days from presentation to advertisement | **36** (middle half 31–41) |
+| Advertised after a **30-day** carve-out from presentation had closed | **79%** |
+| Advertised after a **14-day** carve-out had closed | **95%** |
+| Petitioned companies with no winding-up order notice, still `active` on Companies House | 61% |
+| Companies with an order advertised 1–15 Oct, still `active` on 16 Oct | 23% |
+| Drawstop's Gazette check ahead of the first insolvency filing at Companies House, when the petition was advertised | median **27 days**, earlier in **99%** of 487 cases |
+
+AMS's 49 days is typical, not an outlier.
 
 **Drawstop could not have seen this petition earlier either:** it reads the same public notices. What it changes is what happens once a notice is public. The facility reacts on its next check instead of waiting for a governance vote, records the presentation date so that repayments already passed on since then are surfaced, and holds further repayments in suspense.
 
@@ -283,7 +299,7 @@ Sepolia currently charges roughly 1,570 gas per deployed byte (measured via `eth
 
 ## Research
 
-- **Petition-lag study** (in progress): how many days pass between a winding-up petition being presented and becoming public, across a full quarter of Gazette notices, and what Companies House shows meanwhile. [`research/petition-lag`](research/petition-lag)
+- **Petition-lag study:** how many days pass between a winding-up petition being presented and becoming public, across all 1,683 petitions advertised in Q3 2026, and what Companies House showed meanwhile. [`research/petition-lag`](research/petition-lag)
 - Topic-selection research, in Traditional Chinese: [`docs/research`](docs/research)
 
 ## Disclaimer

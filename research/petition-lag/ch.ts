@@ -46,20 +46,21 @@ const companies = [...new Set(lines.map((l) => l.split(',')[2]).filter((n) => n 
 console.log(`${companies.length} companies`)
 
 const checkedAt = new Date().toISOString().slice(0, 10)
-const rows = ['company_number,ch_status,has_insolvency_history,first_insolvency_filing_date,first_insolvency_filing_type,checked_on']
+const rows = ['company_number,ch_status,has_insolvency_history,insolvency_filing_dates,checked_on']
 let done = 0
 for (const n of companies) {
 	const profile = await getJson(`/company/${n}`, `ch-profile-${n}`)
 	const filings = await getJson(`/company/${n}/filing-history?category=insolvency&items_per_page=100`, `ch-insolv-${n}`)
 	const items: any[] = filings.body?.items ?? []
-	const earliest = items.map((i) => ({ date: String(i.date ?? ''), type: String(i.type ?? '') })).filter((i) => i.date).sort((a, b) => (a.date < b.date ? -1 : 1))[0]
+	// All insolvency filing dates: the analysis picks the first one on or after the relevant petition, so older
+	// insolvency history (e.g. a CVA years earlier) is not mistaken for the current proceeding.
+	const dates = [...new Set(items.map((i) => String(i.date ?? '')).filter((d) => d))].sort()
 	rows.push(
 		[
 			n,
 			profile.status === 200 ? String(profile.body?.company_status ?? '') : `http-${profile.status}`,
 			profile.body?.has_insolvency_history === true ? 'true' : 'false',
-			earliest?.date ?? '',
-			earliest?.type ?? '',
+			dates.join(';'),
 			checkedAt,
 		].join(','),
 	)

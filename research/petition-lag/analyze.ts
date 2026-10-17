@@ -86,8 +86,8 @@ if (chCsv && existsSync(chCsv)) {
 			.split('\n')
 			.slice(1)
 			.map((l) => {
-				const [company, status, history, firstFiling, firstType, checkedOn] = l.split(',')
-				return [company, { status, history: history === 'true', firstFiling, firstType, checkedOn }] as const
+				const [company, status, history, filings, checkedOn] = l.split(',')
+				return [company, { status, history: history === 'true', filings: filings ? filings.split(';').map(utc) : [], checkedOn }] as const
 			}),
 	)
 	const checkedOn = [...ch.values()][0]?.checkedOn ?? ''
@@ -100,6 +100,8 @@ if (chCsv && existsSync(chCsv)) {
 	// Companies with a winding-up order advertised 1 Jul – 30 Sep (at least 16 days before the check).
 	const orderedQ3 = orders.filter((o) => o.publishedAt >= Q3_START && o.publishedAt < Q3_END && o.companies.length === 1 && ch.has(o.companies[0]))
 	const leads: number[] = []
+	const leadsAfterPetitionAdvert: number[] = []
+	const leadsOrderNoticeOnly: number[] = []
 	const registerLag: number[] = []
 	let noFilingYet = 0
 	for (const o of orderedQ3) {
@@ -108,16 +110,26 @@ if (chCsv && existsSync(chCsv)) {
 		// otherwise the order notice itself (conservative: understates the lead for petitions advertised before July).
 		const petition = notices.find((p) => (p.code === '2450' || p.code === '2451') && sameProceeding(p, o))
 		const gazetteFirst = Math.min(o.publishedAt, petition?.publishedAt ?? Number.POSITIVE_INFINITY)
-		if (!c.firstFiling) {
+		// First insolvency filing for this proceeding: on or after the petition's presentation date (or, if unknown,
+		// no earlier than 60 days before the order notice).
+		const from = o.presentedAt > 0 ? o.presentedAt - DAY : o.publishedAt - 60 * DAY
+		const filed = c.filings.find((d) => d >= from)
+		if (filed === undefined) {
 			noFilingYet++
 			continue
 		}
-		const filed = utc(c.firstFiling)
 		registerLag.push(days(o.publishedAt, filed))
 		leads.push(days(gazetteFirst, filed))
+		;(petition ? leadsAfterPetitionAdvert : leadsOrderNoticeOnly).push(days(gazetteFirst, filed))
 	}
+	// Orders advertised in the two weeks before the check: how many still read "active" on the register?
+	const recentOrders = orders.filter((o) => o.publishedAt >= utc('2026-10-01') && o.companies.length === 1 && ch.has(o.companies[0]))
 	companiesHouse = {
 		checkedOn,
+		ordersAdvertised1to15Oct: {
+			companies: recentOrders.length,
+			stillActivePct: pct(recentOrders.filter((o) => ch.get(o.companies[0])!.status === 'active').length, recentOrders.length),
+		},
 		petitionedNoOrder: {
 			companies: petitionNoOrder.length,
 			stillActivePct: pct(petitionNoOrder.filter((c) => ch.get(c)!.status === 'active').length, petitionNoOrder.length),
@@ -130,6 +142,9 @@ if (chCsv && existsSync(chCsv)) {
 			noInsolvencyFilingYet: noFilingYet,
 			orderNoticeToFirstInsolvencyFilingDays: describe(registerLag),
 			drawstopLeadOverRegisterDays: describe(leads),
+			drawstopEarlierPct: pct(leads.filter((l) => l > 0).length, leads.length),
+			leadWhenPetitionWasAdvertised: { ...describe(leadsAfterPetitionAdvert), earlierPct: pct(leadsAfterPetitionAdvert.filter((l) => l > 0).length, leadsAfterPetitionAdvert.length) },
+			leadFromOrderNoticeOnly: { ...describe(leadsOrderNoticeOnly), earlierPct: pct(leadsOrderNoticeOnly.filter((l) => l > 0).length, leadsOrderNoticeOnly.length) },
 		},
 	}
 }

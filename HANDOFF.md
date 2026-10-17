@@ -195,7 +195,7 @@ Drawstop/
 ## 7. 待辦（依建議順序，10/16 更新）
 
 **一定要做（不做等於沒交）**
-1. **時間差研究收尾**（`research/petition-lag/`）：Gazette 抓取完成 → 跑 `ch.ts`（Companies House）→ `analyze.ts` → 把 README 的「一個案例」換成實測分布；README 研究頁的「preliminary」改成正式結果。
+1. ~~時間差研究~~：**10/17 完成**（見第 15 節數字）。README、DESIGN、影片腳本已改用實測數字。
 2. **推送到 GitHub**（每次推送前先掃描有沒有私鑰；`.env` 已被 gitignore）。
 3. **Demo 影片 3–5 分鐘**：要實際錄到 `cre workflow simulate` 執行與 Sepolia 交易（Chainlink 慣例）。開場換成研究的數字。腳本在 `demo/video-script.md`，研究完成後要改第一幕。
 4. **DoraHacks 表單**：使用者自己送出，AI 先寫草稿；要準備 Discord／WhatsApp／WeChat 其中一個；勾選 Chainlink bounty 1362；建議 10/30 前送出。
@@ -402,7 +402,8 @@ Drawstop/
 **新方向**
 - **Altitude**：從「拿 bounty」往上一層到「讓錢移動的地方知道交易對手已進入破產程序」，再上一層到「讓 s.127 的時間差被量化、被看見」。目前查不到任何公開的時間差基準，這可能才是作品真正的貢獻。
 - **Depth**：時間差研究（`research/petition-lag/`）。從每則 Gazette 公告的 linked data 出發，量出聲請到刊登的分布、各種寬限天數在公開前就過期的比例、聲請結果、Companies House 的落後程度，並回測 Drawstop 比只看 Companies House 早幾天。
-  - **初步結果**（前 132 則有聲請日的公告，主要是 9 月下旬）：中位數 42 天、範圍 4.5–99 天；94% 在 14 天窗口關閉後才刊登，80% 在 30 天窗口關閉後才刊登。AMS 的 49 天是常態，不是特例。
+  - **正式結果（10/17，`research/petition-lag/results.json`）**：Q3 2026 共 1,683 則聲請（1,594 則有聲請日）。聲請到刊登**中位數 36 天**（中間一半 31–41）；**95.2%** 在 14 天窗口關閉後、**79.4%** 在 30 天窗口關閉後才刊登。截至 10/15：577 件有清算命令（34%）、28 件刊登駁回、1,078 件尚無結果公告。Companies House（10/16 快照，2,115 家）：聲請中且沒有清算命令的公司 61% 仍 `active`；10/1–10/15 刊登清算命令的 117 家中 23% 仍 `active`。回測：聲請有刊登時，Drawstop 比 Companies House 第一筆 insolvency filing **早中位數 27 天、99% 較早**（487 家）；只看清算命令公告時早 6 天、73% 較早（456 家）——清算命令有時 Companies House 反而比 Gazette 早。
+  - 資料品質：12 則公告（4 清算命令、8 駁回）持續回 HTTP 429，已排除；15 則少於 7 天、16 則超過 120 天（含一則 824 天，疑似年份打錯），保留原樣。
   - AMS 在 10/16（清算命令 9 天後）Companies House 仍是 `active`、沒有任何 insolvency filing。
   - 抓取規模：Q3 聲請 1,680、7/1–10/15 清算命令 1,100、駁回 97、2451 共 3 則；每則 1 次請求、間隔 1.5 秒、全部快取（快取放在 AI 的 scratchpad，不在 repo）。曾因 Gazette 暫時錯誤中斷一次，已改為退避重試並記錄失敗、不中止。
 - **Range**：

@@ -14,7 +14,7 @@
   <rect width="900" height="320" rx="12" fill="#ffffff" stroke="#d0d7de"/>
 
   <text x="30" y="34" class="title">AMS FACILITIES (SW) LTD · company 11877818</text>
-  <text x="30" y="53" class="sub">Public record, checked 2026-10-14 · one case at one point in time, not a lag statistic</text>
+  <text x="30" y="53" class="sub">Public record, checked 2026-10-14 · typical: Q3 2026 median was 36 days, 79% past a 30-day carve-out</text>
 
   <!-- invisible period: presentation to advertisement (day 0 to 49), 12.19 px/day from x=60 -->
   <rect x="60" y="150" width="597" height="22" fill="#ffebe9"/>

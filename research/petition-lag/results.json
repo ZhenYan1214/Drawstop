@@ -1,0 +1,138 @@
+{
+  "generatedFrom": {
+    "notices": 2868,
+    "window": "petitions advertised 2026-07-01..2026-09-30; orders and dismissals 2026-07-01..2026-10-15"
+  },
+  "petitions": {
+    "advertised": 1683,
+    "withPresentationDate": 1594,
+    "presentationToAdvertisementDays": {
+      "n": 1594,
+      "min": 0.4,
+      "p10": 21.6,
+      "p25": 30.7,
+      "median": 36,
+      "p75": 41,
+      "p90": 49.9,
+      "max": 823.6,
+      "mean": 38.4
+    },
+    "carveOutClosedBeforeAdvertisement": {
+      "7d": {
+        "count": 1579,
+        "pct": 99.1
+      },
+      "10d": {
+        "count": 1546,
+        "pct": 97
+      },
+      "14d": {
+        "count": 1518,
+        "pct": 95.2
+      },
+      "30d": {
+        "count": 1266,
+        "pct": 79.4
+      },
+      "60d": {
+        "count": 121,
+        "pct": 7.6
+      }
+    }
+  },
+  "orders": {
+    "notices": 1096,
+    "presentationToOrderNoticeDays": {
+      "n": 1052,
+      "min": 6.5,
+      "p10": 51.3,
+      "p25": 54.5,
+      "median": 60.4,
+      "p75": 99.4,
+      "p90": 177.5,
+      "max": 2296.7,
+      "mean": 99.6
+    }
+  },
+  "q3PetitionOutcomesBy15Oct": {
+    "order": 577,
+    "dismissalAdvertised": 28,
+    "noNoticeYet": 1078,
+    "petitionAdvertToOrderNoticeDays": {
+      "n": 577,
+      "min": 5.3,
+      "p10": 16.5,
+      "p25": 19.4,
+      "median": 21,
+      "p75": 28.1,
+      "p90": 43.6,
+      "max": 98.5,
+      "mean": 26.3
+    }
+  },
+  "companiesHouse": {
+    "checkedOn": "2026-10-16",
+    "ordersAdvertised1to15Oct": {
+      "companies": 117,
+      "stillActivePct": 23.1
+    },
+    "petitionedNoOrder": {
+      "companies": 976,
+      "stillActivePct": 61.1,
+      "noInsolvencyHistoryPct": 61.3
+    },
+    "orderedQ3": {
+      "companies": 973,
+      "stillActivePct": 2.3,
+      "nonActivePct": 97.7,
+      "noInsolvencyFilingYet": 30,
+      "orderNoticeToFirstInsolvencyFilingDays": {
+        "n": 943,
+        "min": -2261.7,
+        "p10": -12.4,
+        "p25": 3.5,
+        "median": 6.3,
+        "p75": 8.6,
+        "p90": 12.4,
+        "max": 81.5,
+        "mean": -8.4
+      },
+      "drawstopLeadOverRegisterDays": {
+        "n": 943,
+        "min": -2261.7,
+        "p10": -4.5,
+        "p25": 6.2,
+        "median": 22,
+        "p75": 27,
+        "p90": 38,
+        "max": 98,
+        "mean": 4.3
+      },
+      "drawstopEarlierPct": 86.5,
+      "leadWhenPetitionWasAdvertised": {
+        "n": 487,
+        "min": -83.8,
+        "p10": 22,
+        "p25": 25,
+        "median": 27,
+        "p75": 32.1,
+        "p90": 49.9,
+        "max": 98,
+        "mean": 31,
+        "earlierPct": 99
+      },
+      "leadFromOrderNoticeOnly": {
+        "n": 456,
+        "min": -2261.7,
+        "p10": -37.5,
+        "p25": -0.6,
+        "median": 6.2,
+        "p75": 8.5,
+        "p90": 12.4,
+        "max": 80.5,
+        "mean": -24.1,
+        "earlierPct": 73.2
+      }
+    }
+  }
+}
