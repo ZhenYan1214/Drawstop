@@ -136,10 +136,11 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		{ step: '7', event: 'Borrower repays 3,000; the record still looks clean', status: 'NORMAL', tone: 'ok', money: '3,000 → lender' },
 		{ step: '8', event: 'Winding-up order; its petition was presented 12 days earlier', status: 'REVIEW_REQUIRED', tone: 'bad', money: '3,000 flagged, not stopped' },
 		{ step: '9', event: 'Borrower repays 2,000 after the order', status: 'REVIEW_REQUIRED', tone: 'bad', money: '2,000 held in suspense' },
-		{ step: '10–11', event: 'Arbiter nominates the Official Receiver · 2-day delay', status: 'REVIEW_REQUIRED', tone: 'bad', money: '2,000 → Official Receiver' },
+		{ step: '10', event: 'Arbiter nominates the Official Receiver; an early transfer reverts', status: 'REVIEW_REQUIRED', tone: 'bad', money: 'effective after 2 days' },
+		{ step: '11', event: 'After the delay, suspense goes back to the estate (scheduled 19 Oct)', status: 'REVIEW_REQUIRED', tone: 'bad', money: '2,000 → Official Receiver' },
 	]
-	const W = 960
-	const H = 640
+	const W = 1000
+	const H = 692
 	const tone = { ok: [C.green, C.greenBg, '✓'], warn: [C.amber, C.amberBg, '!'], bad: [C.red, C.redBg, '■'] } as const
 	let body = frame(W, H)
 	body += text(40, 50, 'What the loan contract did on Sepolia', { size: 22, weight: 600 })
@@ -177,12 +178,12 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 // ── 4. How it was checked: stat tiles ────────────────────────────────────────────────────
 {
 	const tiles = [
-		{ value: '3 / 3', label: 'contracts source-verified', sub: 'Sourcify: creation + runtime bytecode match' },
-		{ value: '128,000', label: 'random calls, 5 invariants', sub: 'Foundry fuzzing: suspense, conservation, reference model' },
-		{ value: '5 / 5', label: 'planted bugs caught', sub: 'mutation testing · first suite missed 2, then fixed' },
-		{ value: '2,868', label: 'Gazette notices analysed', sub: 'same parsers as the workflow · CSVs in the repo' },
-		{ value: '42 + 24', label: 'unit + workflow tests', sub: 'incl. real responses recorded from 3 sources' },
-		{ value: '11 steps', label: 'loan scenario live on Sepolia', sub: 'state read back from chain, not just tx status' },
+		{ value: '3 / 3', label: 'contracts source-verified', sub: 'Sourcify: creation + runtime match' },
+		{ value: '128,000', label: 'random calls, 5 invariants', sub: 'Foundry stateful fuzzing' },
+		{ value: '5 / 5', label: 'planted bugs caught', sub: 'mutation test; first suite missed 2' },
+		{ value: '2,868', label: 'Gazette notices analysed', sub: 'same parsers as the workflow' },
+		{ value: '42 + 24', label: 'unit + workflow tests', sub: 'incl. real responses from 3 sources' },
+		{ value: '10 / 11', label: 'loan steps run on Sepolia', sub: 'step 11 after the 2-day delay (19 Oct)' },
 	]
 	const W = 960
 	const H = 420
@@ -207,7 +208,7 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		'Free, licensed public data: Gazette (OGL), Companies House API, GLEIF (CC0)',
 		'Workflow runs in the CRE CLI against live sources today',
 		'Contracts deployed and source-verified on Sepolia',
-		'Fits Sepolia’s per-transaction gas cap (measured, 1.6% headroom)',
+		'Every result reproduces with one command: forge test, bun test, cre simulate',
 		'Agreement rider maps each clause to code (docs/agreement-rider.md)',
 	]
 	const next = [
@@ -218,15 +219,16 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		'Pilot with a facility agent or pool delegate on one real facility',
 	]
 	const W = 960
-	const H = 400
+	const H = 450
 	let body = frame(W, H)
 	body += text(40, 50, 'Why it is buildable', { size: 22, weight: 600 })
 	body += text(40, 76, 'Nothing here needs a consortium, a paid data feed or a new law', { size: 14, fill: C.ink2 })
 	const col = (x: number, title: string, items: string[], color: string, bg: string, mark: string) => {
-		let s = `<rect x="${x}" y="100" width="430" height="270" rx="10" fill="${bg}" stroke="${color}" stroke-width="1.5"/>`
+		let s = `<rect x="${x}" y="100" width="430" height="320" rx="10" fill="${bg}" stroke="${color}" stroke-width="1.5"/>`
 		s += text(x + 20, 130, title, { size: 15, weight: 700, fill: color })
-		items.forEach((it, i) => {
-			s += text(x + 20, 166 + i * 42, mark, { size: 15, weight: 700, fill: color })
+		let yy = 166
+		items.forEach((it) => {
+			s += text(x + 20, yy, mark, { size: 15, weight: 700, fill: color })
 			const words = it.split(' ')
 			let line = ''
 			let lines: string[] = []
@@ -237,7 +239,8 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 				} else line += ' ' + w
 			}
 			lines.push(line.trim())
-			lines.forEach((l, j) => (s += text(x + 42, 166 + i * 42 + j * 17, l, { size: 13.5 })))
+			lines.forEach((l, j) => (s += text(x + 42, yy + j * 18, l, { size: 13.5 })))
+			yy += lines.length * 18 + 16
 		})
 		return s
 	}
