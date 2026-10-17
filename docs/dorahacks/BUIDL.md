@@ -2,7 +2,7 @@
 
 Working draft for the form at https://dorahacks.io/hackathon/legal-hack-2026 → **Submit Build**. Field limits were not visible without logging in; the short description is kept under 200 characters to be safe. Images: upload the PNGs in [`png/`](png) through the editor, or keep the GitHub links below (they render once pushed).
 
-Every number below traces to a file in the repository (see "Fact sources" at the end).
+Every number below traces to a file in the repository (see "Fact sources" at the end). The draft was read cold by two outside reviewers (a Chainlink engineer's view and an English insolvency lawyer's view) and revised; see "Review log" at the end.
 
 ## Form fields
 
@@ -11,8 +11,8 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 | BUIDL name | **Drawstop** |
 | Logo | [`png/logo.png`](png/logo.png) (512 × 512) |
 | Cover / banner | [`png/cover.png`](png/cover.png) (1.73 : 1, legible at the 222 × 128 card size) |
-| Short description (card, 190 chars) | 4 in 5 UK winding-up petitions go public after a 30-day carve-out has closed. Drawstop (Chainlink CRE) makes tokenized loans react the moment they do: drawstop, s.127 suspense, human review. |
-| Alternative short description (176) | A Chainlink CRE workflow that turns UK Gazette insolvency notices into on-chain attestations, so a tokenized loan stops drawdowns and holds s.127 repayments before money moves. |
+| Short description (card, 178 chars) | Chainlink CRE workflow that reads English insolvency notices (Gazette, Companies House, GLEIF) and writes attestations, so a tokenized loan blocks drawdowns and holds repayments. |
+| Alternative short description (179) | 95% of winding-up petitions in Britain go public after a 14-day loan grace window. Drawstop (Chainlink CRE) makes a tokenized loan stop drawdowns and hold repayments when they do. |
 | Category | The closest of: RWA · Legal / RegTech · Infra (pick what the dropdown offers) |
 | Track | All BUIDLs |
 | Bounties | **Chainlink: Best workflow with CRE** (bounty 1362). Do not apply to RYO-CHAN (agent trading; not this project) |
@@ -30,47 +30,52 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 
 ![Drawstop](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/cover.png)
 
-**Drawstop** is a Chainlink CRE workflow that turns UK statutory insolvency notices into on-chain attestations, so a tokenized loan to a UK company can **stop new drawdowns, hold at-risk repayments and call for human review before money moves**, not after a governance vote.
+**Drawstop** lets a tokenized loan to an English company react on its own when the borrower faces a winding-up petition. A **Chainlink CRE workflow** runs on a schedule and on every drawdown request, checks three public registries with per-source consensus, and writes a signed status to a registry on Sepolia. The loan contract reads that status: **new drawdowns revert, and repayments are held** because they may have to go back to the company's creditors. A source that cannot be checked is recorded as "could not be checked", never as "clean". Acting on a default stays a human decision.
 
-**In 30 seconds**
+**Why it matters:** of 1,594 winding-up petitions advertised in Q3 2026, **95% became public only after a standard 14-day loan grace window had closed** (median: 36 days after the petition was presented).
 
-- **The problem is measured, not anecdotal.** Across 1,594 winding-up petitions advertised in Q3 2026, the median petition became public **36 days** after it was presented, when payments to creditors had already become voidable (Insolvency Act 1986 s.127). **79%** surfaced only after a typical 30-day loan carve-out had closed.
-- **Off-chain, banks freeze the account when the petition is advertised. On-chain, nobody freezes a borrower's stablecoin wallet.** Drawstop puts the drawstop where the money moves.
-- **It runs today**: live sources (The Gazette, Companies House, GLEIF) through a CRE workflow, contracts deployed and source-verified on Sepolia, a two-act loan scenario executed on-chain (10 of 11 steps; the last waits out a deliberate 2-day delay).
-
-![Most petitions become public after a typical carve-out has closed](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/gap.png)
-
-## The problem
-
-Under English law a compulsory winding-up starts when the petition is **presented** (s.129(2)). If an order follows, payments after that date are void unless the court validates them, even to a payee in good faith (s.127; *Express Electrical v Beavis* [2016]). But a petition becomes public only when The Gazette advertises it, at least seven business days after service (IR 2016 r.7.10), and it is never filed at Companies House.
-
-LMA-style facility agreements already treat a pending petition as a Default that stops new drawdowns. The gap is not the contract terms. It is that nobody is told: the borrower self-reports, the facility agent may assume no Default, and token holders on one Centrifuge pool learned of a liquidation 53 days after the order.
-
-![A real public timeline](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/timeline.png)
+> **Four terms, in plain words.** *Drawstop*: the lender's right to refuse new advances. *Carve-out*: a grace window during which a petition is not yet an Event of Default. *s.127 suspense*: repayments held back, because if a winding-up order follows, payments made after the petition are void unless a court validates them. *Arbiter*: the neutral reviewer named in the loan agreement.
 
 ## What it does
 
 ![Architecture](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/architecture.png)
 
-- **CRE workflow** (TypeScript): a cron trigger monitors every registered company; an **EVM log trigger** runs a fresh check whenever a borrower requests a drawdown.
-- **Three sources, each with identical-value consensus**: The Gazette (primary: confirms each notice's company number, petition date and court case), Companies House, and GLEIF as a cross-check only. A failed or disputed source is recorded as **"could not be checked", never as "clean"**.
-- **`StatusRegistry`** stores a signed attestation: as of time T, in source S, event E was found, not found, or could not be checked. Absence is not resolution: a petition clears only with a matched dismissal.
-- **`LoanFacility`** mirrors the agreement: drawstop (cf. LMA cl. 4.2), petition carve-out counted from presentation (cf. cl. 23.7), **s.127 suspense** for repayments, append-only expiring reviews. Default is always a human decision.
+- **CRE workflow** (TypeScript): a **cron trigger** checks every registered company; an **EVM log trigger** runs a fresh check whenever a borrower requests a drawdown, so money never moves on stale evidence.
+- **Three sources, identical-value consensus per source**: The Gazette (primary: confirms each notice's company number, presentation date and court case), Companies House, and GLEIF (cross-check only). A failed or disputed source becomes **"could not be checked"**.
+- **`StatusRegistry`** stores signed attestations: as of time T, in source S, event E was found, not found, or could not be checked. Absence is not resolution: a petition stays live until a dismissal for the same court case is found, or the Arbiter records a review.
+- **`LoanFacility`** mirrors the agreement: drawstop, petition carve-out counted from presentation, s.127 suspense, append-only reviews that expire. It never accelerates or cancels on its own; that is the lender's call.
 
 ## Watch it work on Sepolia
 
 ![What the loan contract did on Sepolia](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/demo.png)
 
-Every check above is a `cre workflow simulate --broadcast` run against the deployed contracts; every transaction is linked in the [README](https://github.com/ZhenYan1214/Drawstop#demo-on-sepolia). Step 8 is the honest limit: a payment made between presentation and advertisement cannot be stopped, only surfaced. The yellow box is what a liquidator would use: [`tools/s127-report.ts`](https://github.com/ZhenYan1214/Drawstop/blob/main/tools/s127-report.ts) rebuilds every payment after presentation from on-chain events, and found that **8,000 reached the lender, not 3,000**, because a dismissal clears only its own petition.
+**What is real and what is staged.** The contracts, the CRE workflow and every transaction are real (Sepolia, [all linked in the README](https://github.com/ZhenYan1214/Drawstop#demo-on-sepolia)). The borrower is **fictional**: so that no real company is ever named as a borrower, its notices come from a local mirror shaped like The Gazette and Companies House, in **compressed time** (real petitions take weeks to reach a hearing). The same workflow on **live sources** recorded a real company, AMS FACILITIES (SW) LTD, as "winding-up order found" while Companies House still showed it "active" ([attestation, 14 Oct](https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda), monitoring only, no loan).
+
+Step 8 is the honest limit: a payment made after presentation but before advertisement cannot be stopped, only surfaced. [`tools/s127-report.ts`](https://github.com/ZhenYan1214/Drawstop/blob/main/tools/s127-report.ts) rebuilds every payment after presentation from on-chain events, as a statement a liquidator or the lender's advisers can check. It found that **at least 8,000 reached the lender, not 3,000**, because a dismissal clears only its own petition. (8,000 assumes money in suspense stays the borrower's until released, as the draft rider's trust wording intends; that point is untested. Whether any payment is void, or should be validated, is for the court.)
+
+## The problem
+
+Under the law of England and Wales a compulsory winding-up is treated as starting when the petition is **presented** (Insolvency Act 1986 s.129(2)). If a winding-up order follows, any disposition of the company's property after that date, a loan repayment included, is **void unless the court validates it** (s.127), and the payee's good faith is no defence (*Express Electrical Distributors Ltd v Beavis* [2016] EWCA Civ 765). But a petition first appears in free open data only when The Gazette advertises it, at least seven business days after service (IR 2016 r.7.10). Until then it sits on the court file, and it is never filed at Companies House.
+
+![Most petitions become public after the carve-out has closed](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/gap.png)
+
+Two clocks start at presentation, and a lender can see neither:
+
+- **The default clock.** LMA-style agreements stop new drawdowns once a Default is continuing. They give a grace window only to a petition that is frivolous or vexatious and is dismissed within [14] days (borrowers negotiate longer). Unless told, the facility agent may assume no Default has occurred (*Torre Asset Funding v RBS* [2013] EWHC 2670 (Ch)), and the borrower is the one who must tell it.
+- **The s.127 clock.** Runs from presentation whatever the carve-out says. Every repayment after that date is at risk if an order follows.
+
+Off-chain, a bank that learns of a petition usually freezes the company's account (bank practice, not law). Nobody does that for a stablecoin wallet, so on-chain repayments keep flowing unless the loan contract itself stops them. Drawstop does that for one lender's facility; it freezes nothing else. Token holders in one Centrifuge pool learned of a borrower's liquidation 53 days after the order.
+
+![A real public timeline](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/timeline.png)
 
 ## Why this stands out
 
 | Chainlink criterion | Evidence |
 |---|---|
-| **Technical execution** | 42 unit tests, 5 fuzzing invariants over 128,000 random calls, 5 of 5 planted bugs caught, 24 workflow tests on real recorded responses; contracts Sourcify-verified |
-| **Blockchain application** | The contract that moves the money enforces the agreement: drawdowns revert, repayments are held, suspense can only go to the lender, the borrower, or an Official Receiver nominated two days in advance |
-| **Effective use of CRE** | Cron and EVM log triggers, HTTP with per-source identical consensus, secrets, EVM read and signed EVM write, receiver hardened for the production forwarder's 64-byte metadata |
-| **Originality** | No legal, insolvency or registry-event project among the 554 CRE entries of Chainlink's Convergence hackathon; built on a quarter of measured petition data, not an assumption |
+| **Technical execution** | 42 unit tests; fuzzing over 128,000 random calls; 5 of 5 deliberately planted bugs caught; workflow tests on real recorded responses; deployed bytecode matches the source (Sourcify) |
+| **Blockchain application** | The contract that moves the money enforces the agreement. Suspense can go only to the lender, the borrower, or an office-holder nominated two days in advance |
+| **Effective use of CRE** | Cron and EVM log triggers, HTTP with per-source identical consensus, secrets, EVM read and signed write; receiver hardened for the production forwarder's 64-byte metadata |
+| **Originality** | Insolvency law as a live on-chain control, built on a quarter of measured petition data rather than an assumption |
 
 ## Verify it yourself in two minutes
 
@@ -79,7 +84,13 @@ git clone https://github.com/ZhenYan1214/Drawstop && cd Drawstop/contracts/evm &
 cd ../../status-monitor && bun test sources.test.ts
 ```
 
-No keys or accounts needed. Deployed = source: [Sourcify, 3 of 3 match](https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245). Raw data and scripts for the petition study: [`research/petition-lag`](https://github.com/ZhenYan1214/Drawstop/tree/main/research/petition-lag).
+No keys or accounts needed. Deployed = source: [Sourcify, 3 of 3 match](https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245). To run the workflow against **live** sources (needs a CRE login and a free Companies House API key; nothing is written without `--broadcast`):
+
+```bash
+cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0
+```
+
+Raw data and scripts for the petition study: [`research/petition-lag`](https://github.com/ZhenYan1214/Drawstop/tree/main/research/petition-lag).
 
 ![How it was checked](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/proof.png)
 
@@ -91,9 +102,10 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 
 ## What we don't claim
 
-- Not faster than commercial vendors: some see petitions before The Gazette. Drawstop changes what happens after a petition is public.
-- "Not found" never rules out a petition presented but not yet advertised. That is a limit of free open data, not of the law: 99% of England-and-Wales petitions sit in courts whose filings the CE-File court search covers, a source that could be added.
-- The CRE simulator runs consensus on one node; Sepolia writes use the simulation forwarder. No user interviews yet. Not legal advice.
+- **Not faster than commercial vendors**, some of which see petitions before The Gazette. Drawstop changes what happens after a petition is public.
+- **"Not found" never rules out a petition** presented but not yet advertised, or withdrawn before advertisement. That is a limit of free open data, not of the law: 99% of England-and-Wales petitions sit in courts whose filings the CE-File court search covers, a source that could be added.
+- **The legal design is illustrative.** The draft facility terms ([`docs/agreement-rider.md`](https://github.com/ZhenYan1214/Drawstop/blob/main/docs/agreement-rider.md)) flag what needs specialist advice. Not legal advice.
+- **Test setup.** The CRE simulator runs consensus on one node, and Sepolia writes go through the simulation forwarder. No user interviews yet.
 
 ## What's next
 
@@ -107,13 +119,31 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 
 | Claim | Source in the repository |
 |---|---|
-| 1,594 petitions, median 36 days, 79% / 95% | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
+| 1,594 petitions, median 36 days, 95% / 79% | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
 | AMS timeline | Gazette notices 5219886, 5229442; `status-monitor/fixtures/ch-company-11877818.json` |
+| AMS live-source attestation, 14 Oct | README "Earlier deployment (superseded)", tx `0x5bc10a05…4cda` |
 | 53 days (Centrifuge) | `docs/research/reports/英國破產事件監控需求驗證.md` |
-| 42 / 24 tests, 5 invariants, 128,000 calls, 5 of 5 mutants | `forge test` output; README "How It Was Checked" |
+| 42 tests, 5 invariants, 128,000 calls, 5 of 5 mutants | `forge test` output; README "How It Was Checked" |
 | Sepolia steps and 8,000 vs 3,000 | `demo/sepolia-run.log`, `demo/s127-statement-DM000001.md` |
+| Trust wording in suspense, untested | `docs/agreement-rider.md` clause 4.1 and its notes |
 | Sourcify 3 of 3 | Sourcify API, 2026-10-17 |
-| 554 CRE entries, no legal/registry project | `docs/research/notes/Chainlink CRE 選題研究/chainlink_adoption_gaps.md` |
 | 99% of E&W petitions in CE-File courts | `research/petition-lag/courts.ts`, `holdout/courts-oct.csv` |
+
+## Review log
+
+Two cold reads on 2026-10-17, each seeing only this page and the images, with up to three spot-checks in the repository.
+
+| Reviewer view | Found | Changed |
+|---|---|---|
+| Chainlink engineer | "Live sources" read as if the loan demo used them, but it uses a local mirror | Demo labelled as fictional borrower, local mirror, compressed time; live-source attestation linked; live-source command added |
+| | Too much legal jargon before any CRE | CRE paragraph first; four terms glossed; legal detail moved under "The problem" |
+| | "Arbiter" undefined; padding (554 entries, repeated bullets) | Arbiter defined; padding removed |
+| Insolvency lawyer | "voidable" (s.127 makes dispositions void, only if an order follows) | Corrected |
+| | "UK" (s.127, s.129 and r.7.10 are England and Wales law) | "English" / "England and Wales" throughout, including cover and figures |
+| | "Default is a human decision" (an Event of Default arises as a fact; acting on it is the decision) | Reworded; architecture figure says "accelerate" |
+| | Carve-out without "frivolous or vexatious"; 30 days called typical (LMA bracket is [14]) | 14 days leads; 30 days shown as borrower-friendly |
+| | "Public only via the Gazette"; "banks freeze" as if law | "First appears in free open data"; freezing marked as bank practice |
+| | 8,000 stated as fact | "At least 8,000", with the trust-wording assumption and "for the court" |
+| | Demo timeline procedurally impossible | Labelled "compressed time" |
 
 Update before submitting: step 11 (scheduled 19 Oct) in `demo.png` and the demo table; the October hold-out result if it is in; the video link.

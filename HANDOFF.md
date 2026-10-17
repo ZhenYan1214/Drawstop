@@ -430,6 +430,7 @@ Drawstop/
 - **s.127 清算人報告**（`tools/s127-report.ts`，只讀鏈上事件，任何人可重跑）：**抓到一個設計盲點**：第一幕駁回後從暫收釋出給放款方的 5,000，時間在第二件聲請（已提出未刊登）之後 → 也是聲請日後送到放款方的錢。報告總數 8,000（不是合約 view 函式的 3,000）。合約 `repaidSincePetitionPresented()` 只算直接轉手，已在註解標明（bytecode 不變）；合約只剩 1.6% gas 餘裕，不改合約。重點：**一件聲請被駁回，不代表之後的付款就安全**。
 - **前向測試（Altitude：與現行做法並行）**：`research/forward/daily.ts` + `.github/workflows/forward-test.yml`（每天記錄新刊登聲請與這些公司在 Companies House 的狀態，commit 時間戳公開）。**尚未推送、尚未啟用**：需要使用者同意推送，並在 GitHub repo 設定 secret `CH_API_KEY`。
 - 修了兩個工程問題：`.gitattributes` 強制 `*.sh` 用 LF（這台電腦 `core.autocrlf=true` 會把腳本變 CRLF，bash 會壞）；收集腳本遵守 `Retry-After`，並在連續兩次長時間封鎖時停止（circuit breaker）。
+- **DoraHacks 表單草稿**（`docs/dorahacks/BUIDL.md` + `png/` 7 張圖）：交給兩位外部裁判（Chainlink 工程師視角、英國破產律師視角）冷讀後修改，修改紀錄在 BUIDL.md 最後的「Review log」。法律用語定稿，**之後所有文字都照這個寫**：s.127 是 **void**（不是 voidable），且只在清算命令做成後才適用；範圍說 **England and Wales**／English，不說 UK；寬限期是「frivolous or vexatious 且 [14] 天內駁回」，**以 14 天（95%）為主**，30 天只當借款方友善的情況；「違約」本身是事實，人做的決定是 **acceleration**（加速到期）；銀行凍結是**實務**，不是法律；聲請在刊登前**在法院檔案裡**，只是不在免費開放資料；8,000 要寫「**at least**」，並註明它假設暫收款依 rider 的 trust 條款仍屬借款方（未經測試）；demo 要標明「虛構借款方、本機鏡像、壓縮時間」。README 標語、影片腳本第 1 幕也同步改了。
 
 ### 16.2 進行中／卡住
 - **10 月樣本外驗證**：預測已在 10/17 11:44 commit（`27fe81d`，`research/petition-lag/holdout/PREDICTIONS.md`），尚未下載逐則資料。Gazette 回 `Retry-After: 900` 且連續封鎖（推測同一 IP 今天早上已抓過約 2,900 則、碰到每日額度）。**明天先送一個請求測試**，通了再跑：`GAZETTE_GAP_MS=3000 bun research/petition-lag/fetch.ts <cache> research/petition-lag/holdout/notices-oct.csv 2450:2026-10-01:2026-10-16 2451:2026-10-01:2026-10-16`，再用 analyze 的邏輯比對預測，結果不論成敗都照實寫。

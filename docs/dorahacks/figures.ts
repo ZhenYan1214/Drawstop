@@ -67,10 +67,10 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 	const y = (c: number) => py + ph - (c / yMax) * ph
 	const bw = (BIN / maxDay) * pw
 	let body = frame(W, H)
-	body += text(40, 50, 'Most winding-up petitions become public after a typical carve-out has closed', { size: 22, weight: 600 })
+	body += text(40, 50, `${pct(14).toFixed(0)}% of winding-up petitions became public only after a 14-day carve-out had closed`, { size: 22, weight: 600 })
 	body += text(40, 78, `Days from presentation (s.127 exposure starts) to advertisement in The Gazette · ${n.toLocaleString('en')} petitions advertised Jul–Sep 2026`, { size: 14, fill: C.ink2 })
 	// shaded "carve-out already closed" zones
-	body += `<rect x="${x(30)}" y="${py}" width="${x(maxDay) - x(30)}" height="${ph}" fill="${C.redBg}" opacity="0.55"/>`
+	body += `<rect x="${x(14)}" y="${py}" width="${x(maxDay) - x(14)}" height="${ph}" fill="${C.redBg}" opacity="0.55"/>`
 	// grid + y axis
 	for (const t of [0, 100, 200, 300, 400, 500]) {
 		body += `<line x1="${px}" y1="${y(t)}" x2="${px + pw}" y2="${y(t)}" stroke="#eaeef2" stroke-width="1"/>`
@@ -97,12 +97,12 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		s += text(x(47), yLabel + 18, sub, { size: 13, fill: C.ink2 })
 		return s
 	}
-	body += ref(14, `14-day carve-out: ${pct(14).toFixed(0)}%`, 'of petitions public only after it closed', C.amber, py + 24)
-	body += ref(30, `30-day carve-out: ${pct(30).toFixed(0)}%`, 'of petitions public only after it closed', C.red, py + 70)
+	body += ref(14, `14-day carve-out (LMA default): ${pct(14).toFixed(0)}%`, 'of petitions public only after it closed', C.amber, py + 24)
+	body += ref(30, `30-day (borrower-friendly): ${pct(30).toFixed(0)}%`, 'public only after it closed', C.red, py + 70)
 	body += `<line x1="${x(median)}" y1="${py + ph}" x2="${x(median)}" y2="${py + ph + 6}" stroke="${C.ink}" stroke-width="2"/>`
 	body += text(x(47), py + 128, `median ${median.toFixed(0)} days`, { size: 14, weight: 600, fill: C.ink })
 	body += text(x(47), py + 146, '(middle half 31–41 days)', { size: 13, fill: C.ink2 })
-	body += text(40, H - 24, 'Source: The Gazette linked data (OGL), Drawstop petition-lag study, research/petition-lag · carve-outs counted from presentation, as in LMA-style agreements', { size: 11.5, fill: C.muted })
+	body += text(40, H - 24, 'Source: The Gazette linked data (OGL), research/petition-lag · carve-outs counted from presentation · mostly England & Wales, some Scottish notices', { size: 11.5, fill: C.muted })
 	writeFileSync(join(OUT, 'gap.svg'), svg(W, H, `Histogram of ${n} petitions: median ${median.toFixed(0)} days from presentation to advertisement; ${pct(14).toFixed(0)}% after a 14-day and ${pct(30).toFixed(0)}% after a 30-day carve-out`, body))
 	console.log(`gap: n=${n} median=${median.toFixed(1)} >14=${pct(14).toFixed(1)} >30=${pct(30).toFixed(1)}`)
 }
@@ -115,12 +115,12 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 	let body = `<rect width="${W}" height="${H}" fill="${C.dark}"/>`
 	body += `<g transform="translate(70,150) scale(1.55)">${logo}</g>`
 	body += text(355, 245, 'Drawstop', { size: 92, weight: 700, fill: '#ffffff' })
-	body += text(360, 300, 'UK insolvency notices in,', { size: 30, fill: '#c9d1d9' })
-	body += text(360, 340, 'LMA-style pause-and-review out', { size: 30, fill: '#c9d1d9' })
+	body += text(360, 300, 'English insolvency notices in,', { size: 30, fill: '#c9d1d9' })
+	body += text(360, 340, 'loan drawdowns stopped, repayments held', { size: 30, fill: '#c9d1d9' })
 	body += `<rect x="360" y="380" width="250" height="40" rx="20" fill="none" stroke="#3987e5" stroke-width="2"/>`
 	body += text(485, 406, 'Chainlink CRE · Sepolia', { size: 17, weight: 600, fill: '#79b8ff', anchor: 'middle' })
-	body += text(630, 406, 'live · source-verified', { size: 17, fill: '#8b949e' })
-	writeFileSync(join(OUT, 'cover.svg'), svg(W, H, 'Drawstop: UK insolvency notices in, LMA-style pause-and-review out. Chainlink CRE on Sepolia.', body))
+	body += text(630, 406, 'contracts source-verified', { size: 17, fill: '#8b949e' })
+	writeFileSync(join(OUT, 'cover.svg'), svg(W, H, 'Drawstop: English insolvency notices in, loan drawdowns stopped and repayments held. Chainlink CRE on Sepolia.', body))
 }
 
 // ── 3. What the contract did on Sepolia: two acts ───────────────────────────────────────
@@ -136,7 +136,7 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		{ step: '7', event: 'Borrower repays 3,000; the record still looks clean', status: 'NORMAL', tone: 'ok', money: '3,000 → lender' },
 		{ step: '8', event: 'Winding-up order; its petition was presented 12 days earlier', status: 'REVIEW_REQUIRED', tone: 'bad', money: '3,000 flagged, not stopped' },
 		{ step: '9', event: 'Borrower repays 2,000 after the order', status: 'REVIEW_REQUIRED', tone: 'bad', money: '2,000 held in suspense' },
-		{ step: '10', event: 'Arbiter nominates the Official Receiver; an early transfer reverts', status: 'REVIEW_REQUIRED', tone: 'bad', money: 'effective after 2 days' },
+		{ step: '10', event: 'Arbiter (neutral reviewer) names the Official Receiver; early transfer reverts', status: 'REVIEW_REQUIRED', tone: 'bad', money: 'effective after 2 days' },
 		{ step: '11', event: 'After the delay, suspense goes back to the estate (scheduled 19 Oct)', status: 'REVIEW_REQUIRED', tone: 'bad', money: '2,000 → Official Receiver' },
 	]
 	const W = 1000
@@ -144,7 +144,7 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 	const tone = { ok: [C.green, C.greenBg, '✓'], warn: [C.amber, C.amberBg, '!'], bad: [C.red, C.redBg, '■'] } as const
 	let body = frame(W, H)
 	body += text(40, 50, 'What the loan contract did on Sepolia', { size: 22, weight: 600 })
-	body += text(40, 76, 'Fictional borrower DM000001 · 30-day carve-out from presentation · every check is a Chainlink CRE workflow run', { size: 14, fill: C.ink2 })
+	body += text(40, 76, 'Fictional borrower DM000001 via a local Gazette mirror · compressed time · 30-day carve-out · every check a CRE run', { size: 14, fill: C.ink2 })
 	const cols = { step: 52, event: 110, status: 590, money: 770 }
 	let yy = 112
 	const header = (label: string) => {
@@ -170,8 +170,8 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 	for (const r of act2) body += row(r)
 	yy += 6
 	body += `<rect x="40" y="${yy}" width="${W - 80}" height="56" rx="8" fill="${C.amberBg}" stroke="#d4a72c" stroke-width="1.5"/>`
-	body += text(56, yy + 23, 's.127 statement rebuilt from on-chain events: 8,000 reached the lender after presentation, not 3,000.', { size: 14, weight: 600 })
-	body += text(56, yy + 43, "The 5,000 released after act 1's dismissal landed after act 2's petition was presented. A dismissal clears only its own petition.", { size: 13, fill: C.ink2 })
+	body += text(56, yy + 23, 's.127 statement rebuilt from on-chain events: at least 8,000 reached the lender after presentation, not 3,000.', { size: 14, weight: 600 })
+	body += text(56, yy + 43, "The 5,000 released after act 1's dismissal came after act 2's petition. Facts for a court; whether it is void is the court's call.", { size: 13, fill: C.ink2 })
 	writeFileSync(join(OUT, 'demo.svg'), svg(W, H, 'Loan contract on Sepolia: drawdown, petition drawstop, suspense, dismissal; then a winding-up order, flagged repayment, suspense returned to the Official Receiver', body))
 }
 
@@ -199,7 +199,7 @@ const frame = (w: number, h: number) => `<rect x="1" y="1" width="${w - 2}" heig
 		body += text(tx + 20, ty + 82, t.label, { size: 15, weight: 600 })
 		body += text(tx + 20, ty + 108, t.sub, { size: 12.5, fill: C.ink2 })
 	})
-	writeFileSync(join(OUT, 'proof.svg'), svg(W, H, 'Verification: 3 of 3 contracts source-verified, 128,000 fuzzing calls, 5 of 5 planted bugs caught, 2,868 notices analysed, 66 tests, 11-step scenario on Sepolia', body))
+	writeFileSync(join(OUT, 'proof.svg'), svg(W, H, 'Verification: 3 of 3 contracts source-verified, 128,000 fuzzing calls, 5 of 5 planted bugs caught, 2,868 notices analysed, 66 tests, 10 of 11 loan steps run on Sepolia', body))
 }
 
 // ── 5. Why it is buildable: today vs production ─────────────────────────────────────────

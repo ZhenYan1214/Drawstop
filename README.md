@@ -4,8 +4,8 @@
 
 # Drawstop
 
-**UK insolvency notices in. LMA-style pause-and-review out.**<br>
-A Chainlink CRE workflow that lets a tokenized loan to a UK company stop new drawdowns,<br>
+**English insolvency notices in. Loan drawdowns stopped, repayments held.**<br>
+A Chainlink CRE workflow that lets a tokenized loan to an English company stop new drawdowns,<br>
 hold at-risk repayments and call for human review when a statutory insolvency notice appears.
 
 [![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE%20v1.38-375BD2?logo=chainlink&logoColor=white)](https://docs.chain.link/cre)
@@ -31,7 +31,7 @@ The risk starts on one date. The world finds out weeks later:
 |---|---|
 | A petition becomes public only when advertised in The Gazette, at least seven business days after service ([IR 2016 r.7.10](https://www.legislation.gov.uk/uksi/2016/1024/rule/7.10)). It is never filed at Companies House. | A lender watching the company register sees nothing while s.127 exposure is already running. |
 | LMA-style agreements treat a pending petition as a Default that blocks drawdowns, but the facility agent may assume no Default has occurred unless it is told ([*Torre Asset Funding v RBS* [2013] EWHC 2670 (Ch)](https://caselaw.nationalarchives.gov.uk/ewhc/ch/2013/2670)). | The only reliable notice channel is the borrower itself. |
-| Off-chain, banks usually freeze a company's accounts once a petition is advertised ([The Gazette](https://www.thegazette.co.uk/all-notices/content/101087)). | Nobody freezes a borrower's stablecoin wallet. On-chain repayments keep flowing to token holders unless the contract itself stops them. |
+| Off-chain, a bank that learns of a petition usually freezes the company's account (bank practice, not law) ([The Gazette](https://www.thegazette.co.uk/all-notices/content/101087)). | Nobody freezes a borrower's stablecoin wallet. On-chain repayments keep flowing to token holders unless the contract itself stops them. |
 | On-chain credit reacts by governance vote. | Centrifuge token holders learned of a borrower's court-ordered liquidation [53 days after the order](https://gov.centrifuge.io/t/consolfreight-cf4-pool-update-august-2023-important-notice/5674). |
 
 > **The ask is simple:** once an insolvency notice is public, the contract that moves the money should know it before the next drawdown, and act the way the loan agreement already says.
