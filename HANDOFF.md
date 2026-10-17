@@ -149,9 +149,9 @@ Drawstop/
 
 | 合約 | 地址 |
 |---|---|
-| StatusRegistry | `0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897`（owner = 使用者測試錢包，forwarder = 模擬用 `0x15fC6ae953E024d975e77382eEeC56A9101f9F88`；正式 forwarder 是 `0xF8344CFd5c43616a4366C34E3EEE75af79a74482`，可用 `setForwarderAddress` 切換） |
-| LoanFacility（DM000001） | `0x1652af1a405f7d73ded60f684d64c7313f4c71ec` |
-| MockUSDC | `0x658b728a1e100dd5bac2f69a2135950e399b952e` |
+| StatusRegistry（10/17 新版） | `0x1AE232515B9C011152335e68314f12926e4d1245`（舊版 `0xE1e4…1897` 已淘汰；owner = 使用者測試錢包，forwarder = 模擬用 `0x15fC6ae953E024d975e77382eEeC56A9101f9F88`；正式 forwarder 是 `0xF8344CFd5c43616a4366C34E3EEE75af79a74482`，可用 `setForwarderAddress` 切換） |
+| LoanFacility（DM000001，10/17 新版） | `0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0`（舊版 `0x1652…71ec` 已淘汰） |
+| MockUSDC（10/17） | `0x687d8a7c046f6e44bfc9f031411fa5618d17645d` |
 
 - 錢包：放款方（10/15 的 demo 中也兼任仲裁人；之後的 demo 改用獨立仲裁人地址）（使用者測試錢包）`0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d`，剩約 1.89 Sepolia ETH；demo 借款人 `0xa0401d2E0671527e20489ffa059A4C3a4541cF3a`。
 - Registry 目前 7 筆證明：#1 AMS（bit3，tx `0x5bc10a05…`）、#2 Tesco（乾淨，tx `0x46f6e23d…`），#3–#7 為 demo 情境。所有交易連結都在 README。
@@ -415,3 +415,29 @@ Drawstop/
 **GitHub About（已定稿，尚未設定）**
 - Description：Chainlink CRE workflow that turns UK Gazette insolvency notices into on-chain attestations, so a tokenized loan can stop drawdowns, hold s.127 repayments and call for human review. Testnet prototype.
 - Topics：chainlink, chainlink-cre, oracle, smart-contracts, solidity, tokenization, rwa, private-credit, legal-tech, insolvency, uk-law, sepolia
+
+---
+
+## 16. 10/17 依「野心」文章的第二輪（這台電腦）
+
+使用者要求：記住 Rieseberg 文章的做事與發想方法（已存成記憶 `ambition-method`），三件事都做，先重新部署。
+
+### 16.1 完成
+- **挑戰「看不到刊登前的聲請」這個假設（Depth）**：聲請在提出時就能查到：HMCTS CE-File 公開查詢（要註冊、可依案號或當事人查、看得到案件事件紀錄，影本每份 £11）與法院的清算聲請登記冊（電話或臨櫃）。用 Gazette 列表頁分類 10/1–10/16 的 438 件聲請（`research/petition-lag/courts.ts`、`holdout/courts-oct.csv`）：**英格蘭與威爾斯 401 件中 397 件（99%）在 CE-File 涵蓋的高等法院／BPC**，郡法院 3 件，蘇格蘭 37 件。結論：36 天盲區是「免費開放資料」的限制，不是法律限制。**尚未確認**非當事人在刊登前能在 CE-File 看到什麼 → 需要使用者本人註冊查 AMS 的 `CR-2026-006286`（AI 不能建帳號）。
+- **工具型外部裁判（Depth）**：`contracts/evm/test/LoanFacility.invariant.t.sol`，5 個不變量（暫收有資產支撐、資金守恆、暫收帳平衡、禁止動作不會成功、獨立參考模型判斷哪些聲請／程序必須擋撥款），256 runs × 500 calls 全過。**突變測試**：植入 5 個 bug，最終全抓到；第一版漏抓 M2（未覆核就釋出暫收的路徑到不了）與 M4（沒有表達覆核範圍的不變量），已補強，README「How It Was Checked」照實記錄。
+- **重新部署（Altitude：讓評審能驗證鏈上 = 原始碼）**：新 registry `0x1AE2…1245`、facility `0x9116…0ab0`、MockUSDC `0x687d…645d`；仲裁人改用獨立錢包 `0xd85f…CC8d`（私鑰在 `.env` 的 `DEMO_ARBITER_PRIVATE_KEY`）。先在 anvil fork 彩排全流程再上鏈。花費 0.0100 測試 ETH（幾乎都是轉給仲裁人的 0.01，今天 gas 極低）。binding 已重新產生。
+- **demo 第二幕（Range：清算人視角）**：第 7–11 步：聲請日後、刊登前的還款被「標記但擋不住」；清算命令 → REVIEW_REQUIRED；之後的還款進暫收；仲裁人提名 Official Receiver（2 天後生效，太早轉會 revert）；**第 11 步 2026-10-19 04:26 UTC（台灣 12:26）後執行 `bash demo/resolve-suspense.sh demo`**。
+- **s.127 清算人報告**（`tools/s127-report.ts`，只讀鏈上事件，任何人可重跑）：**抓到一個設計盲點**：第一幕駁回後從暫收釋出給放款方的 5,000，時間在第二件聲請（已提出未刊登）之後 → 也是聲請日後送到放款方的錢。報告總數 8,000（不是合約 view 函式的 3,000）。合約 `repaidSincePetitionPresented()` 只算直接轉手，已在註解標明（bytecode 不變）；合約只剩 1.6% gas 餘裕，不改合約。重點：**一件聲請被駁回，不代表之後的付款就安全**。
+- **前向測試（Altitude：與現行做法並行）**：`research/forward/daily.ts` + `.github/workflows/forward-test.yml`（每天記錄新刊登聲請與這些公司在 Companies House 的狀態，commit 時間戳公開）。**尚未推送、尚未啟用**：需要使用者同意推送，並在 GitHub repo 設定 secret `CH_API_KEY`。
+- 修了兩個工程問題：`.gitattributes` 強制 `*.sh` 用 LF（這台電腦 `core.autocrlf=true` 會把腳本變 CRLF，bash 會壞）；收集腳本遵守 `Retry-After`，並在連續兩次長時間封鎖時停止（circuit breaker）。
+
+### 16.2 進行中／卡住
+- **10 月樣本外驗證**：預測已在 10/17 11:44 commit（`27fe81d`，`research/petition-lag/holdout/PREDICTIONS.md`），尚未下載逐則資料。Gazette 回 `Retry-After: 900` 且連續封鎖（推測同一 IP 今天早上已抓過約 2,900 則、碰到每日額度）。**明天先送一個請求測試**，通了再跑：`GAZETTE_GAP_MS=3000 bun research/petition-lag/fetch.ts <cache> research/petition-lag/holdout/notices-oct.csv 2450:2026-10-01:2026-10-16 2451:2026-10-01:2026-10-16`，再用 analyze 的邏輯比對預測，結果不論成敗都照實寫。
+- **AMS、Tesco 在新 registry 的第一筆真實查核**：等 Gazette 解封再寫（避免被限流記成「無法查核」）：`cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0 --broadcast`。
+
+### 16.3 需要使用者決定／動手
+1. 推送本機的 commit 到 GitHub（含 `.github/workflows/forward-test.yml`）。
+2. 在 GitHub repo Settings → Secrets 新增 `CH_API_KEY`，前向測試才會跑 Companies House 部分。
+3. （建議）註冊 CE-File 公開查詢帳號，查 AMS 的 `CR-2026-006286`，回報聲請出現在事件紀錄的日期 → 人類外部裁判。
+4. Sourcify 原始碼驗證（讓 Etherscan 顯示原始碼、證明鏈上 = repo）：要同意才做。
+5. 10/19 12:26 後執行 demo 第 11 步。
