@@ -38,6 +38,7 @@ mkdirSync(cacheDir, { recursive: true })
 
 let last = 0
 const failures: string[] = []
+let longBlocks = 0 // consecutive long rate-limit blocks
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const getJson = async (url: string, cacheKey: string): Promise<any> => {
@@ -49,6 +50,7 @@ const getJson = async (url: string, cacheKey: string): Promise<any> => {
 		last = Date.now()
 		const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
 		if (res.ok) {
+			longBlocks = 0
 			const text = await res.text()
 			writeFileSync(file, text)
 			return JSON.parse(text)
@@ -56,6 +58,11 @@ const getJson = async (url: string, cacheKey: string): Promise<any> => {
 		if (res.status === 404) return null
 		// Honour Retry-After (the Gazette sends 900 s on 429); retrying sooner only extends the block.
 		const retryAfter = Number(res.headers.get('retry-after'))
+		// Circuit breaker: two long blocks in a row means a quota, not a blip. Stop; the cache lets a later run resume.
+		if (retryAfter >= 600 && ++longBlocks >= 2) {
+			console.log(`Gazette keeps blocking (Retry-After ${retryAfter} s). Stopping; rerun later to resume from the cache.`)
+			process.exit(2)
+		}
 		const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? (retryAfter + 5) * 1000 : 5000 * 2 ** attempt
 		console.log(`  HTTP ${res.status} on ${cacheKey}, waiting ${Math.round(waitMs / 1000)} s`)
 		await sleep(waitMs)
