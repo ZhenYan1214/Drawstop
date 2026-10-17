@@ -177,7 +177,7 @@ Companies House adverse status (liquidation, administration, dissolved, …) is 
 **What it cannot do**
 
 - **The legal analysis is English law.** Statute, rules and cases cited are those of England and Wales. Scotland and Northern Ireland have their own insolvency rules; companies registered there are monitored through the same sources, but their procedure and notice timing are not analysed.
-- **It does not see a petition before it is advertised.** "Not found" never excludes a petition presented but not yet advertised, and some petitions are never advertised at all: they can be withdrawn before advertisement ([IR 2016 r.7.13](https://www.legislation.gov.uk/uksi/2016/1024/rule/7.13)), or the court can restrain advertisement. Repayments made between presentation and advertisement cannot be stopped, only surfaced afterwards.
+- **It does not see a petition before it is advertised.** "Not found" never excludes a petition presented but not yet advertised, and some petitions are never advertised at all: they can be withdrawn before advertisement ([IR 2016 r.7.13](https://www.legislation.gov.uk/uksi/2016/1024/rule/7.13)), or the court can restrain advertisement. Repayments made between presentation and advertisement cannot be stopped, only surfaced afterwards. This is a limit of the free open data, not of the law: of 401 England-and-Wales petitions advertised 1–16 October 2026, 397 (99%) sit in the High Court or Business and Property Courts ([`courts.ts`](research/petition-lag/courts.ts)), whose filings the HMCTS [CE-File public search](https://www.gov.uk/government/publications/how-to-use-the-hmcts-e-filing-service/create-a-public-search-and-request-office-copies) covers, and practitioners can ask the court's petitions registry. Neither is an open API, and we have not yet confirmed what a non-party sees there before advertisement; an authorised court-data feed could be added as one more source in the same registry.
 - **Consensus is not correctness.** CRE consensus proves the nodes fetched and normalized the same data; it cannot fix a registry that is late or wrong.
 - **Single-node simulation.** `cre workflow simulate` runs consensus on one node; multi-node agreement is designed, not demonstrated. Sepolia writes go through Chainlink's simulation forwarder, whose signature checking we have not verified: they demonstrate the flow, not report authenticity.
 - **No direct authority** covers a smart-contract suspense account under s.127; the treatment above is our reading of the cases cited.
@@ -284,37 +284,61 @@ DESIGN.md                     full specification
 
 ## Demo on Sepolia
 
-### First CRE writes, live sources (2026-10-14)
-
-| Company | Attestation | Transaction |
-|---|---|---|
-| AMS FACILITIES (SW) LTD (11877818) | #1: `GZ_INSOLVENCY_PROCEEDING` (winding-up order, Gazette 5229442); Companies House `active` | [`0x5bc10a05…`](https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda) |
-| TESCO PLC (00445790), control | #2: nothing found; LEI matches company number | [`0x46f6e23d…`](https://sepolia.etherscan.io/tx/0x46f6e23dd3026d014f62785157b20ecf84aa42e3512b374f9e8aa873a4ff819a) |
-
-Registry: [`0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897`](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897). Read back with `cast call 0xE1e4…1897 "getLatest(bytes32)" <entityId>`; the forwarder does not revert when a receiver fails, so success is confirmed from registry state, not only the transaction status.
-
-### Loan scenario, fictional borrower DM000001 (2026-10-15)
-
-A facility for a **fictional** company, fed by [`demo/scenario-server.ts`](demo/scenario-server.ts) (Gazette- and Companies House-shaped JSON) and run with [`demo/run-demo.sh`](demo/run-demo.sh). Terms: 30-day petition carve-out counted from presentation. Every CRE step is `cre workflow simulate --broadcast`.
-
-| Step | What happened | CRE attestation |
-|---|---|---|
-| 1 | Clean record (cron) → `NORMAL` | [`0xe582da43…`](https://sepolia.etherscan.io/tx/0xe582da43783294210b2d3b67c0c4021df77c7249c4d9c315564d167bad1e4f6e) |
-| 2 | Borrower requests 10,000 ([`0xc1b0333b…`](https://sepolia.etherscan.io/tx/0xc1b0333b5a208c4fc83daa8f7764417dde612746191aa06c555e08718be28a6a)) → log trigger → fresh check → drawdown executed | [`0x22ae41a5…`](https://sepolia.etherscan.io/tx/0x22ae41a5c7f7028bcedc66afc3bf6245809a1dc24be30a29668fc989f4373f0b) |
-| 3 | Petition advertised (presented 12 days earlier) → `PETITION_PENDING` | [`0x22e187ba…`](https://sepolia.etherscan.io/tx/0x22e187bab6d04512681d711be7ae0f38d349851c8898156c36f218a9a517ef65) |
-| 4 | Second request → fresh check → `executeDrawdown` reverts `DrawdownsBlocked` | [`0x2ae4a2c1…`](https://sepolia.etherscan.io/tx/0x2ae4a2c140f532fc1a98312bd295501ca98ce94c99d138860818d5be147b5426) |
-| 5 | Borrower repays 5,000 → held in suspense, not passed to lender | — |
-| 6 | Dismissal (2461, same court case) → `NORMAL`; `releaseSuspense` pays the lender | [`0xacc82140…`](https://sepolia.etherscan.io/tx/0xacc8214034186b1d6c4219dc47a62536582f321e0b7e866e0e398e9b1c2487a0) |
+Current deployment, 2026-10-17, from the source in this repository. Every CRE step is `cre workflow simulate --broadcast`; success is confirmed by reading registry and facility state back, because the forwarder does not revert when a receiver fails.
 
 | Contract | Address |
 |---|---|
-| LoanFacility | [`0x1652af1a405f7d73ded60f684d64c7313f4c71ec`](https://sepolia.etherscan.io/address/0x1652af1a405f7d73ded60f684d64c7313f4c71ec) |
-| MockUSDC | [`0x658b728a1e100dd5bac2f69a2135950e399b952e`](https://sepolia.etherscan.io/address/0x658b728a1e100dd5bac2f69a2135950e399b952e) |
+| StatusRegistry | [`0x1AE232515B9C011152335e68314f12926e4d1245`](https://sepolia.etherscan.io/address/0x1AE232515B9C011152335e68314f12926e4d1245) |
+| LoanFacility (fictional DM000001) | [`0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0`](https://sepolia.etherscan.io/address/0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0) |
+| MockUSDC | [`0x687d8a7c046f6e44bfc9f031411fa5618d17645d`](https://sepolia.etherscan.io/address/0x687d8a7c046f6e44bfc9f031411fa5618d17645d) |
 
-Final state read back from chain: drawdown 0 executed, drawdown 1 not executed, repayment 0 flagged `heldInSuspense`, suspense 0, lender holds 5,000 mUSDC. Full log: [`demo/sepolia-run.log`](demo/sepolia-run.log).
+Roles are separate wallets: lender `0x4EC7…459d`, borrower `0xa040…cF3a`, arbiter `0xd85f…CC8d`, Official Receiver stand-in `0x0ff1ce…0001`.
 
-> [!NOTE]
-> The Sepolia `StatusRegistry` and this facility were deployed before the 2026-10-15 corrections described in [DESIGN.md](DESIGN.md) (carve-out window, suspense recipients and reserve, review scope, report validation, "absence is not resolution"). The steps above behave the same under the current source, but the deployed bytecode is the older version. In that run the lender's wallet was also the arbiter; `run-demo.sh` now deploys with a separate arbiter.
+### Real companies, live sources
+
+AMS FACILITIES (SW) LTD (11877818) and TESCO PLC (00445790, control) are registered for public-record monitoring only ([registration](https://sepolia.etherscan.io/tx/0x85d4c5191be9ca080a2686c9ea91d3f690935e1e5e0ac4cc3c20cd0c41b95307)); no lending relationship is implied. Their first attestations on this registry are pending: the Gazette is rate-limiting our collection today. The earlier registry recorded both on 2026-10-14 (AMS: winding-up order found, Companies House `active`).
+
+### Loan scenario: fictional borrower DM000001
+
+A facility for a **fictional** company, fed by [`demo/scenario-server.ts`](demo/scenario-server.ts) (Gazette- and Companies House-shaped JSON) and run with [`demo/run-demo.sh`](demo/run-demo.sh). Terms: 30-day petition carve-out counted from presentation.
+
+**Act 1: petition, dismissal**
+
+| Step | What happened | Transaction |
+|---|---|---|
+| 1 | Clean record (cron) → `NORMAL` | [attestation](https://sepolia.etherscan.io/tx/0x0340ef5295cc614bd42bfcd40769ba9c08b46da35bd728002843fde2890a52fd) |
+| 2 | Borrower requests 10,000 ([request](https://sepolia.etherscan.io/tx/0x7183f561ddeef1f9a79df6866a830bfcc9ff01a0c8d87a45911f96dd74629c54)) → EVM log trigger → fresh check → drawdown executed | [attestation](https://sepolia.etherscan.io/tx/0x2e662911011d6f321e8d119e555ca96c9cafb3a5497c0c2ac730eb5f456dbaca) |
+| 3 | Petition advertised (presented 12 days earlier) → `PETITION_PENDING` | [attestation](https://sepolia.etherscan.io/tx/0xabba91904c9e9e4e364e9e9484c81b034fcdeca76740d4dc1f4da19c855011d1) |
+| 4 | Second request → fresh check → `executeDrawdown` reverts `DrawdownsBlocked` | [attestation](https://sepolia.etherscan.io/tx/0xcdc4cae53fde6cf25feb7a001465572ea0bf75918e19a03d8ae174e6a44c601a) |
+| 5 | Borrower repays 5,000 → held in suspense | [repayment](https://sepolia.etherscan.io/tx/0x11d9768f3f02f9a97e1d2956e3a319e041a02365bbb96c0a60634128c46a127d) |
+| 6 | Dismissal (2461, same court case) → `NORMAL`; `releaseSuspense` pays the lender | [attestation](https://sepolia.etherscan.io/tx/0x2534f98492169e5063779f546763f8eebeb1fa4aaa5af809b3a6222e4011c483) |
+
+**Act 2: winding-up order, what reached the lender, what the liquidator gets back**
+
+| Step | What happened | Transaction |
+|---|---|---|
+| 7 | Borrower repays 3,000 while the public record looks clean → passed to the lender | [repayment](https://sepolia.etherscan.io/tx/0x474eee8cb42a4ffa6906679ec445e5733de0e1a8f73c0594c533744ea1b1328a) |
+| 8 | Winding-up order advertised; its petition was presented 12 days earlier and never seen → `REVIEW_REQUIRED`; `repaidSincePetitionPresented()` = 3,000: **surfaced, not stopped** | [attestation](https://sepolia.etherscan.io/tx/0x22f114ba458bf1efb5568caa55b6013e48824564c705db8819c799ff781025d2) |
+| 9 | Borrower repays 2,000 → held in suspense | [repayment](https://sepolia.etherscan.io/tx/0x8e884ef9d70d724bf8d3924403a27310afb2aa04002be53121030ebc08ff17a6) |
+| 10 | Arbiter nominates the Official Receiver stand-in, effective 2026-10-19 04:26 UTC; an immediate `resolveSuspense` reverts | [nomination](https://sepolia.etherscan.io/tx/0x541378601a872a36e1d3774d0acaca45583168b6ce31343ab7f79ba0deb117fe) |
+| 11 | After the 2-day delay, the arbiter returns the 2,000 to the Official Receiver stand-in ([`demo/resolve-suspense.sh`](demo/resolve-suspense.sh)) | pending (2026-10-19) |
+
+State read back after step 10: drawdown 0 executed, drawdown 1 not executed, repayments 0 and 2 `heldInSuspense`, repayment 1 passed through, suspense 2,000, status `REVIEW_REQUIRED`. Full log: [`demo/sepolia-run.log`](demo/sepolia-run.log).
+
+### s.127 statement for the liquidator
+
+[`tools/s127-report.ts`](tools/s127-report.ts) rebuilds, from on-chain events only, what an insolvency office-holder would examine: every payment after the petition's presentation date, where it went, and what happened to suspense. On this facility ([`demo/s127-statement-DM000001.md`](demo/s127-statement-DM000001.md)) it shows **8,000 reached the lender after presentation, not 3,000**: the 5,000 released from suspense after the first petition was dismissed went to the lender after the second petition had already been presented, though not yet advertised. A dismissal clears only its own petition. The contract's `repaidSincePetitionPresented()` counts direct pass-throughs only; the statement is the complete figure.
+
+```bash
+bun tools/s127-report.ts 0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0 https://ethereum-sepolia-rpc.publicnode.com 11931854
+```
+
+<details>
+<summary><b>Earlier deployment (superseded)</b></summary>
+
+On 2026-10-14/15, before the corrections in [DESIGN.md](DESIGN.md), registry [`0xE1e4…1897`](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897) recorded AMS ([tx](https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda)) and Tesco ([tx](https://sepolia.etherscan.io/tx/0x46f6e23dd3026d014f62785157b20ecf84aa42e3512b374f9e8aa873a4ff819a)), and facility [`0x1652…71ec`](https://sepolia.etherscan.io/address/0x1652af1a405f7d73ded60f684d64c7313f4c71ec) ran act 1 with the lender also acting as arbiter.
+
+</details>
 
 <details>
 <summary><b>Sepolia gas notes (measured October 2026)</b></summary>
