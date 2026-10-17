@@ -283,7 +283,9 @@ contract LoanFacility {
         }
     }
 
-    /// @notice Convenience view: repayments passed to the lender since the pending petition was presented.
+    /// @notice Convenience view: repayments passed straight to the lender since the latest petition was presented.
+    ///         Counts direct pass-throughs only, not suspense later released to the lender (e.g. after an earlier
+    ///         petition was dismissed). tools/s127-report.ts rebuilds the complete figure from events.
     function repaidSincePetitionPresented() external view returns (uint256) {
         uint64 presentedAt = registry.getLatest(entityId).petitionPresentedAt;
         return presentedAt == 0 ? 0 : _repaidToLenderSince(presentedAt);
