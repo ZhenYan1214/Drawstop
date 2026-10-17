@@ -5,3 +5,4 @@ contracts/evm/cache/
 contracts/evm/broadcast/
 .cre_build_tmp.js
 demo/last-run-rehearsal.json
+docs/dorahacks/node_modules/

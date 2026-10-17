@@ -50,7 +50,7 @@
   <text x="286" y="266" class="h">GLEIF · cross-check only</text>
   <text x="286" y="286" class="s">LEI ↔ company number; never pauses on its own</text>
 
-  <rect x="270" y="320" width="360" height="82" rx="8" class="key"/>
+  <rect x="270" y="320" width="360" height="90" rx="8" class="key"/>
   <text x="286" y="344" class="h">Identical-value consensus, per source</text>
   <text x="286" y="364" class="s">normalized enums, dates and hashes only</text>
   <text x="286" y="382" class="s">failure or disagreement → "could not be checked",</text>

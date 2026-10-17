@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="554" viewBox="0 0 960 554" role="img" aria-label="Drawstop: UK insolvency notices in, LMA-style pause-and-review out. Chainlink CRE on Sepolia." font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="960" height="554" fill="#0d1117"/><g transform="translate(70,150) scale(1.55)">
+  <rect width="160" height="160" rx="14" fill="#0d1117"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- drawdown, stopped short of the gate -->
+    <path d="M80 26 V74" stroke="#c9d1d9" stroke-width="5"/>
+    <path d="M65 60 L80 75 L95 60" stroke="#c9d1d9" stroke-width="5"/>
+    <!-- the drawstop -->
+    <path d="M36 92 H124" stroke="#e3b341" stroke-width="9"/>
+    <!-- suspense: funds held, not passed on -->
+    <rect x="54" y="108" width="52" height="26" rx="6" stroke="#8b949e" stroke-width="3" stroke-dasharray="5 5"/>
+  </g>
+
+</g><text x="355" y="245" font-size="92" font-weight="700" fill="#ffffff">Drawstop</text><text x="360" y="300" font-size="30" font-weight="400" fill="#c9d1d9">UK insolvency notices in,</text><text x="360" y="340" font-size="30" font-weight="400" fill="#c9d1d9">LMA-style pause-and-review out</text><rect x="360" y="380" width="250" height="40" rx="20" fill="none" stroke="#3987e5" stroke-width="2"/><text x="485" y="406" font-size="17" font-weight="600" fill="#79b8ff" text-anchor="middle">Chainlink CRE · Sepolia</text><text x="630" y="406" font-size="17" font-weight="400" fill="#8b949e">live · source-verified</text>
+</svg>

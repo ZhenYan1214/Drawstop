@@ -17,8 +17,8 @@
   <text x="30" y="53" class="sub">Public record, checked 2026-10-14 · typical: Q3 2026 median was 36 days, 79% past a 30-day carve-out</text>
 
   <!-- invisible period: presentation to advertisement (day 0 to 49), 12.19 px/day from x=60 -->
-  <rect x="60" y="150" width="597" height="22" fill="#ffebe9"/>
-  <text x="358" y="166" text-anchor="middle" class="lbl red">49 days · petition presented, not in any free public source</text>
+  <rect x="60" y="144" width="597" height="28" fill="#ffebe9"/>
+  <text x="358" y="161" text-anchor="middle" class="lbl red">49 days · petition presented, not in any free public source</text>
   <line x1="60" y1="172" x2="840" y2="172" stroke="#1f2328" stroke-width="2"/>
 
   <!-- 2026-08-11 presented -->
