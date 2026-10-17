@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "rpc": "https://ethereum-sepolia-rpc.publicnode.com",
+  "registry": "0x1AE232515B9C011152335e68314f12926e4d1245",
+  "facility": "0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0",
+  "usdc": "0x687d8a7c046f6e44bfc9f031411fa5618d17645d",
+  "officeHolder": "0x0ff1ce0000000000000000000000000000000001",
+  "officeHolderFrom": 1792383996
+}

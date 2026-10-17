@@ -1,40 +1,39 @@
 
 == Deploy MockUSDC + LoanFacility for DM000001 (30-day petition carve-out from presentation) ==
-   funded borrower with 0.02 test ETH
-   MockUSDC 0x658b728a1e100dd5bac2f69a2135950e399b952e
-   LoanFacility 0x1652af1a405f7d73ded60f684d64c7313f4c71ec (borrower 0xa0401d2E0671527e20489ffa059A4C3a4541cF3a, lender/arbiter 0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d)
+   MockUSDC 0x687d8a7c046f6e44bfc9f031411fa5618d17645d
+   LoanFacility 0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0 (borrower 0xa0401d2E0671527e20489ffa059A4C3a4541cF3a, lender 0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d, arbiter 0xd85fc9E99902967BC115026A13f7C57152D9CC8d)
    facility status: STALE
 
 == 1. Clean public record -> CRE check (cron) ==
    scenario mirror: clean
    cre> Monitoring 1 entities; this run: DM000001
    cre> [DM000001] eventBits=0b0 unavailableBits=0b0 petitionPresentedAt=0 petitionPublishedAt=0
-   cre> [DM000001] evidenceHash 0x4d10880e0b05c56fdd9af9f378e766c9eaa1355f002e7bc3b7c4b704fbb35bf4
-   cre> [DM000001] attestation written, tx 0xe582da43783294210b2d3b67c0c4021df77c7249c4d9c315564d167bad1e4f6e
+   cre> [DM000001] evidenceHash 0x9bf9668bb06f293c97c3aa8af90d9cd4ade7979635efcd372e990b207962122b
+   cre> [DM000001] attestation written, tx 0x0340ef5295cc614bd42bfcd40769ba9c08b46da35bd728002843fde2890a52fd
    facility status: NORMAL
 
 == 2. Borrower requests 10,000 -> DrawdownRequested triggers a fresh CRE check (EVM log trigger) ==
-   request tx 0xc1b0333b5a208c4fc83daa8f7764417dde612746191aa06c555e08718be28a6a
+   request tx 0x7183f561ddeef1f9a79df6866a830bfcc9ff01a0c8d87a45911f96dd74629c54
    cre> DrawdownRequested #0 for DM000001, amount 10000000000
    cre> [DM000001] eventBits=0b0 unavailableBits=0b0 petitionPresentedAt=0 petitionPublishedAt=0
-   cre> [DM000001] evidenceHash 0xed88784363d46f7c11c25b4a304be9ed7cddd106fd43dbb9d8951b9a0d9e17d0
-   cre> [DM000001] attestation written, tx 0x22ae41a5c7f7028bcedc66afc3bf6245809a1dc24be30a29668fc989f4373f0b
+   cre> [DM000001] evidenceHash 0x03cf6126da219984f5724e19da07cc505499c55badd3c4f85b9d687753d0ccbb
+   cre> [DM000001] attestation written, tx 0x2e662911011d6f321e8d119e555ca96c9cafb3a5497c0c2ac730eb5f456dbaca
    executeDrawdown(0): released
    borrower mUSDC 110000000000 | lender mUSDC 0 | suspense 0
 
 == 3. Winding-up petition appears in the Gazette (presented 12 days ago) -> CRE check ==
    scenario mirror: petition
    cre> Monitoring 1 entities; this run: DM000001
-   cre> [DM000001] eventBits=0b100 unavailableBits=0b0 petitionPresentedAt=1790957871 petitionPublishedAt=1791991071
-   cre> [DM000001] evidenceHash 0xcee9ed29a2c2279daedeb4640176e4cace4b3994ff058eb5fabc0544ed64b5bb
-   cre> [DM000001] attestation written, tx 0x22e187bab6d04512681d711be7ae0f38d349851c8898156c36f218a9a517ef65
+   cre> [DM000001] eventBits=0b100 unavailableBits=0b0 petitionPresentedAt=1791174185 petitionPublishedAt=1792207385
+   cre> [DM000001] evidenceHash 0x4521b02871cf6d6e55078dfec2093540073b02527579ba4bcb3a9edfa64db7c3
+   cre> [DM000001] attestation written, tx 0xabba91904c9e9e4e364e9e9484c81b034fcdeca76740d4dc1f4da19c855011d1
    facility status: PETITION_PENDING
 
 == 4. Borrower requests another 10,000 -> fresh check -> drawdown blocked ==
    cre> DrawdownRequested #1 for DM000001, amount 10000000000
-   cre> [DM000001] eventBits=0b100 unavailableBits=0b0 petitionPresentedAt=1790957871 petitionPublishedAt=1791991071
-   cre> [DM000001] evidenceHash 0x68a5fb378d6ee6ac3c88fd29e2cd040b6296858d14b7e1558773c40fcc2e678f
-   cre> [DM000001] attestation written, tx 0x2ae4a2c140f532fc1a98312bd295501ca98ce94c99d138860818d5be147b5426
+   cre> [DM000001] eventBits=0b100 unavailableBits=0b0 petitionPresentedAt=1791174185 petitionPublishedAt=1792207385
+   cre> [DM000001] evidenceHash 0xabe8ca388dc39223b4b928909bbcf73f3df8a27dee56c70a6b085f246e268384
+   cre> [DM000001] attestation written, tx 0xcdc4cae53fde6cf25feb7a001465572ea0bf75918e19a03d8ae174e6a44c601a
    executeDrawdown(1): reverted (DrawdownsBlocked: PETITION_PENDING)
 
 == 5. Borrower repays 5,000 while the petition is live -> held in suspense (s.127) ==
@@ -44,10 +43,32 @@
    scenario mirror: dismissed
    cre> Monitoring 1 entities; this run: DM000001
    cre> [DM000001] eventBits=0b10000 unavailableBits=0b0 petitionPresentedAt=0 petitionPublishedAt=0
-   cre> [DM000001] evidenceHash 0xfdc9ffa17018fd2b1c74be40ce06348b5c7589babd74671b546b2b8e32385348
-   cre> [DM000001] attestation written, tx 0xacc8214034186b1d6c4219dc47a62536582f321e0b7e866e0e398e9b1c2487a0
+   cre> [DM000001] evidenceHash 0xd4f1b6fafb69a896e4e64f48b405e4e45bdaa73be15293c86ef57c70e8473ce5
+   cre> [DM000001] attestation written, tx 0x2534f98492169e5063779f546763f8eebeb1fa4aaa5af809b3a6222e4011c483
    facility status: NORMAL
    releaseSuspense(): suspense paid to lender
    borrower mUSDC 105000000000 | lender mUSDC 5000000000 | suspense 0
 
-Facility: 0x1652af1a405f7d73ded60f684d64c7313f4c71ec   Registry: 0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897   RPC: https://ethereum-sepolia-rpc.publicnode.com
+== 7. Borrower repays 3,000 while the public record looks clean -> passed to the lender ==
+   borrower mUSDC 102000000000 | lender mUSDC 8000000000 | suspense 0
+
+== 8. Winding-up order advertised; its petition was presented 12 days ago and never seen -> CRE check ==
+   scenario mirror: order
+   cre> Monitoring 1 entities; this run: DM000001
+   cre> [DM000001] eventBits=0b1000 unavailableBits=0b0 petitionPresentedAt=1791174332 petitionPublishedAt=1792207532
+   cre> [DM000001] evidenceHash 0x11680168ef1f14dabc4bfd1d9fec6bd1c1d24e52385d5c0c5dcc1e73b9315607
+   cre> [DM000001] attestation written, tx 0x22f114ba458bf1efb5568caa55b6013e48824564c705db8819c799ff781025d2
+   facility status: REVIEW_REQUIRED
+   repaid to the lender since the petition was presented: 3000000000
+   (exposed to s.127 if the order stands: surfaced, not stopped. Drawstop cannot see a petition before advertisement)
+
+== 9. Borrower repays 2,000 after the order -> held in suspense ==
+   borrower mUSDC 100000000000 | lender mUSDC 8000000000 | suspense 2000000000
+
+== 10. Arbiter nominates the Official Receiver (stand-in 0x0ff1ce0000000000000000000000000000000001); effective only after 2 days ==
+   funded arbiter with 0.01 test ETH
+   office-holder may receive suspense from 2026-10-19T04:26:36.000Z
+   resolveSuspense(office-holder) now: reverted (nomination not yet effective)
+   run after that time:  bash demo/resolve-suspense.sh demo
+
+Facility: 0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0   Registry: 0x1AE232515B9C011152335e68314f12926e4d1245   RPC: https://ethereum-sepolia-rpc.publicnode.com

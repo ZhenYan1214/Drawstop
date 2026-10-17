@@ -15,7 +15,8 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 CAST=${CAST:-cast}
 CRE=${CRE:-cre}
 SCENARIO_URL=${SCENARIO_URL:-http://localhost:8787}
-REGISTRY=0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897
+# Registry: REGISTRY env var, else the one in config.demo.json (deploy it with script/DeployMonitor.s.sol)
+REGISTRY=${REGISTRY:-$(node -e 'console.log(require(process.argv[1]).registryAddress)' "$ROOT/status-monitor/config.demo.json")}
 case "$MODE" in
 	rehearsal) RPC=http://127.0.0.1:8546; TARGET=rehearsal-settings ;;
 	demo) RPC=https://ethereum-sepolia-rpc.publicnode.com; TARGET=demo-settings ;;
@@ -68,8 +69,8 @@ RUN="$ROOT/contracts/evm/broadcast/DeployScenario.s.sol/$($CAST chain-id --rpc-u
 read -r USDC FACILITY < <(node -e 'const j=require(process.argv[1]);const c=j.transactions.filter(t=>t.transactionType==="CREATE");console.log(c[0].contractAddress,c[1].contractAddress)' "$RUN")
 echo "   MockUSDC $USDC"
 echo "   LoanFacility $FACILITY (borrower $BORROWER, lender $LENDER, arbiter $ARBITER)"
-node -e 'const fs=require("fs");const f=process.argv[1];const c=JSON.parse(fs.readFileSync(f));c.facilityAddress=process.argv[2];fs.writeFileSync(f,JSON.stringify(c,null,2)+"\n")' \
-	"$ROOT/status-monitor/config.demo.json" "$FACILITY"
+node -e 'const fs=require("fs");const f=process.argv[1];const c=JSON.parse(fs.readFileSync(f));c.facilityAddress=process.argv[2];c.registryAddress=process.argv[3];fs.writeFileSync(f,JSON.stringify(c,null,2)+"\n")' \
+	"$ROOT/status-monitor/config.demo.json" "$FACILITY" "$REGISTRY"
 status
 
 # ── 1. Clean record: drawdown goes through ─────────────────────────────────
@@ -108,6 +109,52 @@ cre_sim 0
 status
 send "$LENDER_KEY" "$FACILITY" "releaseSuspense()" >/dev/null && echo "   releaseSuspense(): suspense paid to lender"
 balances
+
+# ── 4. A winding-up order: what already reached the lender, and what the liquidator gets back ──
+# Needs DEMO_ARBITER_PRIVATE_KEY (the arbiter acts on-chain here). The office-holder is a demo stand-in address.
+ARBITER_KEY=$(grep "^DEMO_ARBITER_PRIVATE_KEY=" "$ROOT/.env" | cut -d= -f2- | tr -d '\r' || true)
+OFFICE_HOLDER=0x0ff1ce0000000000000000000000000000000001
+STATE="$ROOT/demo/last-run-$MODE.json"
+if [ -z "$ARBITER_KEY" ]; then
+	echo "   (DEMO_ARBITER_PRIVATE_KEY not set: skipping the winding-up order act)"
+else
+	step "7. Borrower repays 3,000 while the public record looks clean -> passed to the lender"
+	send "$BORROWER_KEY" "$FACILITY" "repay(uint256)" 3000000000 >/dev/null
+	balances
+
+	step "8. Winding-up order advertised; its petition was presented 12 days ago and never seen -> CRE check"
+	scenario order
+	cre_sim 0
+	status
+	echo "   repaid to the lender since the petition was presented: $($CAST call "$FACILITY" "repaidSincePetitionPresented()(uint256)" --rpc-url "$RPC" | cut -d' ' -f1)"
+	echo "   (exposed to s.127 if the order stands: surfaced, not stopped. Drawstop cannot see a petition before advertisement)"
+
+	step "9. Borrower repays 2,000 after the order -> held in suspense"
+	send "$BORROWER_KEY" "$FACILITY" "repay(uint256)" 2000000000 >/dev/null
+	balances
+
+	step "10. Arbiter nominates the Official Receiver (stand-in $OFFICE_HOLDER); effective only after 2 days"
+	if [ "$($CAST balance "$ARBITER" --rpc-url "$RPC")" = "0" ]; then
+		$CAST send --private-key "$LENDER_KEY" --rpc-url "$RPC" --value 0.01ether --gas-limit 300000 "$ARBITER" >/dev/null && echo "   funded arbiter with 0.01 test ETH"
+	fi
+	send "$ARBITER_KEY" "$FACILITY" "nominateOfficeHolder(address,bytes32)" "$OFFICE_HOLDER" "$($CAST keccak 'Gazette notice 9000003: winding-up order (demo)')" >/dev/null
+	FROM=$($CAST call "$FACILITY" "officeHolderFrom()(uint64)" --rpc-url "$RPC" | cut -d' ' -f1)
+	echo "   office-holder may receive suspense from $(node -e 'console.log(new Date(process.argv[1]*1000).toISOString())' "$FROM")"
+	if send "$ARBITER_KEY" "$FACILITY" "resolveSuspense(address,bytes32)" "$OFFICE_HOLDER" "$($CAST keccak 'early attempt')" >/dev/null 2>&1; then
+		echo "   UNEXPECTED: suspense moved before the nomination took effect"; exit 1
+	fi
+	echo "   resolveSuspense(office-holder) now: reverted (nomination not yet effective)"
+
+	node -e 'require("fs").writeFileSync(process.argv[1],JSON.stringify({mode:process.argv[2],rpc:process.argv[3],registry:process.argv[4],facility:process.argv[5],usdc:process.argv[6],officeHolder:process.argv[7],officeHolderFrom:+process.argv[8]},null,2)+"\n")' \
+		"$STATE" "$MODE" "$RPC" "$REGISTRY" "$FACILITY" "$USDC" "$OFFICE_HOLDER" "$FROM"
+	if [ "$MODE" = rehearsal ]; then
+		$CAST rpc evm_increaseTime 172801 --rpc-url "$RPC" >/dev/null && $CAST rpc evm_mine --rpc-url "$RPC" >/dev/null
+		echo "   (rehearsal: fork clock advanced 2 days)"
+		bash "$ROOT/demo/resolve-suspense.sh" "$MODE"
+	else
+		echo "   run after that time:  bash demo/resolve-suspense.sh demo"
+	fi
+fi
 
 echo
 echo "Facility: $FACILITY   Registry: $REGISTRY   RPC: $RPC"

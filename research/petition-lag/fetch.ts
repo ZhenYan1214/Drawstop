@@ -54,8 +54,11 @@ const getJson = async (url: string, cacheKey: string): Promise<any> => {
 			return JSON.parse(text)
 		}
 		if (res.status === 404) return null
-		console.log(`  HTTP ${res.status} on ${cacheKey}, backing off`)
-		await sleep(5000 * 2 ** attempt) // 429/5xx: back off 5, 10, 20, 40, 80 s
+		// Honour Retry-After (the Gazette sends 900 s on 429); retrying sooner only extends the block.
+		const retryAfter = Number(res.headers.get('retry-after'))
+		const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? (retryAfter + 5) * 1000 : 5000 * 2 ** attempt
+		console.log(`  HTTP ${res.status} on ${cacheKey}, waiting ${Math.round(waitMs / 1000)} s`)
+		await sleep(waitMs)
 	}
 	failures.push(cacheKey) // recorded, not cached: a rerun retries it
 	return null
