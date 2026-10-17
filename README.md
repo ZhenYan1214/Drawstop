@@ -199,6 +199,7 @@ We tried not to let the model that wrote the code be the only judge of it.
 | Unit tests | [`LoanFacility.t.sol`](contracts/evm/test/LoanFacility.t.sol): one scenario per test, including the real AMS timeline and nine issues found in an adversarial audit | 42 pass |
 | Invariant fuzzing | [`LoanFacility.invariant.t.sol`](contracts/evm/test/LoanFacility.invariant.t.sol): Foundry calls every action in random order as borrower, lender, arbiter, CRE forwarder and an outsider, then checks five properties after every call (suspense always backed by tokens, tokens conserved, suspense ledger balances, no forbidden action succeeds, and a reference model that independently decides which petitions or proceedings must still block drawdowns) | 5 invariants, 256 runs × 500 calls, pass |
 | Mutation testing | Five bugs planted in `LoanFacility.sol` one at a time, to check that the fuzzer would notice | 5 of 5 caught (see below) |
+| Deployed = source | [Sourcify](https://sourcify.dev) recompiled the repository source and matched both creation and runtime bytecode of all three Sepolia contracts (constructor arguments included). Built without CBOR metadata to fit the gas cap, so the status is `match` rather than `exact_match` | 3 of 3 match |
 | Real data | Workflow parsers tested on responses recorded from the Gazette, Companies House and GLEIF; the [petition-lag study](research/petition-lag) runs the same parsers over 2,868 notices | 24 workflow tests pass |
 
 <details>
@@ -288,9 +289,9 @@ Current deployment, 2026-10-17, from the source in this repository. Every CRE st
 
 | Contract | Address |
 |---|---|
-| StatusRegistry | [`0x1AE232515B9C011152335e68314f12926e4d1245`](https://sepolia.etherscan.io/address/0x1AE232515B9C011152335e68314f12926e4d1245) |
-| LoanFacility (fictional DM000001) | [`0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0`](https://sepolia.etherscan.io/address/0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0) |
-| MockUSDC | [`0x687d8a7c046f6e44bfc9f031411fa5618d17645d`](https://sepolia.etherscan.io/address/0x687d8a7c046f6e44bfc9f031411fa5618d17645d) |
+| StatusRegistry | [`0x1AE232515B9C011152335e68314f12926e4d1245`](https://sepolia.etherscan.io/address/0x1AE232515B9C011152335e68314f12926e4d1245) · [source verified](https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245) |
+| LoanFacility (fictional DM000001) | [`0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0`](https://sepolia.etherscan.io/address/0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0) · [source verified](https://repo.sourcify.dev/11155111/0x911646d683E2D9bFF45DEc5BcEE9b0bc142a0Ab0) |
+| MockUSDC | [`0x687d8a7c046f6e44bfc9f031411fa5618d17645d`](https://sepolia.etherscan.io/address/0x687d8a7c046f6e44bfc9f031411fa5618d17645d) · [source verified](https://repo.sourcify.dev/11155111/0x687D8A7C046f6e44bFC9f031411fA5618d17645D) |
 
 Roles are separate wallets: lender `0x4EC7…459d`, borrower `0xa040…cF3a`, arbiter `0xd85f…CC8d`, Official Receiver stand-in `0x0ff1ce…0001`.
 

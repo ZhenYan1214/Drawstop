@@ -439,5 +439,5 @@ Drawstop/
 1. 推送本機的 commit 到 GitHub（含 `.github/workflows/forward-test.yml`）。
 2. 在 GitHub repo Settings → Secrets 新增 `CH_API_KEY`，前向測試才會跑 Companies House 部分。
 3. （建議）註冊 CE-File 公開查詢帳號，查 AMS 的 `CR-2026-006286`，回報聲請出現在事件紀錄的日期 → 人類外部裁判。
-4. Sourcify 原始碼驗證（讓 Etherscan 顯示原始碼、證明鏈上 = repo）：要同意才做。
+4. ~~Sourcify 原始碼驗證~~：10/17 完成，三個合約 creation 與 runtime bytecode 都 match（因關閉 CBOR metadata，狀態是 match 不是 exact_match）。
 5. 10/19 12:26 後執行 demo 第 11 步。
