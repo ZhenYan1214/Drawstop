@@ -3,7 +3,8 @@
 // normalized court case. Uses the workflow's own date and case-reference parsers, so the study measures exactly
 // what Drawstop would read.
 //
-//   bun research/petition-lag/fetch.ts <cacheDir> <outCsv>
+//   bun research/petition-lag/fetch.ts <cacheDir> <outCsv> [code:start:end ...]
+//   (default windows below; e.g. 2450:2026-10-01:2026-10-16 for the hold-out test)
 //
 // Polite by design: one request at a time, at least 1.5 s apart, every response cached on disk so a rerun or
 // a resumed run sends no repeat requests. Stores no names of individuals; Gazette data is OGL-licensed.
@@ -14,18 +15,25 @@ import { normalizeCaseRef, normalizeCompanyNumber, parseTimestamp } from '../../
 
 const BASE = 'https://www.thegazette.co.uk'
 const UA = 'Drawstop-research/0.1 (open-source hackathon research script; 1 request per 1.5 s)'
-const GAP_MS = 1500
+const GAP_MS = Number(process.env.GAZETTE_GAP_MS ?? 1500) // raise if the Gazette answers HTTP 429
 
 // Windows: petitions advertised in Q3 2026; orders and dismissals through 15 October, to catch outcomes.
-const QUERIES = [
+const DEFAULT_QUERIES = [
 	{ code: '2450', start: '2026-07-01', end: '2026-09-30' },
 	{ code: '2451', start: '2026-07-01', end: '2026-10-15' },
 	{ code: '2452', start: '2026-07-01', end: '2026-10-15' },
 	{ code: '2461', start: '2026-07-01', end: '2026-10-15' },
 ]
 
-const [cacheDir, outCsv] = process.argv.slice(2)
-if (!cacheDir || !outCsv) throw new Error('usage: fetch.ts <cacheDir> <outCsv>')
+const [cacheDir, outCsv, ...windowArgs] = process.argv.slice(2)
+if (!cacheDir || !outCsv) throw new Error('usage: fetch.ts <cacheDir> <outCsv> [code:start:end ...]')
+const QUERIES =
+	windowArgs.length > 0
+		? windowArgs.map((w) => {
+				const [code, start, end] = w.split(':')
+				return { code, start, end }
+			})
+		: DEFAULT_QUERIES
 mkdirSync(cacheDir, { recursive: true })
 
 let last = 0
@@ -72,7 +80,7 @@ const listIds = async (code: string, start: string, end: string): Promise<string
 	return ids
 }
 
-const rows: string[] = ['notice_id,code,company_numbers,published_at,presented_at,case_ref']
+const rows: string[] = ['notice_id,code,company_numbers,published_at,presented_at,case_ref,court_name,case_number_raw']
 for (const q of QUERIES) {
 	const ids = await listIds(q.code, q.start, q.end)
 	console.log(`${q.code} ${q.start}..${q.end}: ${ids.length} notices`)
@@ -95,6 +103,9 @@ for (const q of QUERIES) {
 				parseTimestamp(t.hasPublicationDate),
 				parseTimestamp(about.dateOfPetitionPresentation ?? about.datePetitionFiled),
 				normalizeCaseRef(court.caseNumber, court.caseYear),
+				// Appended columns (older readers ignore them): the court, and the case number as published
+				String(first(first(court.hasCourt)?.courtName) ?? '').replace(/[,\n]/g, ' ').trim(),
+				String(first(court.caseNumber) ?? '').replace(/[,\n]/g, ' ').trim(),
 			].join(','),
 		)
 		if (++done % 100 === 0) console.log(`  ${q.code}: ${done}/${ids.length}`)

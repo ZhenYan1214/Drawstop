@@ -10,7 +10,7 @@ hold at-risk repayments and call for human review when a statutory insolvency no
 
 [![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE%20v1.38-375BD2?logo=chainlink&logoColor=white)](https://docs.chain.link/cre)
 [![Network](https://img.shields.io/badge/network-Ethereum%20Sepolia-6b7280)](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897)
-[![Tests](https://img.shields.io/badge/tests-42%20contract%20%C2%B7%2024%20workflow-2ea44f)](#getting-started)
+[![Tests](https://img.shields.io/badge/tests-42%20unit%20%C2%B7%205%20invariants%20%C2%B7%2024%20workflow-2ea44f)](#how-it-was-checked)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [Problem](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Facility states](#how-the-facility-responds) · [Trust model](#trust-model-and-honest-limits) · [Chainlink usage](#where-chainlink-is-used) · [Getting started](#getting-started) · [Demo on Sepolia](#demo-on-sepolia)
@@ -190,6 +190,33 @@ Companies House adverse status (liquidation, administration, dissolved, …) is 
 
 ---
 
+## How It Was Checked
+
+We tried not to let the model that wrote the code be the only judge of it.
+
+| Check | What it is | Result |
+|---|---|---|
+| Unit tests | [`LoanFacility.t.sol`](contracts/evm/test/LoanFacility.t.sol): one scenario per test, including the real AMS timeline and nine issues found in an adversarial audit | 42 pass |
+| Invariant fuzzing | [`LoanFacility.invariant.t.sol`](contracts/evm/test/LoanFacility.invariant.t.sol): Foundry calls every action in random order as borrower, lender, arbiter, CRE forwarder and an outsider, then checks five properties after every call (suspense always backed by tokens, tokens conserved, suspense ledger balances, no forbidden action succeeds, and a reference model that independently decides which petitions or proceedings must still block drawdowns) | 5 invariants, 256 runs × 500 calls, pass |
+| Mutation testing | Five bugs planted in `LoanFacility.sol` one at a time, to check that the fuzzer would notice | 5 of 5 caught (see below) |
+| Real data | Workflow parsers tested on responses recorded from the Gazette, Companies House and GLEIF; the [petition-lag study](research/petition-lag) runs the same parsers over 2,868 notices | 24 workflow tests pass |
+
+<details>
+<summary><b>Mutation testing: the judge was tested too</b></summary>
+
+| Planted bug | Caught by | First attempt |
+|---|---|---|
+| M1 A drawdown may spend money held in suspense | suspense always backed | caught |
+| M2 Suspense may be released while a petition is still known | no forbidden action | **missed**: random reviews rarely matched the attestation, so the path that unlocks release was never reached. Fixed by having the fuzzer review bits the attestation actually shows |
+| M3 Repayments during a petition go straight to the lender | no forbidden action | caught |
+| M4 A review covers an occurrence that began after it | reference model | **missed**: no invariant expressed the rule. Fixed by adding the reference model |
+| M5 Expired reviews still count | reference model | caught after M4's fix |
+
+A fuzzer that passes because it never reaches the interesting states proves nothing; the two misses are why the final suite looks the way it does.
+</details>
+
+---
+
 ## Where Chainlink Is Used
 
 | File | Chainlink use |
@@ -210,7 +237,7 @@ Companies House adverse status (liquidation, administration, dissolved, …) is 
 **Quick check, no keys or accounts needed:**
 
 ```bash
-cd contracts/evm && forge test                        # 42 contract tests, incl. the real AMS timeline
+cd contracts/evm && forge test                        # 42 unit tests + 5 invariants (fuzzing, ~1 min)
 cd ../../status-monitor && bun test sources.test.ts   # 22 source tests on real responses recorded 2026-10-14
 ```
 
@@ -236,6 +263,7 @@ contracts/evm/
   src/StatusRegistry.sol      CRE receiver: attestations, firstSeen, report validation
   src/LoanFacility.sol        drawstop, carve-out window, s.127 suspense, reviews
   test/LoanFacility.t.sol     42 tests, incl. the real AMS timeline and audit scenarios
+  test/LoanFacility.invariant.t.sol  invariant fuzzing: 5 properties, reference model
   script/                     deployment scripts
 status-monitor/
   sources.ts                  Gazette, Companies House and GLEIF fetch + normalization
