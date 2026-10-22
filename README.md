@@ -290,7 +290,7 @@ Roles are separate wallets: lender `0x4EC7…459d`, borrower `0xa040…cF3a`, ar
 
 ### Real companies, live sources
 
-AMS FACILITIES (SW) LTD (11877818) and TESCO PLC (00445790, control) are registered for public-record monitoring only ([registration](https://sepolia.etherscan.io/tx/0x85d4c5191be9ca080a2686c9ea91d3f690935e1e5e0ac4cc3c20cd0c41b95307)); no lending relationship is implied. Their first attestations on this registry are pending: the Gazette is rate-limiting our collection today. The earlier registry recorded both on 2026-10-14 (AMS: winding-up order found, Companies House `active`).
+AMS FACILITIES (SW) LTD (11877818) and TESCO PLC (00445790, control) are registered for public-record monitoring only ([registration](https://sepolia.etherscan.io/tx/0x85d4c5191be9ca080a2686c9ea91d3f690935e1e5e0ac4cc3c20cd0c41b95307)); no lending relationship is implied. Live-source attestations on this registry, 2026-10-22: **AMS**, petition and winding-up order found in The Gazette (notices 5219886 and 5229442, same court case), while Companies House still showed `active` 15 days after the order ([tx](https://sepolia.etherscan.io/tx/0xfd78a1e72de6589e2dd1dda06b23b19219d9811de464011d0d4e437e10f1743e)); **Tesco**, nothing found in any of the three sources ([tx](https://sepolia.etherscan.io/tx/0xeb8dc9acdb12b147e43d8673dc88e26480c876ea56b99849c447bca859e33e6a)). The earlier registry recorded the same AMS result on 2026-10-14.
 
 ### Loan scenario: fictional borrower DM000001
 

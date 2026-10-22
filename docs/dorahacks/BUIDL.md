@@ -49,7 +49,7 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 
 ![What the loan contract did on Sepolia](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/demo.png)
 
-**What is real and what is staged.** The contracts, the CRE workflow and every transaction are real (Sepolia, [all linked in the README](https://github.com/ZhenYan1214/Drawstop#demo-on-sepolia)). The borrower is **fictional**: so that no real company is ever named as a borrower, its notices come from a local mirror shaped like The Gazette and Companies House, in **compressed time** (real petitions take weeks to reach a hearing). The same workflow on **live sources** recorded a real company, AMS FACILITIES (SW) LTD, as "winding-up order found" while Companies House still showed it "active" ([attestation, 14 Oct](https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda), monitoring only, no loan).
+**What is real and what is staged.** The contracts, the CRE workflow and every transaction are real (Sepolia, [all linked in the README](https://github.com/ZhenYan1214/Drawstop#demo-on-sepolia)). The borrower is **fictional**: so that no real company is ever named as a borrower, its notices come from a local mirror shaped like The Gazette and Companies House, in **compressed time** (real petitions take weeks to reach a hearing). The same workflow on **live sources** recorded a real company, AMS FACILITIES (SW) LTD, as "winding-up order found" while Companies House still showed it "active", 15 days after the order ([attestation, 22 Oct](https://sepolia.etherscan.io/tx/0xfd78a1e72de6589e2dd1dda06b23b19219d9811de464011d0d4e437e10f1743e), monitoring only, no loan).
 
 Step 8 is the honest limit: a payment made after presentation but before advertisement cannot be stopped, only surfaced. [`tools/s127-report.ts`](https://github.com/ZhenYan1214/Drawstop/blob/main/tools/s127-report.ts) rebuilds every payment after presentation from on-chain events, as a statement a liquidator or the lender's advisers can check. It found that **at least 8,000 reached the lender, not 3,000**, because a dismissal clears only its own petition. (8,000 assumes money in suspense stays the borrower's until released, as the draft rider's trust wording intends; that point is untested. Whether any payment is void, or should be validated, is for the court.)
 
@@ -121,7 +121,7 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 |---|---|
 | 1,594 petitions, median 36 days, 94% / 75% (calendar days; corrected 2026-10-22 from 95% / 79%) | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
 | AMS timeline | Gazette notices 5219886, 5229442; `status-monitor/fixtures/ch-company-11877818.json` |
-| AMS live-source attestation, 14 Oct | README "Earlier deployment (superseded)", tx `0x5bc10a05…4cda` |
+| AMS live-source attestation, 22 Oct | README "Real companies, live sources", tx `0xfd78a1e7…743e` |
 | 53 days (Centrifuge) | `docs/research/reports/英國破產事件監控需求驗證.md` |
 | 42 tests, 5 invariants, 128,000 calls, 5 of 5 mutants | `forge test` output; README "How It Was Checked" |
 | Sepolia steps and 8,000 vs 3,000 | `demo/sepolia-run.log`, `demo/s127-statement-DM000001.md` |

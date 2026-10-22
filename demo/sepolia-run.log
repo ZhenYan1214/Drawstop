@@ -72,3 +72,8 @@
    run after that time:  bash demo/resolve-suspense.sh demo
 
 Facility: 0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0   Registry: 0x1AE232515B9C011152335e68314f12926e4d1245   RPC: https://ethereum-sepolia-rpc.publicnode.com
+
+[1;36m== 11. Arbiter returns suspense to the Official Receiver ==[0m
+   resolveSuspense tx 0x92e216a23b9b57b38204073b746ee5b6a924032651fbaa921f59df0b6b50e327
+   returned 2000000000 to 0x0ff1ce0000000000000000000000000000000001; office-holder mUSDC now 2000000000
+   facility suspense now 0

@@ -1,6 +1,6 @@
 # s.127 statement: payments after presentation of the petition
 
-Generated 2026-10-17T04:30:20Z from on-chain events only (chain id 11155111, blocks 11931854–latest). Facts, not legal conclusions: whether any payment is void under s.127, or should be validated, is for the court.
+Generated 2026-10-22T00:04:59Z from on-chain events only (chain id 11155111, blocks 11931854–latest). Facts, not legal conclusions: whether any payment is void under s.127, or should be validated, is for the court.
 
 ## Facility
 
@@ -12,7 +12,7 @@ Generated 2026-10-17T04:30:20Z from on-chain events only (chain id 11155111, blo
 | Lender | `0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d` |
 | Arbiter | `0xd85fc9E99902967BC115026A13f7C57152D9CC8d` |
 | Token | `0x687D8A7C046f6e44bFC9f031411fA5618d17645D` |
-| Facility status now | REVIEW_REQUIRED |
+| Facility status now | STALE |
 
 ## Commencement
 
@@ -39,7 +39,7 @@ Generated 2026-10-17T04:30:20Z from on-chain events only (chain id 11155111, blo
 | Held in suspense when paid | 7000 (2) |
 | Released from suspense to the lender after presentation | 5000 (1) |
 | **Reached the lender after presentation** | **8000** |
-| Suspense still held by the facility now | 2000 |
+| Suspense still held by the facility now | 0 |
 
 Suspense was released to the lender after this petition was presented (typically after an earlier petition was dismissed while this one was not yet advertised). A dismissal clears only its own petition. The facility's on-chain `repaidSincePetitionPresented()` counts direct pass-throughs only; this statement is the complete figure.
 
@@ -49,5 +49,6 @@ Payments before presentation (0, 0) are outside s.127 and not listed.
 
 - Office-holder `0x0ff1ce0000000000000000000000000000000001` nominated, effective 2026-10-19T04:26:36Z, evidence `0x3c12fef8e6f276cf0a77b52b1247fac3dba9f4215ebf8ce4d8f6e90d229190ac` (tx `0x541378601a872a36e1d3774d0acaca45583168b6ce31343ab7f79ba0deb117fe`)
 - 2026-10-17T04:25:12Z: 5000 paid to the lender `0x4EC7a00D26d392e1B29e6b7fA0199D5849A1459d`, reason `0x0000000000000000000000000000000000000000000000000000000000000000` (tx `0x4ad6a7f3ce5ddeb0589955479f6a071143b41241d8313a549b937a4bd5c537cc`)
+- 2026-10-22T00:02:12Z: 2000 paid to the office-holder `0x0ff1ce0000000000000000000000000000000001`, reason `0x960d054b7e9a4bda648c769be42ea11aabb333979e48dd9a5a275e002c3936b9` (tx `0x92e216a23b9b57b38204073b746ee5b6a924032651fbaa921f59df0b6b50e327`)
 
 Drawdowns executed in the same range: 1 (10000); new advances are not dispositions of the company's property (*Coutts & Co v Stock* [2000]) and are listed for context only.

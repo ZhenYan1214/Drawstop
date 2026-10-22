@@ -22,7 +22,7 @@ if [ "$NOW" -lt "$FROM" ]; then
 fi
 SUSPENSE=$($CAST call "$FACILITY" "suspenseBalance()(uint256)" --rpc-url "$RPC" | cut -d' ' -f1)
 TX=$($CAST send --private-key "$ARBITER_KEY" --rpc-url "$RPC" --json "$FACILITY" "resolveSuspense(address,bytes32)" "$OFFICE_HOLDER" \
-	"$($CAST keccak 'Returned to the Official Receiver: payment after presentation, void under s.127 (demo)')" |
+	"$($CAST keccak 'Returned to the Official Receiver: paid after presentation, s.127 for the court to decide (demo)')" |
 	node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);if(r.status!=="0x1")process.exit(1);process.stdout.write(r.transactionHash)})')
 echo "   resolveSuspense tx $TX"
 echo "   returned $SUSPENSE to $OFFICE_HOLDER; office-holder mUSDC now $($CAST call "$USDC" "balanceOf(address)(uint256)" "$OFFICE_HOLDER" --rpc-url "$RPC" | cut -d' ' -f1)"
