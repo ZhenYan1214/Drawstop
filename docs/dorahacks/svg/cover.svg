@@ -1,15 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="554" viewBox="0 0 960 554" role="img" aria-label="Drawstop: English insolvency notices in, loan drawdowns stopped and repayments held. Chainlink CRE on Sepolia." font-family="Segoe UI, Helvetica, Arial, sans-serif">
-<rect width="960" height="554" fill="#0d1117"/><g transform="translate(70,150) scale(1.55)">
-  <rect width="160" height="160" rx="14" fill="#0d1117"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- drawdown, stopped short of the gate -->
-    <path d="M80 26 V74" stroke="#c9d1d9" stroke-width="5"/>
-    <path d="M65 60 L80 75 L95 60" stroke="#c9d1d9" stroke-width="5"/>
-    <!-- the drawstop -->
-    <path d="M36 92 H124" stroke="#e3b341" stroke-width="9"/>
-    <!-- suspense: funds held, not passed on -->
-    <rect x="54" y="108" width="52" height="26" rx="6" stroke="#8b949e" stroke-width="3" stroke-dasharray="5 5"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="554" viewBox="0 0 960 554" role="img" aria-label="Drawstop: English insolvency notices in, loan drawdowns stopped. Chainlink CRE on Sepolia." font-family="Newsreader, Palatino Linotype, Book Antiqua, Palatino, Georgia, serif">
+<rect width="960" height="554" fill="#f2ede2"/><text x="60" y="64" font-size="15" font-weight="400" fill="#48433b">VOL. I · NO. 1</text><text x="480" y="64" font-size="15" font-weight="400" fill="#48433b" text-anchor="middle">ENGLAND AND WALES · INSOLVENCY ACT 1986</text><text x="900" y="64" font-size="15" font-weight="400" fill="#48433b" text-anchor="end">OCTOBER 2026</text><line x1="60" y1="84" x2="900" y2="84" stroke="#cfc5b1" stroke-width="1"/><g transform="translate(118,128) scale(1.72)">
+  <defs><path id="ring" d="M60 60 m-50 0 a50 50 0 1 1 100 0 a50 50 0 1 1 -100 0"/></defs>
+  <g fill="none" stroke="#a3271d">
+    <circle cx="60" cy="60" r="57" stroke-width="2.2"/>
+    <circle cx="60" cy="60" r="43.5" stroke-width="1"/>
+  </g>
+  <text font-family="Newsreader, 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="8.4" font-weight="600" letter-spacing="1.4" fill="#a3271d"><textPath href="#ring" textLength="311" lengthAdjust="spacing">DRAWSTOP · ENGLAND AND WALES · CHAINLINK CRE ·</textPath></text>
+  <g fill="none" stroke="#a3271d" stroke-linecap="square">
+    <path d="M60 29 V55" stroke-width="3.2"/>
+    <path d="M51.5 47 L60 55.5 L68.5 47" stroke-width="3.2"/>
+    <path d="M36 65.5 H84" stroke-width="6"/>
+    <rect x="47" y="75" width="26" height="13" rx="1.5" stroke-width="1.8" stroke-dasharray="3 2.6"/>
   </g>
 
-</g><text x="355" y="245" font-size="92" font-weight="700" fill="#ffffff">Drawstop</text><text x="360" y="300" font-size="30" font-weight="400" fill="#c9d1d9">English insolvency notices in,</text><text x="360" y="340" font-size="30" font-weight="400" fill="#c9d1d9">loan drawdowns stopped, repayments held</text><rect x="360" y="380" width="250" height="40" rx="20" fill="none" stroke="#3987e5" stroke-width="2"/><text x="485" y="406" font-size="17" font-weight="600" fill="#79b8ff" text-anchor="middle">Chainlink CRE · Sepolia</text><text x="630" y="406" font-size="17" font-weight="400" fill="#8b949e">contracts source-verified</text>
+</g><text x="340" y="282" font-size="126" font-weight="500" fill="#1a1814">Drawstop</text><line x1="60" y1="358" x2="900" y2="358" stroke="#1a1814" stroke-width="5"/><line x1="60" y1="366" x2="900" y2="366" stroke="#1a1814" stroke-width="1.5"/><text x="480" y="428" font-size="34" font-style="italic" fill="#48433b" text-anchor="middle">English insolvency notices in, loan drawdowns stopped.</text><text x="480" y="490" font-size="17" font-weight="400" fill="#a3271d" text-anchor="middle">CHAINLINK CRE · SEPOLIA · CONTRACTS SOURCE-VERIFIED</text>
 </svg>

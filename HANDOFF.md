@@ -402,7 +402,7 @@ Drawstop/
 **新方向**
 - **Altitude**：從「拿 bounty」往上一層到「讓錢移動的地方知道交易對手已進入破產程序」，再上一層到「讓 s.127 的時間差被量化、被看見」。目前查不到任何公開的時間差基準，這可能才是作品真正的貢獻。
 - **Depth**：時間差研究（`research/petition-lag/`）。從每則 Gazette 公告的 linked data 出發，量出聲請到刊登的分布、各種寬限天數在公開前就過期的比例、聲請結果、Companies House 的落後程度，並回測 Drawstop 比只看 Companies House 早幾天。
-  - **正式結果（10/17，`research/petition-lag/results.json`）**：Q3 2026 共 1,683 則聲請（1,594 則有聲請日）。聲請到刊登**中位數 36 天**（中間一半 31–41）；**95.2%** 在 14 天窗口關閉後、**79.4%** 在 30 天窗口關閉後才刊登。截至 10/15：577 件有清算命令（34%）、28 件刊登駁回、1,078 件尚無結果公告。Companies House（10/16 快照，2,115 家）：聲請中且沒有清算命令的公司 61% 仍 `active`；10/1–10/15 刊登清算命令的 117 家中 23% 仍 `active`。回測：聲請有刊登時，Drawstop 比 Companies House 第一筆 insolvency filing **早中位數 27 天、99% 較早**（487 家）；只看清算命令公告時早 6 天、73% 較早（456 家）——清算命令有時 Companies House 反而比 Gazette 早。
+  - **正式結果（10/17，`research/petition-lag/results.json`）**：Q3 2026 共 1,683 則聲請（1,594 則有聲請日）。聲請到刊登**中位數 36 天**（中間一半 30–41）；**94.4%** 在 14 天窗口關閉後、**75.0%** 在 30 天窗口關閉後才刊登（10/22 更正：改用日曆天，原 95.2%／79.4% 把「第 N 天當天刊登」算成已過期）。截至 10/15：577 件有清算命令（34%）、28 件刊登駁回、1,078 件尚無結果公告。Companies House（10/16 快照，2,115 家）：聲請中且沒有清算命令的公司 61% 仍 `active`；10/1–10/15 刊登清算命令的 117 家中 23% 仍 `active`。回測：聲請有刊登時，Drawstop 比 Companies House 第一筆 insolvency filing **早中位數 27 天、99% 較早**（487 家）；只看清算命令公告時早 6 天、73% 較早（456 家）——清算命令有時 Companies House 反而比 Gazette 早。
   - 資料品質：12 則公告（4 清算命令、8 駁回）持續回 HTTP 429，已排除；15 則少於 7 天、16 則超過 120 天（含一則 824 天，疑似年份打錯），保留原樣。
   - AMS 在 10/16（清算命令 9 天後）Companies House 仍是 `active`、沒有任何 insolvency filing。
   - 抓取規模：Q3 聲請 1,680、7/1–10/15 清算命令 1,100、駁回 97、2451 共 3 則；每則 1 次請求、間隔 1.5 秒、全部快取（快取放在 AI 的 scratchpad，不在 repo）。曾因 Gazette 暫時錯誤中斷一次，已改為退避重試並記錄失敗、不中止。
@@ -430,7 +430,7 @@ Drawstop/
 - **s.127 清算人報告**（`tools/s127-report.ts`，只讀鏈上事件，任何人可重跑）：**抓到一個設計盲點**：第一幕駁回後從暫收釋出給放款方的 5,000，時間在第二件聲請（已提出未刊登）之後 → 也是聲請日後送到放款方的錢。報告總數 8,000（不是合約 view 函式的 3,000）。合約 `repaidSincePetitionPresented()` 只算直接轉手，已在註解標明（bytecode 不變）；合約只剩 1.6% gas 餘裕，不改合約。重點：**一件聲請被駁回，不代表之後的付款就安全**。
 - **前向測試（Altitude：與現行做法並行）**：`research/forward/daily.ts` + `.github/workflows/forward-test.yml`（每天記錄新刊登聲請與這些公司在 Companies House 的狀態，commit 時間戳公開）。**尚未推送、尚未啟用**：需要使用者同意推送，並在 GitHub repo 設定 secret `CH_API_KEY`。
 - 修了兩個工程問題：`.gitattributes` 強制 `*.sh` 用 LF（這台電腦 `core.autocrlf=true` 會把腳本變 CRLF，bash 會壞）；收集腳本遵守 `Retry-After`，並在連續兩次長時間封鎖時停止（circuit breaker）。
-- **DoraHacks 表單草稿**（`docs/dorahacks/BUIDL.md` + `png/` 7 張圖）：交給兩位外部裁判（Chainlink 工程師視角、英國破產律師視角）冷讀後修改，修改紀錄在 BUIDL.md 最後的「Review log」。法律用語定稿，**之後所有文字都照這個寫**：s.127 是 **void**（不是 voidable），且只在清算命令做成後才適用；範圍說 **England and Wales**／English，不說 UK；寬限期是「frivolous or vexatious 且 [14] 天內駁回」，**以 14 天（95%）為主**，30 天只當借款方友善的情況；「違約」本身是事實，人做的決定是 **acceleration**（加速到期）；銀行凍結是**實務**，不是法律；聲請在刊登前**在法院檔案裡**，只是不在免費開放資料；8,000 要寫「**at least**」，並註明它假設暫收款依 rider 的 trust 條款仍屬借款方（未經測試）；demo 要標明「虛構借款方、本機鏡像、壓縮時間」。README 標語、影片腳本第 1 幕也同步改了。
+- **DoraHacks 表單草稿**（`docs/dorahacks/BUIDL.md` + `png/` 7 張圖）：交給兩位外部裁判（Chainlink 工程師視角、英國破產律師視角）冷讀後修改，修改紀錄在 BUIDL.md 最後的「Review log」。法律用語定稿，**之後所有文字都照這個寫**：s.127 是 **void**（不是 voidable），且只在清算命令做成後才適用；範圍說 **England and Wales**／English，不說 UK；寬限期是「frivolous or vexatious 且 [14] 天內駁回」，**以 14 天（94%，10/22 更正）為主**，30 天只當借款方友善的情況；「違約」本身是事實，人做的決定是 **acceleration**（加速到期）；銀行凍結是**實務**，不是法律；聲請在刊登前**在法院檔案裡**，只是不在免費開放資料；8,000 要寫「**at least**」，並註明它假設暫收款依 rider 的 trust 條款仍屬借款方（未經測試）；demo 要標明「虛構借款方、本機鏡像、壓縮時間」。README 標語、影片腳本第 1 幕也同步改了。
 
 ### 16.2 進行中／卡住
 - **10 月樣本外驗證**：預測已在 10/17 11:44 commit（`27fe81d`，`research/petition-lag/holdout/PREDICTIONS.md`），尚未下載逐則資料。Gazette 回 `Retry-After: 900` 且連續封鎖（推測同一 IP 今天早上已抓過約 2,900 則、碰到每日額度）。**明天先送一個請求測試**，通了再跑：`GAZETTE_GAP_MS=3000 bun research/petition-lag/fetch.ts <cache> research/petition-lag/holdout/notices-oct.csv 2450:2026-10-01:2026-10-16 2451:2026-10-01:2026-10-16`，再用 analyze 的邏輯比對預測，結果不論成敗都照實寫。
@@ -442,3 +442,11 @@ Drawstop/
 3. （建議）註冊 CE-File 公開查詢帳號，查 AMS 的 `CR-2026-006286`，回報聲請出現在事件紀錄的日期 → 人類外部裁判。
 4. ~~Sourcify 原始碼驗證~~：10/17 完成，三個合約 creation 與 runtime bytecode 都 match（因關閉 CBOR metadata，狀態是 match 不是 exact_match）。
 5. 10/19 12:26 後執行 demo 第 11 步。
+
+## 17. 10/22 視覺重新設計與數字更正
+
+- **使用者回饋**：README 和圖「一看就是 AI 生的」。決定：做獨立網站（GitHub Pages）＋ README 與 DoraHacks 圖改成同一視覺語言；方向選「Gazette 報紙版面」。
+- **網站** `docs/index.html` + `docs/site/`（style.css、app.js、data.js、favicon.svg）：象牙紙、墨黑、單一封印紅（＋赭色代表「暫收」），Newsreader + IBM Plex Mono，報頭、§ 章節、頁邊註、雙線。互動：開場天數尺動畫；**Exhibit A** 可拖曳寬限天數 0–70，百分比由 1,594 則真實資料即時計算；§5 逐步重播 Sepolia 11 步並蓋章；日／夜版（記在 localStorage）；跑頭導覽與閱讀進度。已在桌面、手機、夜間檢查，無橫向捲動、無 console 錯誤。**上線方式**：GitHub repo Settings → Pages → Deploy from branch `main`、資料夾 `/docs`（`docs/.nojekyll` 已加）。網址會是 https://zhenyan1214.github.io/Drawstop/ 。改 CSS／JS 後記得把 `index.html` 裡的 `?v=` 版本號加一，避免快取。
+- **圖**：`docs/dorahacks/figures.ts` 改成同一色票與襯線字（PNG 用本機 Palatino Linotype 渲染），新增 README 報頭 `docs/assets/banner.png`；`docs/assets/logo.svg` 換成封印；timeline／architecture SVG 換色。含「→」的文字在 resvg 會換字型變粗，圖裡避免用箭頭字元。
+- **數字更正（重要）**：研究原本用精確時間差，但 1,004 則公告的刊登時間是 00:00，導致「第 N 天當天刊登」被算成已過期。改用日曆天：14 天 95.2% → **94.4%**，30 天 79.4% → **75.0%**，中位數 36 不變。已更新 results.json、研究頁（附更正說明）、README、BUIDL、影片腳本、圖；`holdout/PREDICTIONS.md` 依預先登記原則不改預測，只加註「兩種定義都會報告」。
+- **Demo 第 11 步已完成**：2026-10-22 00:02 UTC，仲裁人把 2,000 退給 Official Receiver 替身（tx `0x92e216a2…e327`），README 與圖已更新。facility 現在是 `STALE`（證明過期，屬設計行為）。

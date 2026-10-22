@@ -11,9 +11,9 @@
 | Days from presentation (s.127 exposure starts) to Gazette advertisement | |
 |---|---|
 | Median | **36** |
-| Middle half (25th–75th percentile) | 31 – 41 |
-| 10th – 90th percentile | 22 – 50 |
-| Mean | 38.4 |
+| Middle half (25th–75th percentile) | 30 – 41 |
+| 10th – 90th percentile | 21 – 50 |
+| Mean | 38.2 |
 
 ### 2. Most carve-outs close before anyone can see the petition
 
@@ -21,13 +21,13 @@ Share of petitions advertised only after a carve-out counted from presentation h
 
 | Carve-out | Closed before advertisement |
 |---|---|
-| 7 days | 99.1% |
-| 10 days | 97.0% |
-| 14 days (LMA leveraged guidance) | **95.2%** |
-| 30 days (e.g. Carlsberg) | **79.4%** |
-| 60 days | 7.6% |
+| 7 days | 98.1% |
+| 10 days | 96.8% |
+| 14 days (LMA leveraged guidance) | **94.4%** |
+| 30 days (e.g. Carlsberg) | **75.0%** |
+| 60 days | 7.5% |
 
-A lender relying on the free public record would, in about four petitions out of five, first learn of a petition after a 30-day carve-out had expired.
+A lender relying on the free public record would, in three petitions out of four, first learn of a petition after a 30-day carve-out had expired.
 
 ### 3. What happened next (Gazette notices to 15 October)
 
@@ -93,6 +93,10 @@ bun research/petition-lag/analyze.ts research/petition-lag/data/notices.csv rese
 
 All figures above are in [`results.json`](results.json).
 
+## Correction, 2026-10-22
+
+The first version of this page (17 October) measured lags as exact time differences. Most notices carry a publication time of 00:00 UTC, so a petition advertised **on** day N of an N-day carve-out was counted as advertised after the window closed, although a carve-out "within N days of commencement" is still open on day N. Lags are now whole calendar days. The 14-day figure moved from 95.2% to **94.4%** and the 30-day figure from 79.4% to **75.0%**; the median (36 days) is unchanged. Earlier copies of the README, the DoraHacks draft and the figures quoted the old values.
+
 ## Limits
 
 - **One quarter.** Seasonality and changes in HMRC enforcement are not captured.
@@ -100,5 +104,5 @@ All figures above are in [`results.json`](results.json).
 - **Right-censored outcomes.** Petitions advertised in late September may not have been heard by 15 October.
 - **12 notices missing:** 4 order and 8 dismissal notices returned HTTP 429 on every attempt and are excluded. They cannot change the lag distribution and change the outcome counts by at most 12.
 - **Outliers kept as published:** 15 petitions show under 7 days (likely companies' own petitions or recording errors) and 16 over 120 days (adjourned or re-advertised petitions; one of 824 days looks like a year typo in the notice). The median and percentiles are robust to them.
-- **Calendar days**, from the presentation date (midnight UTC) to the publication timestamp, or to the registration date of the filing at Companies House.
+- **Calendar days** (UTC dates) from presentation to publication, and to the registration date of the filing at Companies House.
 - **England and Wales procedure.** Notices for Scottish and Northern Irish companies, if any, are included but not analysed separately.

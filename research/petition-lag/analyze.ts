@@ -51,7 +51,10 @@ const days = (from: number, to: number) => (to - from) / DAY
 // ── 1. Petitions advertised in Q3 2026: presentation → advertisement ─────────────
 const petitions = notices.filter((n) => (n.code === '2450' || n.code === '2451') && n.publishedAt >= Q3_START && n.publishedAt < Q3_END)
 const withDate = petitions.filter((p) => p.presentedAt > 0 && p.presentedAt <= p.publishedAt)
-const lags = withDate.map((p) => days(p.presentedAt, p.publishedAt))
+// Whole calendar days (UTC dates): a carve-out "within N days of commencement" is still open on day N, and most
+// notices carry a publication time of 00:00, so comparing exact timestamps would count day-N adverts as late.
+const calendarDays = (from: number, to: number) => Math.floor(to / DAY) - Math.floor(from / DAY)
+const lags = withDate.map((p) => calendarDays(p.presentedAt, p.publishedAt))
 const carveOutClosedBeforeAdvert = Object.fromEntries(
 	[7, 10, 14, 30, 60].map((d) => [`${d}d`, { count: lags.filter((l) => l > d).length, pct: pct(lags.filter((l) => l > d).length, lags.length) }]),
 )

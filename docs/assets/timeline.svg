@@ -1,61 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320" role="img" aria-label="AMS FACILITIES (SW) LTD public timeline: petition presented 11 August, advertised 29 September, winding-up order 7 October, order advertised 14 October while Companies House still showed active">
   <defs>
     <style>
-      text { font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: #1f2328; }
+      text { font-family: Newsreader, "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif; fill: #1a1814; }
       .title { font-size: 15px; font-weight: 600; }
-      .sub { font-size: 12px; fill: #59636e; }
-      .date { font-size: 12px; font-weight: 600; fill: #59636e; }
+      .sub { font-size: 12px; fill: #48433b; }
+      .date { font-size: 12px; font-weight: 600; fill: #48433b; }
       .lbl { font-size: 13px; font-weight: 600; }
-      .note { font-size: 12px; fill: #59636e; }
-      .red { fill: #cf222e; }
-      .amber { fill: #9a6700; }
+      .note { font-size: 12px; fill: #48433b; }
+      .red { fill: #a3271d; }
+      .amber { fill: #8f6414; }
     </style>
   </defs>
-  <rect width="900" height="320" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <rect width="900" height="320" rx="2" fill="#f2ede2" stroke="#cfc5b1"/>
 
   <text x="30" y="34" class="title">AMS FACILITIES (SW) LTD · company 11877818</text>
-  <text x="30" y="53" class="sub">Public record, checked 2026-10-14 · typical: Q3 2026 median was 36 days, 95% past a 14-day carve-out</text>
+  <text x="30" y="53" class="sub">Public record, checked 2026-10-14 · typical: Q3 2026 median was 36 days, 94% past a 14-day carve-out</text>
 
   <!-- invisible period: presentation to advertisement (day 0 to 49), 12.19 px/day from x=60 -->
-  <rect x="60" y="144" width="597" height="28" fill="#ffebe9"/>
+  <rect x="60" y="144" width="597" height="28" fill="#f1dcd5"/>
   <text x="358" y="161" text-anchor="middle" class="lbl red">49 days · petition on the court file, not in any free open-data feed</text>
-  <line x1="60" y1="172" x2="840" y2="172" stroke="#1f2328" stroke-width="2"/>
+  <line x1="60" y1="172" x2="840" y2="172" stroke="#1a1814" stroke-width="2"/>
 
   <!-- 2026-08-11 presented -->
-  <line x1="60" y1="100" x2="60" y2="172" stroke="#cf222e" stroke-width="2"/>
-  <circle cx="60" cy="172" r="6" fill="#cf222e"/>
+  <line x1="60" y1="100" x2="60" y2="172" stroke="#a3271d" stroke-width="2"/>
+  <circle cx="60" cy="172" r="6" fill="#a3271d"/>
   <text x="68" y="90" class="date">11 Aug</text>
   <text x="68" y="108" class="lbl">HMRC presents winding-up petition</text>
   <text x="68" y="125" class="note">s.127 exposure starts (s.129(2))</text>
 
   <!-- 2026-09-29 advertised -->
-  <line x1="657" y1="100" x2="657" y2="172" stroke="#1a7f37" stroke-width="2"/>
-  <circle cx="657" cy="172" r="6" fill="#1a7f37"/>
+  <line x1="657" y1="100" x2="657" y2="172" stroke="#1a1814" stroke-width="2"/>
+  <circle cx="657" cy="172" r="6" fill="#1a1814"/>
   <text x="649" y="90" text-anchor="end" class="date">29 Sep</text>
   <text x="649" y="108" text-anchor="end" class="lbl">Advertised in The Gazette (2450)</text>
   <text x="649" y="125" text-anchor="end" class="note">earliest a public-source monitor, incl. Drawstop, can see it</text>
 
   <!-- 2026-10-14 order advertised -->
-  <line x1="840" y1="100" x2="840" y2="172" stroke="#1f2328" stroke-width="2"/>
-  <circle cx="840" cy="172" r="6" fill="#1f2328"/>
+  <line x1="840" y1="100" x2="840" y2="172" stroke="#1a1814" stroke-width="2"/>
+  <circle cx="840" cy="172" r="6" fill="#1a1814"/>
   <text x="832" y="90" text-anchor="end" class="date">14 Oct</text>
   <text x="832" y="108" text-anchor="end" class="lbl">Order advertised</text>
 
   <!-- below the axis -->
   <!-- 30-day carve-out from presentation: day 0 to 30 -->
-  <path d="M60 196 V204 H426 V196" fill="none" stroke="#9a6700" stroke-width="2"/>
+  <path d="M60 196 V204 H426 V196" fill="none" stroke="#8f6414" stroke-width="2"/>
   <text x="243" y="224" text-anchor="middle" class="lbl amber">30-day carve-out counted from presentation</text>
   <text x="243" y="241" text-anchor="middle" class="note">window closed on 10 Sep, 19 days before the petition was public</text>
-  <circle cx="426" cy="172" r="5" fill="#ffffff" stroke="#9a6700" stroke-width="2"/>
+  <circle cx="426" cy="172" r="5" fill="#f2ede2" stroke="#8f6414" stroke-width="2"/>
   <text x="434" y="194" class="date">10 Sep</text>
 
   <!-- 2026-10-07 order -->
-  <line x1="755" y1="172" x2="755" y2="262" stroke="#1f2328" stroke-width="2"/>
-  <circle cx="755" cy="172" r="6" fill="#1f2328"/>
+  <line x1="755" y1="172" x2="755" y2="262" stroke="#1a1814" stroke-width="2"/>
+  <circle cx="755" cy="172" r="6" fill="#1a1814"/>
   <text x="747" y="262" text-anchor="end" class="date">7 Oct</text>
   <text x="747" y="279" text-anchor="end" class="lbl">Winding-up order</text>
 
   <!-- Companies House -->
-  <rect x="566" y="288" width="304" height="22" rx="4" fill="#fff8c5" stroke="#d4a72c"/>
+  <rect x="566" y="288" width="304" height="22" rx="4" fill="#efe4c9" stroke="#c9a96a"/>
   <text x="718" y="303" text-anchor="middle" class="note">Companies House still "active" on 14 Oct</text>
 </svg>

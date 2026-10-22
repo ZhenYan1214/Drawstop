@@ -1,21 +1,14 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" width="120" alt="Drawstop logo">
+<a href="https://zhenyan1214.github.io/Drawstop/"><img src="docs/assets/banner.png" width="100%" alt="Drawstop: statutory insolvency notices in, loan drawdowns stopped, repayments held"></a>
 
-# Drawstop
+**Winding-up petitions in England and Wales reach free open data a median 36 days after the risk to every repayment begins.**<br>
+Drawstop is a Chainlink CRE workflow that lets a tokenized loan stop new drawdowns, hold at-risk repayments<br>
+and call for human review the moment a statutory insolvency notice appears.
 
-**English insolvency notices in. Loan drawdowns stopped, repayments held.**<br>
-A Chainlink CRE workflow that lets a tokenized loan to an English company stop new drawdowns,<br>
-hold at-risk repayments and call for human review when a statutory insolvency notice appears.
+**[Read it as a website](https://zhenyan1214.github.io/Drawstop/)** · [The gap](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Trust model](#trust-model-and-honest-limits) · [Verification](#how-it-was-checked) · [Demo on Sepolia](#demo-on-sepolia)
 
-[![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE%20v1.38-375BD2?logo=chainlink&logoColor=white)](https://docs.chain.link/cre)
-[![Network](https://img.shields.io/badge/network-Ethereum%20Sepolia-6b7280)](https://sepolia.etherscan.io/address/0xE1e494Ec6E87c85048b08c0F622E3BD1E98c1897)
-[![Tests](https://img.shields.io/badge/tests-42%20unit%20%C2%B7%205%20invariants%20%C2%B7%2024%20workflow-2ea44f)](#how-it-was-checked)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-
-[Problem](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Facility states](#how-the-facility-responds) · [Trust model](#trust-model-and-honest-limits) · [Chainlink usage](#where-chainlink-is-used) · [Getting started](#getting-started) · [Demo on Sepolia](#demo-on-sepolia)
-
-<sub>Built for BLI Legal Tech Hackathon 2 · Chainlink "Best workflow with CRE" bounty · Testnet only · Not legal advice</sub>
+<sub>BLI Legal Tech Hackathon 2 · Chainlink “Best workflow with CRE” · Ethereum Sepolia · 42 unit tests · 5 invariants · 24 workflow tests · Testnet only · Not legal advice · MIT</sub>
 
 </div>
 
@@ -57,9 +50,9 @@ We pulled every corporate winding-up petition advertised in The Gazette in Q3 20
 | Measured, Q3 2026 | |
 |---|---|
 | Petitions advertised (with a presentation date) | 1,683 (1,594) |
-| Median days from presentation to advertisement | **36** (middle half 31–41) |
-| Advertised after a **30-day** carve-out from presentation had closed | **79%** |
-| Advertised after a **14-day** carve-out had closed | **95%** |
+| Median days from presentation to advertisement | **36** (middle half 30–41) |
+| Advertised after a **30-day** carve-out from presentation had closed | **75%** |
+| Advertised after a **14-day** carve-out had closed | **94%** |
 | Petitioned companies with no winding-up order notice, still `active` on Companies House | 61% |
 | Companies with an order advertised 1–15 Oct, still `active` on 16 Oct | 23% |
 | Drawstop's Gazette check ahead of the first insolvency filing at Companies House, when the petition was advertised | median **27 days**, earlier in **99%** of 487 cases |
@@ -322,9 +315,9 @@ A facility for a **fictional** company, fed by [`demo/scenario-server.ts`](demo/
 | 8 | Winding-up order advertised; its petition was presented 12 days earlier and never seen → `REVIEW_REQUIRED`; `repaidSincePetitionPresented()` = 3,000: **surfaced, not stopped** | [attestation](https://sepolia.etherscan.io/tx/0x22f114ba458bf1efb5568caa55b6013e48824564c705db8819c799ff781025d2) |
 | 9 | Borrower repays 2,000 → held in suspense | [repayment](https://sepolia.etherscan.io/tx/0x8e884ef9d70d724bf8d3924403a27310afb2aa04002be53121030ebc08ff17a6) |
 | 10 | Arbiter nominates the Official Receiver stand-in, effective 2026-10-19 04:26 UTC; an immediate `resolveSuspense` reverts | [nomination](https://sepolia.etherscan.io/tx/0x541378601a872a36e1d3774d0acaca45583168b6ce31343ab7f79ba0deb117fe) |
-| 11 | After the 2-day delay, the arbiter returns the 2,000 to the Official Receiver stand-in ([`demo/resolve-suspense.sh`](demo/resolve-suspense.sh)) | pending (2026-10-19) |
+| 11 | After the 2-day delay, the arbiter returns the 2,000 to the Official Receiver stand-in ([`demo/resolve-suspense.sh`](demo/resolve-suspense.sh)), 2026-10-22 00:02 UTC | [return](https://sepolia.etherscan.io/tx/0x92e216a23b9b57b38204073b746ee5b6a924032651fbaa921f59df0b6b50e327) |
 
-State read back after step 10: drawdown 0 executed, drawdown 1 not executed, repayments 0 and 2 `heldInSuspense`, repayment 1 passed through, suspense 2,000, status `REVIEW_REQUIRED`. Full log: [`demo/sepolia-run.log`](demo/sepolia-run.log).
+State read back on 22 October, after step 11: drawdown 0 executed, drawdown 1 not executed, repayments 0 and 2 `heldInSuspense`, repayment 1 passed through, suspense 0, and the 2,000 with the Official Receiver stand-in. The facility now reads `STALE`, because its last attestation expired after a day, as designed. Full log: [`demo/sepolia-run.log`](demo/sepolia-run.log).
 
 ### s.127 statement for the liquidator
 

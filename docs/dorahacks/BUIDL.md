@@ -12,13 +12,13 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 | Logo | [`png/logo.png`](png/logo.png) (512 × 512) |
 | Cover / banner | [`png/cover.png`](png/cover.png) (1.73 : 1, legible at the 222 × 128 card size) |
 | Short description (card, 178 chars) | Chainlink CRE workflow that reads English insolvency notices (Gazette, Companies House, GLEIF) and writes attestations, so a tokenized loan blocks drawdowns and holds repayments. |
-| Alternative short description (179) | 95% of winding-up petitions in Britain go public after a 14-day loan grace window. Drawstop (Chainlink CRE) makes a tokenized loan stop drawdowns and hold repayments when they do. |
+| Alternative short description (179) | 94% of winding-up petitions in Britain go public after a 14-day loan grace window. Drawstop (Chainlink CRE) makes a tokenized loan stop drawdowns and hold repayments when they do. |
 | Category | The closest of: RWA · Legal / RegTech · Infra (pick what the dropdown offers) |
 | Track | All BUIDLs |
 | Bounties | **Chainlink: Best workflow with CRE** (bounty 1362). Do not apply to RYO-CHAN (agent trading; not this project) |
 | GitHub | https://github.com/ZhenYan1214/Drawstop |
 | Demo video | (YouTube or Loom link, 4–5 min; script in `demo/video-script.md`) |
-| Project website | https://github.com/ZhenYan1214/Drawstop#readme |
+| Project website | https://zhenyan1214.github.io/Drawstop/ (enable GitHub Pages first: Settings → Pages → Deploy from branch `main`, folder `/docs`) |
 | Other links | Sourcify-verified contracts: https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245 |
 | Open source | Yes, MIT |
 | Contact (required) | Your Discord, WhatsApp or WeChat |
@@ -32,7 +32,7 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 
 **Drawstop** lets a tokenized loan to an English company react on its own when the borrower faces a winding-up petition. A **Chainlink CRE workflow** runs on a schedule and on every drawdown request, checks three public registries with per-source consensus, and writes a signed status to a registry on Sepolia. The loan contract reads that status: **new drawdowns revert, and repayments are held** because they may have to go back to the company's creditors. A source that cannot be checked is recorded as "could not be checked", never as "clean". Acting on a default stays a human decision.
 
-**Why it matters:** of 1,594 winding-up petitions advertised in Q3 2026, **95% became public only after a standard 14-day loan grace window had closed** (median: 36 days after the petition was presented).
+**Why it matters:** of 1,594 winding-up petitions advertised in Q3 2026, **94% became public only after a standard 14-day loan grace window had closed** (median: 36 days after the petition was presented).
 
 > **Four terms, in plain words.** *Drawstop*: the lender's right to refuse new advances. *Carve-out*: a grace window during which a petition is not yet an Event of Default. *s.127 suspense*: repayments held back, because if a winding-up order follows, payments made after the petition are void unless a court validates them. *Arbiter*: the neutral reviewer named in the loan agreement.
 
@@ -119,7 +119,7 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 
 | Claim | Source in the repository |
 |---|---|
-| 1,594 petitions, median 36 days, 95% / 79% | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
+| 1,594 petitions, median 36 days, 94% / 75% (calendar days; corrected 2026-10-22 from 95% / 79%) | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
 | AMS timeline | Gazette notices 5219886, 5229442; `status-monitor/fixtures/ch-company-11877818.json` |
 | AMS live-source attestation, 14 Oct | README "Earlier deployment (superseded)", tx `0x5bc10a05…4cda` |
 | 53 days (Centrifuge) | `docs/research/reports/英國破產事件監控需求驗證.md` |
@@ -146,4 +146,4 @@ Two cold reads on 2026-10-17, each seeing only this page and the images, with up
 | | 8,000 stated as fact | "At least 8,000", with the trust-wording assumption and "for the court" |
 | | Demo timeline procedurally impossible | Labelled "compressed time" |
 
-Update before submitting: step 11 (scheduled 19 Oct) in `demo.png` and the demo table; the October hold-out result if it is in; the video link.
+Update before submitting: the October hold-out result if it is in; the video link. (Step 11 ran on 22 Oct; figures and the 94% / 75% correction were updated on 22 Oct.)

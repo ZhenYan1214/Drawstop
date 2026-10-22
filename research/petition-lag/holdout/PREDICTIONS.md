@@ -25,3 +25,7 @@ The tolerances are set now, not after seeing the data. A miss will be reported a
 
 - Two weeks instead of a quarter: a smaller sample, so wider uncertainty.
 - Early-October advertisements include petitions presented in late August and September, i.e. the same filing period as late Q3; this is a test of stability across adjacent periods, not across seasons.
+
+## Note added 2026-10-22 (after registration, before any October data was analysed)
+
+The Q3 measurement was corrected to whole calendar days (see the study page): Q3 values are now 94.4% for 14 days, 75.0% for 30 days and 7.5% for 60 days; the median and spread are unchanged (36; 30.3 – 41). The predictions above are left exactly as registered. The October data will be evaluated against them as written, under both the original timestamp definition and the corrected calendar-day definition, and both results will be reported.
