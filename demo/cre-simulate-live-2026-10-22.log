@@ -1,0 +1,22 @@
+# cre workflow simulate status-monitor --target staging-settings --non-interactive --trigger-index 0 --broadcast
+# Live sources (The Gazette, Companies House, GLEIF), CRE CLI 1.38.0, 2026-10-22. Output as printed, from "Simulator Initialized".
+# Attestations confirmed stored by the StatusRegistry event in each transaction receipt.
+
+2026-10-22T08:03:22Z [SIMULATION] Simulator Initialized
+
+2026-10-22T08:03:22Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-10-22T08:03:22Z [USER LOG] Monitoring 3 entities; this run: 11877818, 00445790
+2026-10-22T08:03:25Z [USER LOG] [11877818] eventBits=0b1000 unavailableBits=0b0 petitionPresentedAt=1786406400 petitionPublishedAt=1790674208
+2026-10-22T08:03:25Z [USER LOG] [11877818] evidence {"v":1,"entity":"11877818","checkedAt":1792627405,"gazette":{"ok":true,"bits":8,"notices":"2450:5219886:2026/006286,2452:5229442:2026/006286"},"companiesHouse":{"ok":true,"bits":0,"status":"active"},"gleif":null}
+2026-10-22T08:03:25Z [USER LOG] [11877818] evidenceHash 0xf201edac69848c82245ff80915bc33e009770918973c2d1528ec28ac99a5bf5f
+2026-10-22T08:03:42Z [USER LOG] [11877818] attestation written, tx 0xfd78a1e72de6589e2dd1dda06b23b19219d9811de464011d0d4e437e10f1743e
+2026-10-22T08:03:44Z [USER LOG] [00445790] eventBits=0b0 unavailableBits=0b0 petitionPresentedAt=0 petitionPublishedAt=0
+2026-10-22T08:03:44Z [USER LOG] [00445790] evidence {"v":1,"entity":"00445790","checkedAt":1792627424,"gazette":{"ok":true,"bits":0,"notices":""},"companiesHouse":{"ok":true,"bits":0,"status":"active"},"gleif":{"ok":true,"bits":0,"registeredAs":"00445790","entity":"ACTIVE","registration":"ISSUED"}}
+2026-10-22T08:03:44Z [USER LOG] [00445790] evidenceHash 0xf077d905c067ef6ddbe47270713843bbe8e5a05b6dc9767c2c4fbdeaba22a838
+
+✓ Workflow Simulation Result:
+"0xfd78a1e72de6589e2dd1dda06b23b19219d9811de464011d0d4e437e10f1743e,0xeb8dc9acdb12b147e43d8673dc88e26480c876ea56b99849c447bca859e33e6a"
+
+2026-10-22T08:03:50Z [SIMULATION] Execution finished signal received
+2026-10-22T08:03:50Z [USER LOG] [00445790] attestation written, tx 0xeb8dc9acdb12b147e43d8673dc88e26480c876ea56b99849c447bca859e33e6a
+2026-10-22T08:03:50Z [SIMULATION] Skipping WorkflowEngineV2
