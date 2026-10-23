@@ -1,0 +1,14 @@
+node_modules/
+package-lock.json
+profile/
+clips/
+audio/
+voice/
+build/
+check/
+out/
+pylib/
+wlib/
+*.ttf
+*.log
+slides/*.png

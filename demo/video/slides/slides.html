@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drawstop video slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<style>
+  /* Each slide renders at 1920x1080: slides.html#plain shows the "plain" slide. Tokens match docs/site/style.css. */
+  :root { --paper:#f2ede2; --paper-2:#e9e2d3; --ink:#1a1814; --ink-2:#48433b; --ink-3:#827a6c; --seal:#a3271d; --ochre:#8f6414;
+    --serif:"Newsreader", Georgia, serif; --mono:"IBM Plex Mono", Consolas, monospace; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { font-family: var(--serif); background: var(--paper); color: var(--ink); }
+  .slide { display: none; width: 1920px; height: 1080px; padding: 220px 200px 220px; position: relative; flex-direction: column; justify-content: center; }
+  .slide.on { display: flex; }
+  .rule { position: absolute; left: 200px; right: 200px; top: 96px; border-top: 3px solid var(--ink); }
+  .rule::after { content: ""; position: absolute; left: 0; right: 0; top: 5px; border-top: 1px solid var(--ink); }
+  .kicker { font-family: var(--mono); font-size: 26px; letter-spacing: .16em; text-transform: uppercase; color: var(--seal); margin-bottom: 44px; }
+  h1 { font-size: 92px; line-height: 1.04; font-weight: 400; letter-spacing: -.01em; }
+  h1 em { color: var(--seal); }
+  .src { position: absolute; left: 200px; right: 200px; top: 118px; font-family: var(--mono); font-size: 22px; color: var(--ink-3); letter-spacing: .04em; }
+  .three { display: flex; flex-direction: column; gap: 46px; margin-top: 20px; }
+  .three div { display: grid; grid-template-columns: 110px 1fr; align-items: baseline; font-size: 68px; line-height: 1.15; }
+  .three b { font-family: var(--mono); font-weight: 500; font-size: 40px; color: var(--seal); }
+  .three i { color: var(--seal); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 10px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+  .two > div { padding: 56px 60px 60px 0; }
+  .two > div + div { padding-left: 60px; border-left: 1px solid var(--ink-3); }
+  .two h2 { font-family: var(--mono); font-weight: 500; font-size: 28px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 26px; }
+  .two p { font-size: 52px; line-height: 1.16; }
+  .tag { display: inline-block; font-family: var(--mono); font-size: 26px; letter-spacing: .14em; text-transform: uppercase; border: 2px solid currentColor; padding: 8px 18px; margin-top: 34px; }
+  .open { color: var(--ochre); } .stop { color: var(--seal); }
+  .after { font-size: 60px; margin-top: 48px; }
+  .after em { color: var(--seal); }
+  .score { display: flex; align-items: flex-end; gap: 80px; }
+  .huge { font-size: 300px; line-height: .85; color: var(--seal); font-weight: 400; letter-spacing: -.02em; }
+  .score p { font-size: 54px; line-height: 1.2; max-width: 980px; padding-bottom: 20px; }
+  table { border-collapse: collapse; margin-top: 70px; width: 100%; font-size: 40px; }
+  th { font-family: var(--mono); font-weight: 500; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); text-align: left; padding: 0 0 16px; border-bottom: 2px solid var(--ink); }
+  td { padding: 20px 0; border-bottom: 1px solid var(--paper-2); }
+  td.n { font-family: var(--mono); font-size: 36px; }
+  td.ok { font-family: var(--mono); font-size: 26px; letter-spacing: .12em; text-transform: uppercase; color: var(--seal); }
+  .money { display: grid; grid-template-columns: 1fr 1fr; gap: 90px; margin-top: 50px; }
+  .money .v { font-size: 190px; line-height: .9; letter-spacing: -.02em; }
+  .money .v.struck { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 10px; text-decoration-color: var(--seal); }
+  .money .v.big { color: var(--seal); }
+  .money p { font-size: 38px; line-height: 1.3; color: var(--ink-2); margin-top: 28px; }
+  .note { font-size: 38px; font-style: italic; margin-top: 44px; color: var(--ink-2); }
+  .close { align-items: center; text-align: center; }
+  .close img { width: 200px; height: 200px; margin-bottom: 30px; }
+  .close h1 { font-size: 160px; }
+  .close .tagline { font-size: 46px; margin-top: 26px; color: var(--ink-2); }
+  .close .tagline em { color: var(--seal); }
+  .links { font-family: var(--mono); font-size: 32px; margin-top: 50px; line-height: 1.7; }
+  .close .src { text-align: center; top: auto; bottom: 170px; }
+</style>
+</head>
+<body>
+
+<section class="slide" id="holdout">
+  <div class="rule"></div>
+  <p class="kicker">Out of sample · predicted in advance</p>
+  <div class="score"><div class="huge">5/5</div><p>predictions registered on <b>17 October</b>, before any October data was collected, held on <b>409</b> petitions advertised 1–16 October.</p></div>
+  <table>
+    <tr><th>Measure</th><th>Registered range</th><th>October</th><th></th></tr>
+    <tr><td>Median days, presentation to advertisement</td><td class="n">33 – 39</td><td class="n">38</td><td class="ok">held</td></tr>
+    <tr><td>Public only after a 14-day carve-out</td><td class="n">≥ 90%</td><td class="n">95.4%</td><td class="ok">held</td></tr>
+    <tr><td>Public only after a 30-day carve-out</td><td class="n">72 – 86%</td><td class="n">77.5%</td><td class="ok">held</td></tr>
+  </table>
+  <p class="src">research/petition-lag/holdout · PREDICTIONS.md (17 Oct) · RESULTS.md (23 Oct)</p>
+</section>
+
+<section class="slide" id="plain">
+  <div class="rule"></div>
+  <p class="kicker">The problem, in three lines</p>
+  <div class="three">
+    <div><b>01</b><span>The risk starts the day a winding-up petition is <i>presented</i>.</span></div>
+    <div><b>02</b><span>The public sees it about <i>36 days</i> later.</span></div>
+    <div><b>03</b><span>Drawstop reads the public registries and <i>stops new loan money</i>.</span></div>
+  </div>
+  <p class="src">England and Wales · IA 1986 s.129(2), s.127 · IR 2016 r.7.10 · Q3 2026, 1,594 petitions</p>
+</section>
+
+<section class="slide" id="freeze">
+  <div class="rule"></div>
+  <p class="kicker">Why it has to be on-chain</p>
+  <div class="two">
+    <div><h2>Off-chain</h2><p>A bank that learns of a petition usually <b>freezes the account</b>.</p><span class="tag stop">Account frozen</span></div>
+    <div><h2>On-chain</h2><p>Nobody freezes a borrower's <b>stablecoin wallet</b>. Repayments keep flowing to token holders.</p><span class="tag open">Wallet open</span></div>
+  </div>
+  <p class="after">So the stop has to live <em>in the loan contract.</em></p>
+  <p class="src">Freezing is bank practice, not law · Drawstop protects one lender's facility, it freezes nothing else</p>
+</section>
+
+<section class="slide" id="s127">
+  <div class="rule"></div>
+  <p class="kicker">s.127 statement · rebuilt from on-chain events</p>
+  <h1>What reached the lender <em>after presentation</em></h1>
+  <div class="money">
+    <div><div class="v struck">3,000</div><p>The facility's own counter: repayments passed straight through.</p></div>
+    <div><div class="v big">8,000</div><p>At least, in the full statement: it adds the 5,000 released from suspense after the second petition was presented.</p></div>
+  </div>
+  <p class="note">A dismissal clears only its own petition. Whether any payment is void is for the court.</p>
+  <p class="src">tools/s127-report.ts · demo/s127-statement-DM000001.md · fictional borrower DM000001 on Sepolia</p>
+</section>
+
+<section class="slide close" id="close">
+  <img src="../../../docs/assets/logo.svg" alt="">
+  <h1>Drawstop</h1>
+  <p class="tagline">English insolvency notices in, <em>loan drawdowns stopped, repayments held.</em></p>
+  <p class="links">github.com/ZhenYan1214/Drawstop<br>zhenyan1214.github.io/Drawstop</p>
+  <p class="src">Chainlink CRE · Ethereum Sepolia testnet · Open source, MIT · Not legal advice</p>
+</section>
+
+<script>
+  const show = () => {
+    const id = location.hash.slice(1) || "holdout";
+    document.querySelectorAll(".slide").forEach((s) => s.classList.toggle("on", s.id === id));
+  };
+  addEventListener("hashchange", show);
+  show();
+</script>
+</body>
+</html>
