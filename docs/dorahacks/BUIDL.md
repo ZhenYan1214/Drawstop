@@ -2,7 +2,7 @@
 
 Working draft for the form at https://dorahacks.io/hackathon/legal-hack-2026 → **Submit Build**. Field limits were not visible without logging in; the short description is kept under 200 characters to be safe. Images: upload the PNGs in [`png/`](png) through the editor, or keep the GitHub links below (they render once pushed).
 
-Every number below traces to a file in the repository (see "Fact sources" at the end). The draft was read cold by two outside reviewers (a Chainlink engineer's view and an English insolvency lawyer's view) and revised; see "Review log" at the end.
+Every number below traces to a file in the repository (see "Fact sources" at the end). The draft was checked by two AI-simulated cold reads (prompted to take a CRE engineer's and an English insolvency lawyer's perspective; not human reviews) and revised; see "Review log" at the end.
 
 ## Form fields
 
@@ -12,7 +12,7 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 | Logo | [`png/logo.png`](png/logo.png) (512 × 512) |
 | Cover / banner | [`png/cover.png`](png/cover.png) (1.73 : 1, legible at the 222 × 128 card size) |
 | Short description (card, 178 chars) | Chainlink CRE workflow that reads English insolvency notices (Gazette, Companies House, GLEIF) and writes attestations, so a tokenized loan blocks drawdowns and holds repayments. |
-| Alternative short description (179) | 94% of winding-up petitions in Britain go public after a 14-day loan grace window. Drawstop (Chainlink CRE) makes a tokenized loan stop drawdowns and hold repayments when they do. |
+| Alternative short description (183) | 94% of winding-up petitions in The Gazette go public after a 14-day loan grace window. Drawstop (Chainlink CRE) makes a tokenized loan stop drawdowns and hold repayments when they do. |
 | Category | The closest of: RWA · Legal / RegTech · Infra (pick what the dropdown offers) |
 | Track | All BUIDLs |
 | Bounties | **Chainlink: Best workflow with CRE** (bounty 1362). Do not apply to RYO-CHAN (agent trading; not this project) |
@@ -98,7 +98,7 @@ Raw data and scripts for the petition study: [`research/petition-lag`](https://g
 
 ![Why it is buildable](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/buildable.png)
 
-A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/research/forward) keeps recording new petitions beside the Companies House register on GitHub Actions, so the evidence keeps growing after submission.
+A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/research/forward) on GitHub Actions has recorded each day's newly advertised petitions since 18 October, timestamped by its commits, so the evidence keeps growing after submission.
 
 ## What we don't claim
 
@@ -119,7 +119,7 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 
 | Claim | Source in the repository |
 |---|---|
-| 1,594 petitions, median 36 days, 94% / 75% (calendar days; corrected 2026-10-22 from 95% / 79%) | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
+| 1,594 petitions, median 36 days, 94% / 75% (calendar days; corrected 2026-10-22 from 95% / 79%). 10% are Scottish- or NI-registered companies; England-and-Wales only: 98% / 78% | `research/petition-lag/results.json`, figure from `data/notices.csv` via `docs/dorahacks/figures.ts` |
 | AMS timeline | Gazette notices 5219886, 5229442; `status-monitor/fixtures/ch-company-11877818.json` |
 | AMS live-source attestation, 22 Oct | README "Real companies, live sources", tx `0xfd78a1e7…743e` |
 | 53 days (Centrifuge) | `docs/research/reports/英國破產事件監控需求驗證.md` |
@@ -131,9 +131,9 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 
 ## Review log
 
-Two cold reads on 2026-10-17, each seeing only this page and the images, with up to three spot-checks in the repository.
+Two AI-simulated cold reads on 2026-10-17 (Claude subagents with no project context, each prompted with one perspective), each seeing only this page and the images, with up to three spot-checks in the repository. They are a self-check, not outside review.
 
-| Reviewer view | Found | Changed |
+| Simulated perspective | Found | Changed |
 |---|---|---|
 | Chainlink engineer | "Live sources" read as if the loan demo used them, but it uses a local mirror | Demo labelled as fictional borrower, local mirror, compressed time; live-source attestation linked; live-source command added |
 | | Too much legal jargon before any CRE | CRE paragraph first; four terms glossed; legal detail moved under "The problem" |
