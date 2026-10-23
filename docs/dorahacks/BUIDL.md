@@ -98,7 +98,7 @@ Raw data and scripts for the petition study: [`research/petition-lag`](https://g
 
 ![Why it is buildable](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/buildable.png)
 
-A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/research/forward) on GitHub Actions has recorded each day's newly advertised petitions since 18 October, timestamped by its commits, so the evidence keeps growing after submission.
+A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/research/forward) on GitHub Actions records each day's newly advertised petitions (since 18 October) and the Companies House status of every petitioned company (since 23 October), timestamped by its commits, so the evidence keeps growing after submission. First register snapshot, 23 October: 184 of 197 petitioned companies (93%) still showed `active`.
 
 ## What we don't claim
 

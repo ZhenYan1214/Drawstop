@@ -458,3 +458,4 @@ Drawstop/
 - **10 月樣本外驗證：5／5 成立**（`research/petition-lag/holdout/RESULTS.md`）。Gazette 封鎖這台電腦，改由 GitHub Actions `holdout-oct.yml` 抓（10/23）；評分程式 `evaluate.ts` 在資料到之前就 commit。409 件有聲請日：中位數 38、中間一半 34–42、14 天 95.4%、30 天 77.5%、60 天 5.1%（日曆天；時間戳定義也是 5／5）。30 件 linked data 沒有結構化聲請日（抽查 5232264 確認是欄位不存在，不是下載失敗），與 Q3 同樣排除。
 - **影片腳本**剪成 3:08（11 幕），第 5 幕是 bounty 原文要求的 CRE CLI 成功模擬，不能剪；10/22 的真實 CLI 輸出存在 `demo/cre-simulate-live-2026-10-22.log` 當備案。
 - **使用者待辦**：開 GitHub Pages（Settings → Pages → `main` / `/docs`，目前 404）；設 `CH_API_KEY` secret；錄影片。
+- **前瞻測試的 Companies House 部分 10/23 啟用**：secret 名稱必須是 `CH_API_KEY`（workflow 用 `secrets.CH_API_KEY` 傳給程式內的 `CH_API_KEY_VAR`；使用者一開始建成 `CH_API_KEY_VAR` 所以讀不到）。第一次快照：197 家被聲請的公司，184 家（93%）仍 `active`、187 家（95%）沒有 insolvency history。BUIDL 與網站已改回「同時記錄 Companies House 狀態」。
