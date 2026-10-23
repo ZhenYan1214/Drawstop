@@ -18,7 +18,7 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 | Bounties | **Chainlink: Best workflow with CRE** (bounty 1362). Do not apply to RYO-CHAN (agent trading; not this project) |
 | GitHub | https://github.com/ZhenYan1214/Drawstop |
 | Demo video | (YouTube or Loom link, 4–5 min; script in `demo/video-script.md`) |
-| Project website | https://zhenyan1214.github.io/Drawstop/ (enable GitHub Pages first: Settings → Pages → Deploy from branch `main`, folder `/docs`) |
+| Project website | https://zhenyan1214.github.io/Drawstop/ |
 | Other links | Sourcify-verified contracts: https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245 |
 | Open source | Yes, MIT |
 | Contact (required) | Your Discord, WhatsApp or WeChat |
