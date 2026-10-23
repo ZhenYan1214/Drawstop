@@ -1,0 +1,42 @@
+# One-off: collect the October 2026 hold-out sample (petitions advertised 1–16 October) for the pre-registered
+# predictions in research/petition-lag/holdout/PREDICTIONS.md. Runs here because The Gazette blocks the IP the
+# Q3 study was collected from. Same collector and parsers as the Q3 study; the CSV is committed as collected.
+name: holdout-oct
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/holdout-oct.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: holdout-oct
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.11"
+      - name: Collect October petitions from The Gazette
+        env:
+          GAZETTE_GAP_MS: "3000"
+        run: |
+          bun research/petition-lag/fetch.ts "$RUNNER_TEMP/gazette-cache" research/petition-lag/holdout/notices-oct.csv \
+            2450:2026-10-01:2026-10-16 2451:2026-10-01:2026-10-16
+      - name: Commit the sample
+        run: |
+          git config user.name "drawstop-holdout"
+          git config user.email "drawstop-holdout@users.noreply.github.com"
+          git add research/petition-lag/holdout/notices-oct.csv
+          if git diff --cached --quiet; then echo "nothing collected"; exit 1; fi
+          git commit -m "Hold-out: October 2026 petitions as collected $(date -u +%FT%TZ)"
+          git pull --rebase
+          git push
