@@ -57,7 +57,7 @@ We pulled every corporate winding-up petition advertised in The Gazette in Q3 20
 | Companies with an order advertised 1–15 Oct, still `active` on 16 Oct | 23% |
 | Drawstop's Gazette check ahead of the first insolvency filing at Companies House, when the petition was advertised | median **27 days**, earlier in **99%** of 487 cases |
 
-AMS's 49 days is typical, not an outlier.
+AMS's 49 days is typical, not an outlier. **The pattern held out of sample:** predictions registered on 17 October, before any October data was collected, held on all 5 checks for the 409 petitions advertised 1–16 October (median 38 days; 95% after a 14-day and 78% after a 30-day carve-out; [results](research/petition-lag/holdout/RESULTS.md)).
 
 **Drawstop could not have seen this petition earlier either:** it reads the same public notices. What it changes is what happens once a notice is public. The facility reacts on its next check instead of waiting for a governance vote, records the presentation date so that repayments already passed on since then are surfaced, and holds further repayments in suspense.
 

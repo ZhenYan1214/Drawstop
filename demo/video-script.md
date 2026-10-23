@@ -33,7 +33,7 @@
 
 | # | 畫面 | 英文旁白 | 中文說明與來源 |
 |---|---|---|---|
-| 1 | 黑底白字，一行一行出現：<br>**1,594** winding-up petitions · Q3 2026<br>median **36 days** from presentation to public notice<br>**94%** public only after a 14-day carve-out had closed<br>→ 標題卡 **Drawstop**，副標 *English insolvency notices in, loan drawdowns stopped, repayments held*，小字 *Chainlink CRE · Sepolia · testnet · not legal advice* | Last quarter, ninety-four percent of winding-up petitions in The Gazette became public only after a standard fourteen-day loan grace window had closed. Drawstop is a Chainlink CRE workflow that lets a tokenized loan react to those notices before money moves. | 倒金字塔：先丟實測數字。來源：`research/petition-lag/results.json`（1,594、36、94.4%）。 |
+| 1 | 黑底白字，一行一行出現：<br>**1,594** winding-up petitions · Q3 2026<br>median **36 days** from presentation to public notice<br>**94%** public only after a 14-day carve-out had closed<br>→ 標題卡 **Drawstop**，副標 *English insolvency notices in, loan drawdowns stopped, repayments held*，小字 *Chainlink CRE · Sepolia · testnet · not legal advice* | Last quarter, ninety-four percent of winding-up petitions in The Gazette became public only after a standard fourteen-day loan grace window had closed, and October's data, predicted in advance, matched. Drawstop is a Chainlink CRE workflow that lets a tokenized loan react to those notices before money moves. | 倒金字塔：先丟實測數字。來源：`research/petition-lag/results.json`（1,594、36、94.4%）。 |
 | 2 | 三行白話卡（給非律師）：<br>① Risk starts when a petition is **presented**<br>② The public sees it about **36 days later**<br>③ Drawstop reads public registries and **stops new loan money**<br>→ 切 AMS 時間軸（`timeline.svg`），小字條文 s.129(2)、s.127、r.7.10 | Under English law, the risk starts the day a petition is presented. If a winding-up order follows, later payments are void unless a court validates them. But the public only sees the petition when The Gazette advertises it. For AMS Facilities, that took forty-nine days. | 法律核心：風險起點和公開時點錯開。條文編號留在畫面小字給律師評審。來源：Gazette 5219886／5229442。 |
 | 3 | 銀行帳戶上鎖 vs. 穩定幣錢包沒鎖 | Off-chain, a bank that learns of a petition usually freezes the account. On-chain, nobody freezes a borrower's stablecoin wallet. So the stop has to live in the loan contract. | 銀行凍結是**實務**，不是法律。 |
 | 4 | 架構圖（`architecture.svg`），角落列 CRE 能力：cron trigger · EVM log trigger · HTTP + identical consensus · secrets · EVM read · EVM write | CRE is the orchestration layer. On a schedule, and on every drawdown request, the workflow calls three external APIs, The Gazette, Companies House and GLEIF, reaches identical-value consensus per source, and writes a signed attestation to Sepolia. A source that fails is recorded as could not be checked, never as clean. | 對上 bounty 原文「orchestration layer」「blockchain + external API」。 |
@@ -47,7 +47,7 @@
 
 ### 待補（數字出來才放進影片）
 
-- **10 月樣本外驗證**：結果出來後，如果預測成立，在第 1 幕最後加一句 *"and October data, predicted in advance, matched"*；如果沒成立，**不要放進影片**，只在 README 照實寫。
+- ~~10 月樣本外驗證~~：10/23 完成，5 項預測全部成立，已加進第 1 幕旁白；畫面可加一行 *October hold-out: 5 / 5 predictions held*（來源 `research/petition-lag/holdout/RESULTS.md`）。
 
 ## 錄影準備
 

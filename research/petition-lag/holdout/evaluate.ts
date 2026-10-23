@@ -54,7 +54,7 @@ const score = (lags: number[]): Check[] => {
 	]
 }
 
-let md = `# Hold-out test: results\n\nScored by [\`evaluate.ts\`](evaluate.ts) against [\`PREDICTIONS.md\`](PREDICTIONS.md), unchanged since registration. Sample: [\`notices-oct.csv\`](notices-oct.csv), petitions advertised 1–16 October 2026: ${petitions.length} notices, ${withDate.length} with a presentation date.\n`
+let md = `# Hold-out test: results\n\nScored by [\`evaluate.ts\`](evaluate.ts) against [\`PREDICTIONS.md\`](PREDICTIONS.md), unchanged since registration. Sample: [\`notices-oct.csv\`](notices-oct.csv), petitions advertised 1–16 October 2026: ${petitions.length} notices, ${withDate.length} with a presentation date. Notices whose linked data carries no structured presentation date (${petitions.length - withDate.length}) are excluded, as in the Q3 study.\n`
 let summary = ''
 for (const [name, lag] of Object.entries(definitions)) {
 	const checks = score(withDate.map(lag))

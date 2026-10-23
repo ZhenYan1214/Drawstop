@@ -32,7 +32,7 @@ Every number below traces to a file in the repository (see "Fact sources" at the
 
 **Drawstop** lets a tokenized loan to an English company react on its own when the borrower faces a winding-up petition. A **Chainlink CRE workflow** runs on a schedule and on every drawdown request, checks three public registries with per-source consensus, and writes a signed status to a registry on Sepolia. The loan contract reads that status: **new drawdowns revert, and repayments are held** because they may have to go back to the company's creditors. A source that cannot be checked is recorded as "could not be checked", never as "clean". Acting on a default stays a human decision.
 
-**Why it matters:** of 1,594 winding-up petitions advertised in Q3 2026, **94% became public only after a standard 14-day loan grace window had closed** (median: 36 days after the petition was presented).
+**Why it matters:** of 1,594 winding-up petitions advertised in Q3 2026, **94% became public only after a standard 14-day loan grace window had closed** (median: 36 days after the petition was presented). The pattern held out of sample: predictions registered on 17 October, before any October data was collected, held on all 5 checks for the 409 petitions advertised 1–16 October ([results](https://github.com/ZhenYan1214/Drawstop/blob/main/research/petition-lag/holdout/RESULTS.md)).
 
 > **Four terms, in plain words.** *Drawstop*: the lender's right to refuse new advances. *Carve-out*: a grace window during which a petition is not yet an Event of Default. *s.127 suspense*: repayments held back, because if a winding-up order follows, payments made after the petition are void unless a court validates them. *Arbiter*: the neutral reviewer named in the loan agreement.
 
@@ -127,6 +127,7 @@ A daily [forward test](https://github.com/ZhenYan1214/Drawstop/tree/main/researc
 | Sepolia steps and 8,000 vs 3,000 | `demo/sepolia-run.log`, `demo/s127-statement-DM000001.md` |
 | Trust wording in suspense, untested | `docs/agreement-rider.md` clause 4.1 and its notes |
 | Sourcify 3 of 3 | Sourcify API, 2026-10-17 |
+| October hold-out, 5 of 5, 409 petitions | `research/petition-lag/holdout/RESULTS.md` (predictions committed 17 Oct in `PREDICTIONS.md`; data collected by GitHub Actions 23 Oct) |
 | 99% of E&W petitions in CE-File courts | `research/petition-lag/courts.ts`, `holdout/courts-oct.csv` |
 
 ## Review log
@@ -146,4 +147,4 @@ Two AI-simulated cold reads on 2026-10-17 (Claude subagents with no project cont
 | | 8,000 stated as fact | "At least 8,000", with the trust-wording assumption and "for the court" |
 | | Demo timeline procedurally impossible | Labelled "compressed time" |
 
-Update before submitting: the October hold-out result if it is in; the video link. (Step 11 ran on 22 Oct; figures and the 94% / 75% correction were updated on 22 Oct.)
+Update before submitting: the video link. (Step 11 ran on 22 Oct; figures and the 94% / 75% correction were updated on 22 Oct.)

@@ -63,6 +63,20 @@ For the 943 companies with a winding-up order advertised in Q3 and an insolvency
 
 The second row understates Drawstop: those petitions were also advertised, just before the study window. It also shows that the Gazette is not always first for orders: Companies House sometimes registers an order before the Gazette publishes the order notice. The advantage comes from the petition, which the register never carries.
 
+### 6. Hold-out: the pattern held on unseen October data
+
+Predictions for petitions advertised 1–16 October 2026 were committed on 17 October ([`holdout/PREDICTIONS.md`](holdout/PREDICTIONS.md)), before any October notice was downloaded, with tolerances fixed in advance. The sample was collected on 23 October by a GitHub Actions run ([`holdout-oct.yml`](../../.github/workflows/holdout-oct.yml)), because The Gazette was blocking the IP this study was collected from, and scored by [`holdout/evaluate.ts`](holdout/evaluate.ts), committed before the data arrived.
+
+| 409 petitions, 1–16 Oct (calendar days) | Registered tolerance | October |
+|---|---|---|
+| Median days | 33 – 39 | 38 |
+| Middle half | p25 ≥ 27, p75 ≤ 45 | 34 – 42 |
+| After a 14-day carve-out | ≥ 90% | 95.4% |
+| After a 30-day carve-out | 72% – 86% | 77.5% |
+| After a 60-day carve-out | ≤ 15% | 5.1% |
+
+All 5 held under both the registered timestamp definition and the corrected calendar-day one ([`holdout/RESULTS.md`](holdout/RESULTS.md)). 30 of the 439 notices carry no structured presentation date in their linked data (spot-checked: notice 5232264 returns the full record without the field) and are excluded, as in Q3. Two adjacent periods, not seasons: this shows the gap is stable, not that it never changes.
+
 ## What this changes
 
 - The gap is systematic, not anecdotal: s.127 exposure runs for about five weeks before a petition becomes public, and most carve-outs close before then. A drawstop cannot remove that gap, but it should act the moment the petition is public, and record when exposure began.

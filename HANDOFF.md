@@ -450,3 +450,11 @@ Drawstop/
 - **圖**：`docs/dorahacks/figures.ts` 改成同一色票與襯線字（PNG 用本機 Palatino Linotype 渲染），新增 README 報頭 `docs/assets/banner.png`；`docs/assets/logo.svg` 換成封印；timeline／architecture SVG 換色。含「→」的文字在 resvg 會換字型變粗，圖裡避免用箭頭字元。
 - **數字更正（重要）**：研究原本用精確時間差，但 1,004 則公告的刊登時間是 00:00，導致「第 N 天當天刊登」被算成已過期。改用日曆天：14 天 95.2% → **94.4%**，30 天 79.4% → **75.0%**，中位數 36 不變。已更新 results.json、研究頁（附更正說明）、README、BUIDL、影片腳本、圖；`holdout/PREDICTIONS.md` 依預先登記原則不改預測，只加註「兩種定義都會報告」。
 - **Demo 第 11 步已完成**：2026-10-22 00:02 UTC，仲裁人把 2,000 退給 Official Receiver 替身（tx `0x92e216a2…e327`），README 與圖已更新。facility 現在是 `STALE`（證明過期，屬設計行為）。
+
+## 18. 10/23 審查建議與 10 月樣本外驗證
+
+- **審查建議**（`../審查建議_2026-10-23.md`）逐條核對後處理：BUIDL 的「兩位外部審查者」改成「AI 模擬的冷讀，不是人類審查」（**之後任何地方都不要把 AI 子代理稱為外部審查者**）；前向測試的描述改成實際狀態（`CH_API_KEY` 設好後才改回「並列 Companies House」）；影片旁白 95% → 94%；替代短描述 "in Britain" → "in The Gazette"。
+- **資料裡 10% 是蘇格蘭／北愛公司**（1,594 件中 157 件，用公司編號字首判斷）。只算英格蘭與威爾斯：14 天 98.2%、30 天 78.2%、中位數 36。頭條數字保留全部（較保守），研究頁、網站、BUIDL 已註明。
+- **10 月樣本外驗證：5／5 成立**（`research/petition-lag/holdout/RESULTS.md`）。Gazette 封鎖這台電腦，改由 GitHub Actions `holdout-oct.yml` 抓（10/23）；評分程式 `evaluate.ts` 在資料到之前就 commit。409 件有聲請日：中位數 38、中間一半 34–42、14 天 95.4%、30 天 77.5%、60 天 5.1%（日曆天；時間戳定義也是 5／5）。30 件 linked data 沒有結構化聲請日（抽查 5232264 確認是欄位不存在，不是下載失敗），與 Q3 同樣排除。
+- **影片腳本**剪成 3:08（11 幕），第 5 幕是 bounty 原文要求的 CRE CLI 成功模擬，不能剪；10/22 的真實 CLI 輸出存在 `demo/cre-simulate-live-2026-10-22.log` 當備案。
+- **使用者待辦**：開 GitHub Pages（Settings → Pages → `main` / `/docs`，目前 404）；設 `CH_API_KEY` secret；錄影片。
