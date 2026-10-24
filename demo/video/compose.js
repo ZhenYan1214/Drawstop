@@ -41,13 +41,15 @@ const wordAt = (row, re, nth = 0) => {
 };
 
 const clipData = (name) => JSON.parse(fs.readFileSync(path.join(ROOT, "clips", name, "frames.json"), "utf8"));
+// The hero clip is the page loading: use its last (fully loaded) frame, however fast the page came up.
+const lastFrameAt = (name) => { const f = clipData(name).frames; return f.at(-1).t - f[0].t; };
 const markAt = (name, label) => clipData(name).marks.find((m) => m.label === label).t - clipData(name).frames[0].t;
 const slide = (name, until) => ({ slide: path.join(ROOT, "slides", `${name}.png`), until });
 // from/to: seconds from the clip's first frame (undefined = clip start/end)
 const clip = (name, until, from, to) => ({ clip: name, until, from, to });
 
 const plan = [
-  /* 1 */ [clip("exhibit", wordAt(0, /^October/) - 0.3), slide("holdout", wordAt(0, /^Drawstop$/) - 0.2), clip("hero", undefined, 1.6)],
+  /* 1 */ [clip("exhibit", wordAt(0, /^October/) - 0.3), slide("holdout", wordAt(0, /^Drawstop$/) - 0.2), clip("hero", undefined, lastFrameAt("hero"))],
   /* 2 */ [slide("plain", wordAt(1, /^But$/) - 0.2), clip("record")],
   /* 3 */ [slide("freeze")],
   /* 4 */ [clip("mechanism")],
