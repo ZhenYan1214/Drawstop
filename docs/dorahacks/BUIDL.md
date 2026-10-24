@@ -1,5 +1,7 @@
 # DoraHacks BUIDL submission: draft
 
+> **Details field: use [`DETAILS.md`](DETAILS.md)** (rewritten 2026-10-24: no tables, one image, about 1,200 words). This file keeps the form fields and the earlier long draft.
+
 Working draft for the form at https://dorahacks.io/hackathon/legal-hack-2026 → **Submit Build**. Field limits were not visible without logging in; the short description is kept under 200 characters to be safe. Images: upload the PNGs in [`png/`](png) through the editor, or keep the GitHub links below (they render once pushed).
 
 Every number below traces to a file in the repository (see "Fact sources" at the end). The draft was checked by two AI-simulated cold reads (prompted to take a CRE engineer's and an English insolvency lawyer's perspective; not human reviews) and revised; see "Review log" at the end.
@@ -70,7 +72,9 @@ Off-chain, a bank that learns of a petition usually freezes the company's accoun
 
 ## Why this stands out
 
-| Chainlink criterion | Evidence |
+The bounty publishes requirements, not a rubric. These four headings are the criteria Chainlink published for its Convergence hackathon, used here as a checklist.
+
+| Heading (Convergence criteria) | Evidence |
 |---|---|
 | **Technical execution** | 42 unit tests; fuzzing over 128,000 random calls; 5 of 5 deliberately planted bugs caught; workflow tests on real recorded responses; deployed bytecode matches the source (Sourcify) |
 | **Blockchain application** | The contract that moves the money enforces the agreement. Suspense can go only to the lender, the borrower, or an office-holder nominated two days in advance |
