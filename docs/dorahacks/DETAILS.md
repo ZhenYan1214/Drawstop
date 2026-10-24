@@ -3,7 +3,7 @@ Drawstop is a Chainlink CRE workflow that checks the public insolvency record ev
 ## At a glance
 
 - **Website, no install or wallet:** https://zhenyan1214.github.io/Drawstop/ . Try §2 (pick a grace window) and §5 (step through the 11 Sepolia transactions).
-- **Video (3:40):** https://youtu.be/k0O1HUqAb0U
+- **Video (3:40):** https://youtu.be/d3qod9UnwVs
 - **Code:** https://github.com/ZhenYan1214/Drawstop . No keys needed: `forge test` in `contracts/evm`, `bun test` in `status-monitor`.
 - **Contracts on Ethereum Sepolia,** source-verified on Sourcify: https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245
 - **Three transactions:**
