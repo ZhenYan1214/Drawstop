@@ -75,7 +75,7 @@ How this answers the problem:
 
 ## Next
 
-- CRE deployment access was requested on 24 October. Once approved: deploy to a DON with the production forwarder, and move the registry owner to a multisig.
+- I have requested CRE deployment access. Once it is enabled: deploy to a DON with the production forwarder, and move the registry owner to a multisig.
 - One pilot: a facility agent, pool delegate or insolvency practitioner running Drawstop beside a live facility.
 - A court-filing source for the gap before advertisement: 99% of the England-and-Wales petitions I classified sit in courts the CE-File search covers.
 - Deliberately not doing: automatic default or acceleration, credit scoring, anything beyond statutory public records.

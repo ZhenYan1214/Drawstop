@@ -463,5 +463,5 @@ Drawstop/
 ## 19. 10/24 Details 與 CRE 部署權限
 
 - **Details 定稿**：`docs/dorahacks/DETAILS.md`（依 `Circle_arc/_private/docs/DETAILS_GUIDE.md`，無表格、1 張圖、約 1,230 字）。動機照第 3 節的真實發想過程寫；不寫獎金用途；影片用使用者聲音版（3:40）。BUIDL.md 那張四項標準表其實來自 Convergence 黑客松，已改標題說明；這次 bounty 只有需求原文，沒有評分標準。
-- **CRE 部署權限**：10/24 由使用者在終端機執行 `cre account access` 送出申請（之前是 Not enabled）。不是 bounty 必要條件（原文是 simulation **or** live deployment）。開通後再部署到 DON。
+- **CRE 部署權限**：使用者 **10/14 已申請過**（Chainlink 的 Noel Wilamowski 有回信）；10/24 又誤送一次重複申請（`cre whoami` 只顯示 Not enabled，看不出已申請，之後先查信箱再動作）。Noel 10/24 回信請參考 10/14 的信，內容待確認。不是 bounty 必要條件（原文是 simulation **or** live deployment）。開通後再部署到 DON。
 - **影片**：`demo/video/` 是製作工具（README 有步驟）；成品在 repo 外 `C:\Users\User\Desktop\BLI\video\`（`drawstop-demo-voice.mp4` + `.srt`、AI 配音版、逐字稿）。使用者錄音 32–42 對應第 1–11 段，以 1.2 倍速處理。
