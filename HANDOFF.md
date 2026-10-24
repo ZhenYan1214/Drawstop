@@ -459,3 +459,9 @@ Drawstop/
 - **影片腳本**剪成 3:08（11 幕），第 5 幕是 bounty 原文要求的 CRE CLI 成功模擬，不能剪；10/22 的真實 CLI 輸出存在 `demo/cre-simulate-live-2026-10-22.log` 當備案。
 - **使用者待辦**：開 GitHub Pages（Settings → Pages → `main` / `/docs`，目前 404）；設 `CH_API_KEY` secret；錄影片。
 - **前瞻測試的 Companies House 部分 10/23 啟用**：secret 名稱必須是 `CH_API_KEY`（workflow 用 `secrets.CH_API_KEY` 傳給程式內的 `CH_API_KEY_VAR`；使用者一開始建成 `CH_API_KEY_VAR` 所以讀不到）。第一次快照：197 家被聲請的公司，184 家（93%）仍 `active`、187 家（95%）沒有 insolvency history。BUIDL 與網站已改回「同時記錄 Companies House 狀態」。
+
+## 19. 10/24 Details 與 CRE 部署權限
+
+- **Details 定稿**：`docs/dorahacks/DETAILS.md`（依 `Circle_arc/_private/docs/DETAILS_GUIDE.md`，無表格、1 張圖、約 1,230 字）。動機照第 3 節的真實發想過程寫；不寫獎金用途；影片用使用者聲音版（3:40）。BUIDL.md 那張四項標準表其實來自 Convergence 黑客松，已改標題說明；這次 bounty 只有需求原文，沒有評分標準。
+- **CRE 部署權限**：10/24 由使用者在終端機執行 `cre account access` 送出申請（之前是 Not enabled）。不是 bounty 必要條件（原文是 simulation **or** live deployment）。開通後再部署到 DON。
+- **影片**：`demo/video/` 是製作工具（README 有步驟）；成品在 repo 外 `C:\Users\User\Desktop\BLI\video\`（`drawstop-demo-voice.mp4` + `.srt`、AI 配音版、逐字稿）。使用者錄音 32–42 對應第 1–11 段，以 1.2 倍速處理。
