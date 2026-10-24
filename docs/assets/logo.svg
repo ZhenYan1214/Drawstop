@@ -1,14 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Drawstop seal: a drawdown arrow stopped at a bar, funds held below, ringed by 'Drawstop · England and Wales · Chainlink CRE'">
-  <defs><path id="ring" d="M60 60 m-50 0 a50 50 0 1 1 100 0 a50 50 0 1 1 -100 0"/></defs>
-  <g fill="none" stroke="#a3271d">
-    <circle cx="60" cy="60" r="57" stroke-width="2.2"/>
-    <circle cx="60" cy="60" r="43.5" stroke-width="1"/>
-  </g>
-  <text font-family="Newsreader, 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="8.4" font-weight="600" letter-spacing="1.4" fill="#a3271d"><textPath href="#ring" textLength="311" lengthAdjust="spacing">DRAWSTOP · ENGLAND AND WALES · CHAINLINK CRE ·</textPath></text>
-  <g fill="none" stroke="#a3271d" stroke-linecap="square">
-    <path d="M60 29 V55" stroke-width="3.2"/>
-    <path d="M51.5 47 L60 55.5 L68.5 47" stroke-width="3.2"/>
-    <path d="M36 65.5 H84" stroke-width="6"/>
-    <rect x="47" y="75" width="26" height="13" rx="1.5" stroke-width="1.8" stroke-dasharray="3 2.6"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Drawstop: a D with a gap in its curve, where the drawdown stops">
+  <path fill="#8e1819" d="M14.03 10 H60.36 A48.16 43.95 0 0 1 108.52 53.95 H79.46 A24.01 24.99 0 0 0 55.45 28.95 H37.47 V91.15 H55.17 A24.29 25.27 0 0 0 79.46 65.88 H108.52 A49.56 44.09 0 0 1 58.96 109.97 H14.03 Q11.5 109.97 11.5 107.44 V12.53 Q11.5 10 14.03 10 Z"/>
 </svg>
