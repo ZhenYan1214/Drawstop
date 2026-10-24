@@ -36,6 +36,8 @@ I started from the Chainlink bounty and looked for a job where a CRE workflow ch
 
 **In one line:** every drawdown request triggers a fresh check of the public record before money moves, and a source that cannot be checked counts as "could not be checked", never as "clean".
 
+![Architecture: two triggers, three public sources with per-source consensus, a signed report to the StatusRegistry, read by the LoanFacility](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/architecture.png)
+
 1. The borrower calls `requestDrawdown`; the `DrawdownRequested` log triggers the CRE workflow. A cron trigger also cycles through every monitored company every 10 minutes.
 2. The workflow queries The Gazette (each notice matched by company number and court case), Companies House and GLEIF.
 3. Each source's normalized result passes identical-value consensus; one signed report goes to the `StatusRegistry`: as of time T, in source S, event E was found, not found, or could not be checked.

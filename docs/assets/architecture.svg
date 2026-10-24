@@ -20,16 +20,16 @@
 
   <!-- column captions -->
   <text x="30" y="36" class="cap">TRIGGERS</text>
-  <text x="250" y="36" class="cap">CHAINLINK CRE WORKFLOW (DON)</text>
+  <text x="250" y="36" class="cap">CHAINLINK CRE WORKFLOW</text>
   <text x="700" y="36" class="cap">ETHEREUM (SEPOLIA)</text>
 
   <!-- triggers -->
   <rect x="30" y="80" width="180" height="62" rx="2" class="box"/>
-  <text x="44" y="105" class="h">Cron · H2</text>
+  <text x="44" y="105" class="h">Cron trigger</text>
   <text x="44" y="126" class="s">every monitored company</text>
 
   <rect x="30" y="250" width="180" height="78" rx="2" class="box"/>
-  <text x="44" y="275" class="h">Drawdown · H3</text>
+  <text x="44" y="275" class="h">Drawdown request</text>
   <text x="44" y="296" class="s">EVM log trigger on</text>
   <text x="44" y="314" class="m">DrawdownRequested</text>
 
@@ -63,7 +63,7 @@
   <!-- chain side -->
   <rect x="700" y="62" width="230" height="56" rx="2" class="box"/>
   <text x="716" y="86" class="h">KeystoneForwarder</text>
-  <text x="716" y="105" class="s">verifies DON signatures</text>
+  <text x="716" y="105" class="s">checks report signatures</text>
 
   <rect x="700" y="150" width="230" height="118" rx="2" class="box"/>
   <text x="716" y="174" class="h">StatusRegistry</text>
