@@ -451,3 +451,22 @@ footer { padding: clamp(36px, 5vw, 64px) 0 48px; }
 	.statement { grid-template-columns: 1fr; }
 	.colophon ul { columns: 1; }
 }
+
+/* ── Try to break it (§5): real eth_calls against the deployed contracts ── */
+.tryit { margin-top: clamp(24px, 3vw, 36px); padding: 18px; border-top: 3px solid var(--seal); background: var(--paper-2); }
+.try-head h4 { margin: 0 0 6px; font-size: 1.25rem; }
+.try-head p { margin: 0 0 14px; font-size: 0.95rem; color: var(--ink-2); max-width: 70ch; }
+.attempts { list-style: none; margin: 0; padding: 0; counter-reset: att; }
+.attempts li { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 14px; align-items: start; padding: 12px 0; border-top: 1px solid var(--rule); counter-increment: att; }
+.attempts button { appearance: none; font: inherit; font-size: 0.92rem; text-align: left; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); padding: 8px 12px; border-radius: 2px; cursor: pointer; }
+.attempts button::before { content: counter(att, lower-roman) '. '; color: var(--seal); font-style: italic; }
+.attempts button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.attempts button:disabled { opacity: 0.5; cursor: progress; }
+.attempts .out { font-size: 0.9rem; min-height: 1.5em; }
+.attempts .out p { margin: 6px 0 0; color: var(--ink-2); }
+.attempts .out .meta { font-size: 0.8rem; color: var(--ink-3); }
+.attempts .out code { font-size: 0.82rem; word-break: break-all; }
+.attempts .out.refused .stamp { color: var(--seal); }
+.attempts .out.wait .stamp { color: var(--ink-3); }
+.try-foot { margin: 12px 0 0; font-size: 0.82rem; color: var(--ink-3); }
+@media (max-width: 640px) { .attempts li { grid-template-columns: 1fr; } }

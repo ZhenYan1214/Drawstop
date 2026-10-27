@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
-<link rel="stylesheet" href="site/style.css?v=9">
+<link rel="stylesheet" href="site/style.css?v=10">
 </head>
 <body>
 
@@ -84,6 +84,7 @@
 			<div class="cta">
 				<a href="#measured">Read the measurement</a>
 				<a href="#sepolia">Watch it on Sepolia</a>
+				<a href="#try">Try to break it</a>
 				<a href="https://github.com/ZhenYan1214/Drawstop">Source on GitHub ↗</a>
 			</div>
 		</aside>
@@ -325,6 +326,19 @@
 			<p>Assumes money in suspense stays the borrower's until released, as the draft rider's trust wording intends; untested. Whether any payment is void, or should be validated, is for the court. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/tools/s127-report.ts">tools/s127-report.ts ↗</a></p>
 		</div>
 	</div>
+	<div class="tryit reveal" id="try" aria-labelledby="try-title">
+		<div class="try-head">
+			<h4 id="try-title">Try to break it</h4>
+			<p>Each button sends a real <span class="mono">eth_call</span> to the contracts deployed on Ethereum Sepolia: the network runs the contract code and returns what it would do. No wallet, nothing is signed or spent. You act as a random address, <span class="mono" id="try-you">…</span>.</p>
+		</div>
+		<ol class="attempts">
+			<li><button type="button" data-attempt="report">Write a status into the registry yourself</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="payme">Pay the money held in suspense to yourself</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="arbiter">Do it as the arbiter instead</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="release">Release the held money to the lender now</button><div class="out" aria-live="polite"></div></li>
+		</ol>
+		<p class="try-foot">StatusRegistry <span class="mono">0x1AE2…1245</span> and LoanFacility <span class="mono">0x9116…0ab0</span>, source-verified on Sourcify. The arbiter attempt borrows the arbiter's real address, which an <span class="mono">eth_call</span> allows without its key. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/site/try.js">How each call is built ↗</a></p>
+	</div>
 </section>
 
 <!-- ───────────── § 6 Verification ───────────── -->
@@ -409,5 +423,6 @@
 
 <script src="site/data.js?v=8"></script>
 <script src="site/app.js?v=8"></script>
+<script src="site/try.js?v=1"></script>
 </body>
 </html>
