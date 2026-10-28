@@ -48,18 +48,22 @@ const slide = (name, until) => ({ slide: path.join(ROOT, "slides", `${name}.png`
 // from/to: seconds from the clip's first frame (undefined = clip start/end)
 const clip = (name, until, from, to) => ({ clip: name, until, from, to });
 
+// Animated scene from anim/scenes.html, rendered frame by frame; cues are words of this scene's narration.
+const anim = (name, until, cues = {}) => ({ anim: name, until, cues })
 const plan = [
-  /* 1 */ [clip("exhibit", wordAt(0, /^October/) - 0.3), slide("holdout", wordAt(0, /^Drawstop$/) - 0.2), clip("hero", undefined, lastFrameAt("hero"))],
-  /* 2 */ [slide("plain", wordAt(1, /^But$/) - 0.2), clip("record")],
-  /* 3 */ [slide("freeze")],
-  /* 4 */ [clip("mechanism")],
+  /* 1 */ [anim("intro", wordAt(0, /^October/) - 0.3, { ninety: /^ninety/, public: /^public/, fourteen: /^fourteen/ }),
+           anim("holdout", wordAt(0, /^Drawstop$/) - 0.2),
+           anim("title", undefined, { react: /^react/, money: /^money/ })],
+  /* 2 */ [anim("law", undefined, { risk: /^risk/, presented: /^presented/, void: /^void/, public: /^public/, Gazette: /^Gazette/, AMS: /^AMS/, forty: /^forty/ })],
+  /* 3 */ [anim("freeze", undefined, { bank: /^bank/, freezes: /^freezes/, On: /^On-chain/, wallet: /^wallet/, So: /^So$/, stop: /^stop$/ })],
+  /* 4 */ [anim("arch", undefined, { schedule: /^schedule/, drawdown: /^drawdown/, Gazette: /^Gazette/, Companies: /^Companies/, GLEIF: /^GLEIF/, identical: /^identical/, consensus: /^consensus/, writes: /^writes/, fails: /^fails/, could: /^could/, never: /^never/ })],
   /* 5 */ [clip("terminal", wordAt(4, /^Broadcast/) - 0.2), clip("chain")],
   /* 6 */ [clip("sepolia", undefined, 0, markAt("sepolia", "act1-end"))],
   /* 7 */ [clip("sepolia", undefined, markAt("sepolia", "act1-end"), markAt("sepolia", "act2-start"))],
   /* 8 */ [clip("sepolia", undefined, markAt("sepolia", "act2-start"))],
-  /* 9 */ [slide("s127")],
-  /* 10 */ [clip("checked")],
-  /* 11 */ [clip("limits", wordAt(10, /^Drawstop/) - 0.2), slide("close")],
+  /* 9 */ [anim("s127", undefined, { least: /^least/, eight: /^eight/, three: /^three/, dismissal: /^dismissal/ })],
+  /* 10 */ [anim("checks", undefined, { Sourcify: /^Sourcify/, hundred: /^hundred/, caught: /^caught/ })],
+  /* 11 */ [clip("limits", wordAt(10, /^Drawstop/) - 0.2), anim("end", undefined, { English: /^English/, loan: /^loan/, repayments: /^repayments/, Everything: /^Everything/ })],
 ];
 
 // Frames of a clip between from and to (seconds from its start), each with its own on-screen time.
@@ -84,11 +88,21 @@ const ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-r", "30"];
 function renderRow(i) {
   const segs = [];
   let t = 0;
-  plan[i].forEach((seg, s) => {
+  plan[i].forEach((seg0, s) => {
+    let seg = seg0
     const until = seg.until ?? dur[i];
     const slot = until - t;
     if (slot <= 0.05) throw new Error(`scene ${i + 1}: empty slot`);
     const out = `row${i}_${s}.mp4`;
+    if (seg.anim) {
+      const cues = Object.fromEntries(Object.entries(seg.cues).map(([k, re]) => [k, +(wordAt(i, re) - t).toFixed(3)]))
+      const spec = { scene: seg.anim, dur: +slot.toFixed(3), cues, out: path.join(ROOT, "clips", `anim-${i}-${s}`) }
+      const specFile = path.join(spec.out + ".json")
+      const same = fs.existsSync(specFile) && fs.readFileSync(specFile, "utf8") === JSON.stringify(spec) && fs.existsSync(path.join(spec.out, "frames.json"))
+        && fs.statSync(path.join(ROOT, "anim", "scenes.html")).mtimeMs < fs.statSync(specFile).mtimeMs
+      if (!same) { fs.writeFileSync(specFile, JSON.stringify(spec)); execFileSync("node", [path.join(ROOT, "render-anim.js"), specFile], { stdio: "inherit" }) }
+      seg = { clip: `anim-${i}-${s}` }
+    }
     if (seg.slide) {
       ff(["-loop", "1", "-framerate", "30", "-i", asJpg(seg.slide), "-vf", VF, "-t", slot.toFixed(3), ...ENC, out]);
     } else {
@@ -173,8 +187,20 @@ const delays = rows.map((_, i) => `[${i}]adelay=${Math.round((offsets[i] + LEAD)
 ff([...ins, "-filter_complex", `${delays};${rows.map((_, i) => `[a${i}]`).join("")}amix=inputs=${rows.length}:normalize=0,apad,atrim=0:${total.toFixed(3)},loudnorm=I=-16:TP=-1.5:LRA=11[a]`,
   "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "voice.m4a"]);
 
+// Background music under the voice, ducked by the voice (sidechain). MUSIC=none to leave it out.
+const MUSIC = process.env.MUSIC || path.join(ROOT, "audio", "music.wav");
+let audio = "voice.m4a";
+if (MUSIC !== "none" && fs.existsSync(MUSIC)) {
+  ff(["-i", "voice.m4a", "-i", MUSIC, "-filter_complex",
+    `[1]volume=${process.env.MUSIC_GAIN || 0.2},atrim=0:${total.toFixed(3)},apad=whole_dur=${total.toFixed(3)}[m];[0]asplit=2[v][k];` +
+    `[m][k]sidechaincompress=threshold=0.015:ratio=6:attack=40:release=700[md];[v][md]amix=inputs=2:normalize=0,alimiter=limit=0.95[a]`,
+    "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "mix.m4a"]);
+  audio = "mix.m4a";
+  console.log("music:", MUSIC);
+}
+
 fs.copyFileSync(process.env.FONT || "C:/Windows/Fonts/arial.ttf", path.join(BUILD, "arial.ttf"));
 const style = "FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF,OutlineColour=&H50141A1A,BorderStyle=3,Outline=5,Shadow=0,MarginV=30,MarginL=40,MarginR=40";
-ff(["-i", "video.mp4", "-i", "voice.m4a", "-vf", `subtitles=captions.srt:fontsdir=.:force_style='${style}'`,
+ff(["-i", "video.mp4", "-i", audio, "-vf", `subtitles=captions.srt:fontsdir=.:force_style='${style}'`,
   "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", OUT]);
 console.log("wrote", OUT);
