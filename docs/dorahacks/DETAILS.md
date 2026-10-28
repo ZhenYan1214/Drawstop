@@ -19,7 +19,7 @@ In England and Wales, a compulsory winding-up is deemed to start on the day the 
 
 I measured the gap: of the 1,594 petitions advertised in Q3 2026 with a presentation date, the median appeared 36 days after presentation, 94.4% after a 14-day grace window had closed. Predictions committed on 17 October held on all five checks for 409 October petitions.
 
-One case: AMS Facilities (SW) Ltd's petition was presented on 11 August and advertised 49 days later. Fifteen days after its winding-up order, Companies House still listed it as active.
+One case: AMS Facilities (SW) Ltd's petition was presented on 11 August and advertised 49 days later. Fifteen days after its winding-up order, Companies House still listed it as active; the register recorded the order only on 27 October, 77 days after the petition was presented.
 
 ![94% of petitions became public only after a 14-day grace window had closed](https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/gap.png)
 

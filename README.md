@@ -40,6 +40,7 @@ The risk starts on one date. The world finds out weeks later:
 | 2026‑10‑07 | Winding-up order | — |
 | 2026‑10‑14 | Order advertised, [Gazette notice 5229442](https://www.thegazette.co.uk/notice/5229442) | Gazette |
 | 2026‑10‑14 | Companies House API still returns `company_status: active`, `has_insolvency_history: false` | — |
+| 2026‑10‑27 | Companies House registers the winding-up order ([filing history](https://find-and-update.company-information.service.gov.uk/company/11877818/filing-history), COCOMP): **77 days** after presentation, 28 days after the Gazette advert | Companies House |
 
 A 30-day carve-out counted from presentation had expired 19 days before the petition appeared in any free public source. A lender watching only Companies House would still have seen nothing a week after the order.
 
