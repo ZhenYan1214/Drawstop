@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
-<link rel="stylesheet" href="site/style.css?v=10">
+<link rel="stylesheet" href="site/style.css?v=11">
 </head>
 <body>
 
@@ -244,7 +244,7 @@
 		<div class="box">
 			<span class="kind caps">Triggers</span>
 			<h4>Schedule and request</h4>
-			<ul><li>Cron: every registered company</li><li>EVM log: a fresh check on every drawdown request</li></ul>
+			<ul><li>Cron: rotates through registered companies</li><li>EVM log: a fresh check on every drawdown request</li></ul>
 		</div>
 		<div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 12"><path d="M0 6 H28 M23 1 L28 6 L23 11"/></svg></div>
 		<div class="box key">
@@ -329,7 +329,7 @@
 	<div class="tryit reveal" id="try" aria-labelledby="try-title">
 		<div class="try-head">
 			<h4 id="try-title">Try to break it</h4>
-			<p>Each button sends a real <span class="mono">eth_call</span> to the contracts deployed on Ethereum Sepolia: the network runs the contract code and returns what it would do. No wallet, nothing is signed or spent. You act as a random address, <span class="mono" id="try-you">…</span>.</p>
+			<p>Each button sends a real <span class="mono">eth_call</span> to the contracts deployed on Ethereum Sepolia: the network runs the contract code and returns what it would do. No wallet, nothing is signed or spent. Each attempt targets the contract directly; on testnet the simulation forwarder itself does not check signatures (see §7). You act as a random address, <span class="mono" id="try-you">…</span>.</p>
 		</div>
 		<ol class="attempts">
 			<li><button type="button" data-attempt="report">Write a status into the registry yourself</button><div class="out" aria-live="polite"></div></li>
@@ -337,7 +337,7 @@
 			<li><button type="button" data-attempt="arbiter">Do it as the arbiter instead</button><div class="out" aria-live="polite"></div></li>
 			<li><button type="button" data-attempt="release">Release the held money to the lender now</button><div class="out" aria-live="polite"></div></li>
 		</ol>
-		<p class="try-foot">StatusRegistry <span class="mono">0x1AE2…1245</span> and LoanFacility <span class="mono">0x9116…0ab0</span>, source-verified on Sourcify. The arbiter attempt borrows the arbiter's real address, which an <span class="mono">eth_call</span> allows without its key. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/site/try.js">How each call is built ↗</a></p>
+		<p class="try-foot">StatusRegistry <span class="mono">0x1AE2…1245</span> and LoanFacility <span class="mono">0x9116…0ab0</span>, source-verified on Sourcify. Suspense is empty today (the 2,000 went to the Official Receiver stand-in on 22 October); the refusals do not depend on the balance. The arbiter attempt borrows the arbiter's real address, which an <span class="mono">eth_call</span> allows without its key. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/site/try.js">How each call is built ↗</a></p>
 	</div>
 </section>
 
@@ -352,7 +352,7 @@
 	<ul class="checks reveal">
 		<li><div class="res num">42<small class="caps">pass</small></div><div><h4>Unit tests</h4><p>One scenario per test, including the real AMS timeline and nine issues found in an adversarial audit.</p></div></li>
 		<li><div class="res num">128k<small class="caps">calls</small></div><div><h4>Invariant fuzzing</h4><p>Every action in random order by every role, five properties checked after each call, against an independent reference model.</p></div></li>
-		<li><div class="res num">5 / 5<small class="caps">caught</small></div><div><h4>Mutation testing</h4><p>Five bugs planted to test the fuzzer. Two were missed at first, which is why the final suite looks the way it does.</p></div></li>
+		<li><div class="res num">5 / 5<small class="caps">caught</small></div><div><h4>Mutation testing</h4><p>Five bugs planted to test the fuzzer. Two of the first four slipped past it, which is why the final suite looks the way it does.</p></div></li>
 		<li><div class="res num">3 / 3<small class="caps">match</small></div><div><h4>Deployed = source</h4><p>Sourcify recompiled the repository and matched the creation and runtime bytecode of all three contracts.</p></div></li>
 		<li><div class="res num">24<small class="caps">pass</small></div><div><h4>Real responses</h4><p>Workflow parsers tested on recorded Gazette, Companies House and GLEIF responses.</p></div></li>
 		<li><div class="res num">Daily<small class="caps">forward test</small></div><div><h4>Evidence that keeps growing</h4><p>GitHub Actions records each day's newly advertised petitions and every petitioned company's Companies House status, timestamped in public. On 23 October, 184 of 197 (93%) still showed active.</p></div></li>
@@ -392,7 +392,7 @@
 			<li><b>“Not found” never rules out a petition</b> presented but not yet advertised. That is a limit of free open data, not of the law: 99% of England-and-Wales petitions sit in courts the CE-File search covers, a source that could be added.</li>
 			<li><b>A payment between presentation and advertisement cannot be stopped,</b> only surfaced afterwards.</li>
 			<li><b>The legal design is illustrative.</b> The draft facility terms flag what needs specialist advice. Not legal advice.</li>
-			<li><b>Test setup.</b> The CRE simulator runs consensus on one node; Sepolia writes go through the simulation forwarder; the registry owner is the test lender.</li>
+			<li><b>Test setup.</b> The CRE simulator runs consensus on one node. Sepolia writes go through the simulation forwarder, which does not check signatures, so anyone could push a report through it; production uses the KeystoneForwarder, which does. The registry owner is the test lender.</li>
 			<li><b>No user interviews yet.</b> Demand is argued from statute, case law, LMA structure and on-chain incidents.</li>
 			<li><b>One quarter of data, plus a two-week hold-out.</b> Predictions registered on 17 October held on all 5 checks for 409 October petitions. 12 Q3 notices were unretrievable. Corrected on 22 October to whole calendar days: the 30-day figure is 75%, not the 79% first published.</li>
 			<li><b>Mostly England and Wales.</b> 10% of the petitions concern Scottish or Northern Irish companies, whose rules differ; they are kept in, which makes the figures conservative (England and Wales only: 98% after 14 days).</li>
@@ -423,6 +423,6 @@
 
 <script src="site/data.js?v=8"></script>
 <script src="site/app.js?v=8"></script>
-<script src="site/try.js?v=1"></script>
+<script src="site/try.js?v=2"></script>
 </body>
 </html>
