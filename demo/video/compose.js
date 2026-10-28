@@ -187,13 +187,14 @@ const delays = rows.map((_, i) => `[${i}]adelay=${Math.round((offsets[i] + LEAD)
 ff([...ins, "-filter_complex", `${delays};${rows.map((_, i) => `[a${i}]`).join("")}amix=inputs=${rows.length}:normalize=0,apad,atrim=0:${total.toFixed(3)},loudnorm=I=-16:TP=-1.5:LRA=11[a]`,
   "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "voice.m4a"]);
 
-// Background music under the voice, ducked by the voice (sidechain). MUSIC=none to leave it out.
+// Background music under the voice, ducked by the voice (sidechain): about 9 dB under speech, louder in pauses.
+// MUSIC=none to leave it out; MUSIC_GAIN to change its level.
 const MUSIC = process.env.MUSIC || path.join(ROOT, "audio", "music.wav");
 let audio = "voice.m4a";
 if (MUSIC !== "none" && fs.existsSync(MUSIC)) {
   ff(["-i", "voice.m4a", "-i", MUSIC, "-filter_complex",
-    `[1]volume=${process.env.MUSIC_GAIN || 0.2},atrim=0:${total.toFixed(3)},apad=whole_dur=${total.toFixed(3)}[m];[0]asplit=2[v][k];` +
-    `[m][k]sidechaincompress=threshold=0.015:ratio=6:attack=40:release=700[md];[v][md]amix=inputs=2:normalize=0,alimiter=limit=0.95[a]`,
+    `[1]volume=${process.env.MUSIC_GAIN || 0.6},atrim=0:${total.toFixed(3)},apad=whole_dur=${total.toFixed(3)}[m];[0]asplit=2[v][k];` +
+    `[m][k]sidechaincompress=threshold=0.03:ratio=3:attack=60:release=800[md];[v][md]amix=inputs=2:normalize=0,alimiter=limit=0.95[a]`,
     "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "mix.m4a"]);
   audio = "mix.m4a";
   console.log("music:", MUSIC);

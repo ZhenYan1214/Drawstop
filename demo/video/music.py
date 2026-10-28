@@ -60,13 +60,13 @@ for b in range(bars):
     e = env(L, 1.4, 1.8)
     for k, m in enumerate(pad):
         f = hz(m)
-        v = (np.sin(2 * np.pi * f * 0.998 * tt) + np.sin(2 * np.pi * f * 1.002 * tt) + 0.18 * np.sin(2 * np.pi * 2 * f * tt)) * e * 0.055
+        v = (np.sin(2 * np.pi * f * 0.998 * tt) + np.sin(2 * np.pi * f * 1.002 * tt) + 0.35 * np.sin(2 * np.pi * 2 * f * tt) + 0.15 * np.sin(2 * np.pi * 3 * f * tt)) * e * 0.05
         pan = 0.35 + 0.15 * k
         add(left, t0, v * (1 - pan) * 2)
         add(right, t0, v * pan * 2)
     # sub bass
     f = hz(bass)
-    v = np.sin(2 * np.pi * f * tt) * env(L, 0.5, 1.6) * 0.09
+    v = np.sin(2 * np.pi * f * tt) * env(L, 0.5, 1.6) * 0.05
     add(left, t0, v)
     add(right, t0, v)
     # plucked arpeggio, eighth notes at 60 bpm, an octave up, with a 3/8 echo
@@ -77,13 +77,24 @@ for b in range(bars):
         f = hz(m)
         P = int(1.2 * SR)
         tp = np.arange(P) / SR
-        pl = (np.sin(2 * np.pi * f * tp) + 0.3 * np.sin(2 * np.pi * 2 * f * tp)) * np.exp(-tp * 4.2) * env(P, 0.005, 0.2) * 0.05
+        pl = (np.sin(2 * np.pi * f * tp) + 0.45 * np.sin(2 * np.pi * 2 * f * tp) + 0.2 * np.sin(2 * np.pi * 3 * f * tp)) * np.exp(-tp * 4.2) * env(P, 0.005, 0.2) * 0.13
         st = t0 + j * 0.5
         side = 0.3 if j % 2 else 0.7
         add(left, st, pl * side * 2)
         add(right, st, pl * (1 - side) * 2)
         add(left, st + 0.75, pl * 0.35 * (1 - side) * 2)
         add(right, st + 0.75, pl * 0.35 * side * 2)
+
+# bell: two octaves up on beats 1 and 3 from the second bar, soft, so small speakers hear the harmony
+for b in range(1, bars):
+    bass, pad = CHORDS[b % len(CHORDS)]
+    for j, m in enumerate([pad[2] + 24, pad[0] + 24]):
+        f = hz(m)
+        P = int(2.0 * SR)
+        tp = np.arange(P) / SR
+        bell = (np.sin(2 * np.pi * f * tp) + 0.25 * np.sin(2 * np.pi * 2.76 * f * tp)) * np.exp(-tp * 2.2) * env(P, 0.004, 0.3) * 0.035
+        add(left, b * BAR + j * 2.0, bell * (0.6 if j else 0.4) * 2)
+        add(right, b * BAR + j * 2.0, bell * (0.4 if j else 0.6) * 2)
 
 # tiny bit of air so silence is not digital
 noise = rng.normal(0, 0.0015, n)
