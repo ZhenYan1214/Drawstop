@@ -25,6 +25,9 @@
   .card { position: absolute; background: #f8f4ea; border: 2px solid var(--ink); border-radius: 10px; padding: 22px 26px; }
   .card h3 { font-size: 34px; font-weight: 500; margin-bottom: 6px; }
   .card p { font-size: 24px; color: var(--ink-2); line-height: 1.3; }
+  .shot { position: absolute; background: #fff; border: 1px solid var(--paper-3); box-shadow: 0 18px 50px rgba(26,24,20,.18); border-radius: 6px; overflow: hidden; }
+  .shot img { display: block; width: 100%; }
+  .credit { position: absolute; font-family: var(--mono); font-size: 18px; color: var(--ink-3); letter-spacing: .04em; }
   .card .t { font-family: var(--mono); font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
 </style>
 </head>
@@ -68,6 +71,8 @@ const icon = (name, size, color, x, y, id = '') => add(`<div ${id ? `id="${id}"`
 const scenes = {
   // Scene 1a: the measured gap, with the real Q3 histogram
   intro() {
+    S.bg = add(`<div class="abs" style="left:900px;top:100px;width:1100px;height:707px;opacity:0;background:url(../real/gz-petitions-list.png) center/cover;filter:grayscale(.3)"></div>`)
+    S.bgc = add(`<p class="credit" style="right:40px;top:40px">background: thegazette.co.uk insolvency notices, 28 Oct 2026 (OGL)</p>`)
     add(`<div class="rule"></div>`)
     S.k = add(`<p class="abs k" style="left:160px;top:124px">The gap, measured · Q3 2026</p>`)
     S.n = add(`<div class="abs big" style="left:160px;top:190px;font-size:150px">0</div>`)
@@ -89,6 +94,7 @@ const scenes = {
     S.bars = [...document.querySelectorAll('.bar')]
   },
   intro_seek(t) {
+    S.bg.style.opacity = .07 * p(t, 0, 1.2); S.bg.style.transform = `scale(${1.04 - .04 * clamp(t / 12)})`; S.bgc.style.opacity = .9 * p(t, .5, 1)
     show(S.k, p(t, 0, .5))
     S.n.textContent = fmt(1594 * out(p(t, .1, 1.3))); show(S.n, p(t, 0, .4)); show(S.nl, p(t, .4, .6))
     const a = cue('ninety', 1.3)
@@ -163,7 +169,9 @@ const scenes = {
     S.void = add(`<div class="abs stamp" style="left:${x(4)}px;top:${y + 200}px;color:var(--seal);transform:rotate(-6deg)">void if an order follows</div>`)
     S.paper = icon('paper', 120, 'var(--ink)', x(36) - 60, y - 340)
     S.pl = add(`<p class="abs" style="left:${x(36) - 40}px;top:${y - 205}px;width:420px;font-size:30px"><b id="pday">Day 36</b> · advertised in The Gazette<br><span class="mono" style="font-size:20px;color:var(--ink-3)" id="pnote">Q3 2026 median</span></p>`)
-    S.ams = add(`<p class="abs" style="left:160px;top:${y + 260}px;font-size:40px">AMS FACILITIES (SW) LTD · <span class="mono" style="font-size:30px">11 Aug → 29 Sep 2026</span></p>`)
+    S.notice = add(`<div class="shot" style="left:160px;top:615px;width:780px"><img src="../real/gz-petition-text.png"><div style="position:absolute;left:24.5%;top:30%;width:41%;height:13.5%;border:4px solid var(--seal);border-radius:4px;background:rgba(163,39,29,.08)"></div></div>`)
+    S.noticec = add(`<p class="credit" style="left:160px;top:866px">The Gazette, notice 5219886 · published 29 Sep 2026</p>`)
+    S.ams = add(`<p class="abs" style="left:900px;top:130px;font-size:36px">AMS FACILITIES (SW) LTD · <span class="mono" style="font-size:30px">11 Aug → 29 Sep 2026</span></p>`)
   },
   law_seek(t) {
     const x = S.x, y = 600
@@ -180,6 +188,8 @@ const scenes = {
     $('#hid').setAttribute('width', (x(36) - x(0)) * ease(p(t, cue('public', 13.3), 1.2))); $('#hidt').style.opacity = p(t, cue('public', 13.3) + .6, .6)
     const a = cue('AMS', 19.0)
     show(S.ams, p(t, a - .2, .5))
+    const fade = 1 - p(t, a - .6, .4); S.coins.forEach((c) => (c.style.opacity = Math.min(+c.style.opacity || 0, fade))); S.void.style.opacity = Math.min(+S.void.style.opacity, fade)
+    const nk = p(t, a - .3, .6); S.notice.style.opacity = nk; S.notice.style.transform = `translateY(${-30 * (1 - out(nk))}px)`; S.noticec.style.opacity = p(t, a + .2, .5)
     const mv = ease(p(t, a + .4, 1.2)); const day = 36 + 13 * mv
     S.paper.style.left = (x(day) - 60) + 'px'; S.pl.style.left = (x(day) - 40) + 'px'
     $('#pday').textContent = t > a ? `Day ${Math.round(day)}` : 'Day 36'; $('#pnote').textContent = t > a ? 'AMS: 29 September' : 'Q3 2026 median'
@@ -296,10 +306,12 @@ const scenes = {
     add(`<div class="rule"></div>`)
     S.k = add(`<p class="abs k" style="left:160px;top:124px">Is it right? · checks anyone can rerun</p>`)
     const tiles = [['3 / 3', 'contracts match the source', 'Sourcify: creation + runtime bytecode'], ['128,000', 'random calls', 'invariant fuzzing, 5 properties after every call'], ['5 / 5', 'planted bugs caught', 'the first suite missed 2 of the first 4; fixed'], ['42 + 24', 'unit + workflow tests', 'forge test · bun test, no keys needed']]
+    S.src = add(`<div class="shot" style="left:490px;top:222px;width:470px"><img src="../real/sourcify-crop.png"></div>`)
     S.tiles = tiles.map((tl, i) => add(`<div class="abs" style="left:${160 + (i % 2) * 820}px;top:${210 + Math.floor(i / 2) * 380}px;width:760px;border-top:3px solid var(--ink);padding-top:20px">
       <div class="big n" style="font-size:150px;color:${i === 2 ? 'var(--seal)' : 'var(--ink)'}">${tl[0]}</div><p style="font-size:40px;margin-top:10px">${tl[1]}</p><p class="mono" style="font-size:22px;color:var(--ink-3);margin-top:8px">${tl[2]}</p></div>`))
   },
   checks_seek(t) {
+    { const k = p(t, cue('Sourcify', 2.2) + .2, .6); S.src.style.opacity = k; S.src.style.transform = `translateY(${20 * (1 - out(k))}px)` }
     show(S.k, p(t, 0, .4))
     const at = [cue('Sourcify', 2.2), cue('hundred', 6.9), cue('caught', 14.1), cue('caught', 14.1) + 1.2]
     S.tiles.forEach((el, i) => show(el, p(t, at[i] - .3, .5)))

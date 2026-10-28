@@ -12,3 +12,4 @@ wlib/
 *.ttf
 *.log
 slides/*.png
+real/

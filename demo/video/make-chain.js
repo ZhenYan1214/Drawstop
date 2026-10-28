@@ -26,7 +26,13 @@ const row = (r) => `<div class="row">
   <div class="kv"><span>transaction</span><b>${short(r.tx)}</b><em>block ${r.block.toLocaleString("en")} · ${r.status}</em></div>
 </div>`;
 
-const page = (k) => `<!doctype html><html><head><meta charset="utf-8">
+const CH = "data:image/png;base64," + fs.readFileSync(path.join(ROOT, "real", "ch-filing-cocomp.png")).toString("base64");
+const ps = `<div style="position:absolute;left:960px;top:-14px;width:560px;background:#fff;border:1px solid #ddd4c1;box-shadow:0 14px 40px rgba(26,24,20,.16);border-radius:6px;padding:14px 16px 12px">
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.12em;text-transform:uppercase;color:#a3271d;margin:0 0 8px">Postscript · Companies House</p>
+  <img src="${CH}" style="width:100%;display:block">
+  <p style="font-size:22px;margin:8px 0 0;color:#48433b">The register recorded the winding-up order on <b>27 October</b>, 20 days after it was made.</p>
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#827a6c;margin:6px 0 0">find-and-update.company-information.service.gov.uk · checked 28 Oct 2026</p></div>`;
+const page = (k, post = false) => `<!doctype html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
 <style>
   html,body{margin:0;width:1920px;height:1080px;background:#f2ede2;color:#1a1814;font-family:Newsreader,Georgia,serif}
@@ -45,20 +51,21 @@ const page = (k) => `<!doctype html><html><head><meta charset="utf-8">
 <h1>What the registry now says</h1>
 <p class="call">StatusRegistry ${data.registry.slice(0, 10)}…${data.registry.slice(-4)} · getLatest(entityIdFor(company))</p>
 ${data.rows.slice(0, k).map(row).join("")}
+${post ? ps : ""}
 </div></body></html>`;
 
 (async () => {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const p = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const frames = [];
-  for (const [k, t] of [[0, 0], [1, 1.2], [2, 4.2]]) {
-    await p.setContent(page(k), { waitUntil: "networkidle" });
+  for (const [k, t, post] of [[0, 0], [1, 1.2], [2, 3.4], [2, 5.4, true]]) {
+    await p.setContent(page(k, post), { waitUntil: "networkidle" });
     await p.evaluate(() => document.fonts.ready);
     const file = String(frames.length).padStart(5, "0") + ".png";
     await p.screenshot({ path: path.join(OUT, file) });
     frames.push({ file, t });
   }
-  frames.push({ ...frames.at(-1), t: 7.5 });
+  frames.push({ ...frames.at(-1), t: 9.5 });
   fs.writeFileSync(path.join(OUT, "frames.json"), JSON.stringify({ name: "chain", frames }, null, 1));
   console.log(`chain: ${frames.length} frames`);
   await browser.close();
