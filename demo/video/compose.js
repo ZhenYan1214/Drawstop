@@ -53,14 +53,14 @@ const anim = (name, until, cues = {}) => ({ anim: name, until, cues })
 const plan = [
   /* 1 */ [anim("intro", wordAt(0, /^October/) - 0.3, { ninety: /^ninety/, public: /^public/, fourteen: /^fourteen/ }),
            anim("holdout", wordAt(0, /^Drawstop$/) - 0.2),
-           anim("title", undefined, { react: /^react/, money: /^money/ })],
+           clip("landing", undefined, 1.9, 12.6)],
   /* 2 */ [anim("law", undefined, { risk: /^risk/, presented: /^presented/, void: /^void/, public: /^public/, Gazette: /^Gazette/, AMS: /^AMS/, forty: /^forty/ })],
   /* 3 */ [anim("freeze", undefined, { bank: /^bank/, freezes: /^freezes/, On: /^On-chain/, wallet: /^wallet/, So: /^So$/, stop: /^stop$/ })],
   /* 4 */ [anim("arch", undefined, { schedule: /^schedule/, drawdown: /^drawdown/, Gazette: /^Gazette/, Companies: /^Companies/, GLEIF: /^GLEIF/, identical: /^identical/, consensus: /^consensus/, writes: /^writes/, fails: /^fails/, could: /^could/, never: /^never/ })],
-  /* 5 */ [clip("terminal", wordAt(4, /^Broadcast/) - 0.2), clip("chain")],
-  /* 6 */ [clip("sepolia", undefined, 0, markAt("sepolia", "act1-end"))],
-  /* 7 */ [clip("sepolia", undefined, markAt("sepolia", "act1-end"), markAt("sepolia", "act2-start"))],
-  /* 8 */ [clip("sepolia", undefined, markAt("sepolia", "act2-start"))],
+  /* 5 */ [clip("terminal", wordAt(4, /^Broadcast/) - 0.2), clip("console", undefined, 0, 3.6)],
+  /* 6 */ [anim("docket", undefined, { _start: 0, s1: /^loan/, s2: /^released/, s3: /^petition/, s4: /^reverts/ })],
+  /* 7 */ [anim("docket", undefined, { _start: 4, s5: /^held/, s6: /^dismissal/ })],
+  /* 8 */ [anim("docket", undefined, { _start: 6, s7: /^repays/, s8: /^winding/, s9: /^held/, s10: /^Official/, s11: /^after/ })],
   /* 9 */ [anim("s127", undefined, { least: /^least/, eight: /^eight/, three: /^three/, dismissal: /^dismissal/ })],
   /* 10 */ [anim("checks", undefined, { Sourcify: /^Sourcify/, hundred: /^hundred/, caught: /^caught/ })],
   /* 11 */ [clip("limits", wordAt(10, /^Drawstop/) - 0.2), anim("end", undefined, { English: /^English/, loan: /^loan/, repayments: /^repayments/, Everything: /^Everything/ })],
@@ -95,7 +95,7 @@ function renderRow(i) {
     if (slot <= 0.05) throw new Error(`scene ${i + 1}: empty slot`);
     const out = `row${i}_${s}.mp4`;
     if (seg.anim) {
-      const cues = Object.fromEntries(Object.entries(seg.cues).map(([k, re]) => [k, +(wordAt(i, re) - t).toFixed(3)]))
+      const cues = Object.fromEntries(Object.entries(seg.cues).map(([k, re]) => [k, typeof re === "number" ? re : +(wordAt(i, re) - t).toFixed(3)]))
       const spec = { scene: seg.anim, dur: +slot.toFixed(3), cues, out: path.join(ROOT, "clips", `anim-${i}-${s}`) }
       const specFile = path.join(spec.out + ".json")
       const same = fs.existsSync(specFile) && fs.readFileSync(specFile, "utf8") === JSON.stringify(spec) && fs.existsSync(path.join(spec.out, "frames.json"))

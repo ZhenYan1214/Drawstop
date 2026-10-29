@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Drawstop video scenes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
 <style>
   /* Animated scenes for the demo video. Every frame is a pure function of time: render-anim.js calls
      setup(scene, duration, cues, data) once, then seek(t) for each frame, so animation lands on spoken words. */
@@ -28,6 +28,18 @@
   .shot { position: absolute; background: #fff; border: 1px solid var(--paper-3); box-shadow: 0 18px 50px rgba(26,24,20,.18); border-radius: 6px; overflow: hidden; }
   .shot img { display: block; width: 100%; }
   .credit { position: absolute; font-family: var(--mono); font-size: 18px; color: var(--ink-3); letter-spacing: .04em; }
+  /* product (console) look for the loan docket */
+  .prod { font-family: Inter, system-ui, sans-serif; }
+  .prod .cardp { position: absolute; background: #fff; border: 1px solid #e4dfd4; border-radius: 18px; box-shadow: 0 2px 6px rgba(23,21,15,.05), 0 24px 60px rgba(23,21,15,.10); }
+  .prod .pillp { display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 16px; border-radius: 999px; font-size: 20px; font-weight: 600; }
+  .prod .pillp::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .prod .ok { background: #e5f3ea; color: #1f7a4a; } .prod .warn { background: #fbf1dc; color: #9a6a0c; } .prod .bad { background: #f8e9e6; color: #a3271d; } .prod .muted { background: #efece5; color: #8a8476; }
+  .prod .step { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 11px 16px; border-radius: 12px; font-size: 21px; color: #8a8476; }
+  .prod .step .no { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; font-weight: 600; background: #efece5; color: #8a8476; }
+  .prod .step.done { color: #4a463d; } .prod .step.done .no { background: #17150f; color: #fff; }
+  .prod .step.now { background: #f1eee7; color: #17150f; font-weight: 600; } .prod .step.now .no { background: #a3271d; color: #fff; }
+  .prod .tile { background: #f1eee7; border-radius: 14px; padding: 18px; } .prod .tile small { display: block; font-size: 17px; color: #8a8476; } .prod .tile b { font-family: 'IBM Plex Mono', monospace; font-size: 34px; font-weight: 500; }
+  .prod .stampp { font: 700 20px 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; padding: 8px 14px; border-radius: 9px; border: 3px solid currentColor; display: inline-block; }
   .card .t { font-family: var(--mono); font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
 </style>
 </head>
@@ -273,6 +285,63 @@ const scenes = {
     
   },
 
+
+  // Scenes 6-8: the 11-step loan scenario on Sepolia, in the console's product look. Cues s1..s11 reveal steps;
+  // _start is the number of steps already done when the scene opens.
+  docket() {
+    const STEPS = [
+      ['Clean record', 'Normal', 'ok', 'Cron check: nothing found', 'Checked', 'ok', '0x0340ef…52fd'],
+      ['Drawdown of 10,000 released', 'Normal', 'ok', 'Request → log trigger → fresh check', 'Released', 'ok', '0x2e6629…baca'],
+      ['Petition advertised', 'Petition pending', 'warn', 'Presented 12 days earlier', 'Drawstop on', 'warn', '0xabba91…11d1'],
+      ['Second drawdown refused', 'Petition pending', 'warn', 'Fresh check: petition on record', 'Refused', 'bad', '0xcdc4ca…601a'],
+      ['Repayment of 5,000 held', 'Petition pending', 'warn', 'Paid while the petition is known', 'Held', 'warn', '0x11d976…127d'],
+      ['Dismissed: suspense released', 'Normal', 'ok', 'Dismissal for the same court case', 'To lender', 'ok', '0x2534f9…c483'],
+      ['Repayment of 3,000 passes through', 'Normal', 'ok', 'The record still looks clean', 'Passed', 'ok', '0x474eee…328a'],
+      ['Winding-up order advertised', 'Review required', 'bad', 'Its petition was presented 12 days earlier', '3,000 flagged', 'bad', '0x22f114…25d2'],
+      ['Repayment of 2,000 held', 'Review required', 'bad', 'Paid after the order', 'Held', 'warn', '0x8e884e…17a6'],
+      ['Official Receiver nominated', 'Review required', 'bad', 'Effective after two days; an early transfer is refused', 'Delay running', 'warn', '0x541378…17fe'],
+      ['2,000 returned to the estate', 'Review required', 'bad', 'After the two-day delay', 'To Official Receiver', 'ok', '0x92e216…e327'],
+    ]
+    // money after each step: drawn, held, lender, office-holder
+    S.money = [[0,0,0,0],[0,0,0,0],[10000,0,0,0],[10000,0,0,0],[10000,0,0,0],[10000,5000,0,0],[10000,0,5000,0],[10000,0,8000,0],[10000,0,8000,0],[10000,2000,8000,0],[10000,2000,8000,0],[10000,0,8000,2000]]
+    S.STEPS = STEPS
+    const root = add(`<div class="prod abs" style="inset:0"></div>`)
+    root.appendChild(h(`<p class="abs k" style="left:120px;top:70px">On Ethereum Sepolia · fictional borrower · local mirror, compressed time</p>`))
+    const list = h(`<div class="cardp" style="left:120px;top:130px;width:700px;padding:18px"></div>`)
+    S.rows = STEPS.map((st, i) => { const r = h(`<div class="step"><span class="no">${i + 1}</span><span>${st[0]}</span></div>`); list.appendChild(r); return r })
+    root.appendChild(list)
+    root.appendChild(h(`<div class="cardp" style="left:870px;top:130px;width:930px;padding:34px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:30px;font-weight:700">Loan facility · DM000001</div><div style="font-size:19px;color:#8a8476">Borrower Ltd (fictional) · mUSDC · 30-day carve-out from presentation</div></div><span class="pillp ok" id="dk-status">Normal</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px">
+        <div class="tile"><small>Drawn</small><b id="dk-m0">0</b></div><div class="tile"><small>Held in suspense</small><b id="dk-m1">0</b></div>
+        <div class="tile"><small>Paid to lender</small><b id="dk-m2">0</b></div><div class="tile"><small>Official Receiver</small><b id="dk-m3">0</b></div></div>
+      <div style="margin-top:34px;background:#f7f5f0;border-radius:16px;padding:28px;min-height:230px">
+        <div style="font-size:18px;color:#8a8476;letter-spacing:.06em;text-transform:uppercase" id="dk-no">Step</div>
+        <div style="font-size:34px;font-weight:600;margin:10px 0 6px" id="dk-title"></div>
+        <div style="font-size:22px;color:#4a463d" id="dk-sub"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:26px"><span class="stampp" id="dk-stamp"></span><span style="font:20px 'IBM Plex Mono',monospace;color:#8a8476" id="dk-tx"></span></div>
+      </div>
+    </div>`))
+  },
+  docket_seek(t) {
+    const start = cue('_start', 0)
+    const at = S.STEPS.map((_, i) => (i < start ? -1 : cue('s' + (i + 1), 1e9)))
+    let n = start
+    at.forEach((a, i) => { if (i >= start && t >= a) n = i + 1 })
+    S.rows.forEach((r, i) => (r.className = 'step' + (i < n && !(i === n - 1 && n > start) ? ' done' : '') + (i === n - 1 && n > start ? ' now' : '')))
+    const cur = S.STEPS[Math.max(0, n - 1)]
+    const st = $('#dk-status'); st.textContent = n ? cur[1] : 'Normal'; st.className = 'pillp ' + (n ? cur[2] : 'ok')
+    const prev = S.money[Math.max(0, n - 1)], next = S.money[n], k = n > start ? Math.min(1, Math.max(0, (t - at[n - 1]) / .8)) : 1
+    for (let j = 0; j < 4; j++) $('#dk-m' + j).textContent = Math.round(prev[j] + (next[j] - prev[j]) * (1 - Math.pow(1 - k, 3))).toLocaleString('en-GB')
+    $('#dk-no').textContent = n ? `Step ${n} of 11` : 'Before step 1'
+    $('#dk-title').textContent = n ? cur[0] : ''
+    $('#dk-sub').textContent = n ? cur[3] : ''
+    const sp = $('#dk-stamp'); sp.textContent = n ? cur[4] : ''; sp.style.color = n ? ({ ok: '#1f7a4a', warn: '#9a6a0c', bad: '#a3271d' })[cur[5]] : 'transparent'
+    const ks = n > start ? Math.min(1, Math.max(0, (t - at[n - 1] - .2) / .35)) : 1
+    sp.style.opacity = ks; sp.style.transform = `rotate(-4deg) scale(${.6 + .4 * ks})`
+    $('#dk-tx').textContent = n ? 'tx ' + cur[6] : ''
+  },
+
   // Scene 9: the s.127 statement
   s127() {
     add(`<div class="rule"></div>`)
@@ -325,7 +394,7 @@ const scenes = {
     S.mark = icon('mark', 200, 'var(--seal)', 860, 150)
     S.word = add(`<div class="abs big" style="left:0;width:1920px;text-align:center;top:380px;font-size:180px">Drawstop</div>`)
     S.tag = ['English insolvency notices in,', 'loan drawdowns stopped,', 'repayments held.'].map((w, i) => add(`<span class="abs" style="top:600px;font-size:52px;${i ? 'color:var(--seal);font-style:italic' : ''}">${w}</span>`))
-    S.links = add(`<div class="abs mono" style="left:0;width:1920px;text-align:center;top:720px;font-size:32px;line-height:1.8">github.com/ZhenYan1214/Drawstop<br>zhenyan1214.github.io/Drawstop · <span style="color:var(--seal)">try to break it: #try</span></div>`)
+    S.links = add(`<div class="abs mono" style="left:0;width:1920px;text-align:center;top:720px;font-size:32px;line-height:1.8">github.com/ZhenYan1214/Drawstop<br>zhenyan1214.github.io/Drawstop · <span style="color:var(--seal)">live console · try to break it</span></div>`)
     S.small = add(`<p class="abs mono" style="left:0;width:1920px;text-align:center;top:880px;font-size:22px;color:var(--ink-3)">Chainlink CRE · Ethereum Sepolia testnet · open source, MIT · not legal advice</p>`)
   },
   end_seek(t) {

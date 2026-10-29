@@ -136,6 +136,25 @@ const clips = {
     await sleep(5000);
     await stop();
   },
+  async landing() {
+    // the new product landing: the facility mock plays Released -> petition -> Refused -> Held on load
+    await page.goto("about:blank");
+    await start("landing");
+    await page.goto(SITE, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#mock");
+    await sleep(11500);
+    await stop();
+  },
+  async console() {
+    await page.goto(SITE + "console.html", { waitUntil: "networkidle" });
+    await page.waitForSelector(".verdict", { timeout: 60000 });
+    await sleep(800);
+    await start("console");
+    await sleep(2500);
+    await scrollTo(260, 1400);
+    await sleep(3500);
+    await stop();
+  },
   async etherscan() {
     await page.goto(AMS_TX, { waitUntil: "domcontentloaded" });
     await sleep(4000);
