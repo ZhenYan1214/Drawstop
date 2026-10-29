@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawstop Console · live on Ethereum Sepolia</title>
+<meta name="description" content="The Drawstop console: monitored companies and the demo loan facility, read live from the deployed contracts on Ethereum Sepolia.">
+<link rel="icon" href="site/favicon.svg" type="image/svg+xml">
+<script>document.documentElement.classList.add('js')</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
+<link rel="stylesheet" href="site/product.css?v=2">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="mark" viewBox="0 0 120 120"><path fill="currentColor" d="M14.03 10 H60.36 A48.16 43.95 0 0 1 108.52 53.95 H79.46 A24.01 24.99 0 0 0 55.45 28.95 H37.47 V91.15 H55.17 A24.29 25.27 0 0 0 79.46 65.88 H108.52 A49.56 44.09 0 0 1 58.96 109.97 H14.03 Q11.5 109.97 11.5 107.44 V12.53 Q11.5 10 14.03 10 Z"/></symbol>
+	<symbol id="v-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12.5 3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+	<symbol id="v-bad" viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5m0 2.5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+	<symbol id="v-warn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6m0 3v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+	<symbol id="v-muted" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="nav scrolled">
+	<div class="wrap" style="width:calc(100% - 40px);max-width:none">
+		<a class="brand" href="./"><svg aria-hidden="true"><use href="#mark"/></svg>Drawstop <span class="muted" style="font-weight:500">Console</span></a>
+		<nav aria-label="Main"><a href="./">Product</a><a href="story.html">Evidence</a><a href="https://github.com/ZhenYan1214/Drawstop">GitHub</a></nav>
+		<div class="right">
+			<span class="pill pulse ok" id="net">Sepolia · connecting…</span>
+			<button class="btn ghost small" id="connect" type="button" title="Optional: see your role. Nothing is signed.">Connect wallet</button>
+		</div>
+	</div>
+</header>
+
+<div class="app">
+	<aside class="side" aria-label="Records">
+		<h4>Loan facilities</h4>
+		<button class="item" type="button" data-view="facility" aria-selected="false"><span class="dot" id="dot-facility"></span><span><b>Demo facility</b><small>DM000001 Borrower Ltd · fictional</small></span></button>
+		<h4>Monitored companies</h4>
+		<div id="companies"><div class="item"><span class="dot"></span><span style="flex:1"><span class="skeleton" style="display:block;width:70%"></span></span></div></div>
+		<p class="note" style="margin:22px 10px 0">Everything here is read live from the deployed contracts. Nothing is sent, and no wallet is needed.</p>
+	</aside>
+	<main class="main" id="view" aria-live="polite">
+		<div class="panel"><div class="skeleton" style="width:40%;height:22px"></div><div class="skeleton" style="width:70%;margin-top:14px"></div></div>
+	</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js" defer></script>
+<script src="site/chain.js?v=2" defer></script>
+<script src="site/console.js?v=2" defer></script>
+</body>
+</html>

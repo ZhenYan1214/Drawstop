@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawstop · Evidence: the gap, the case, the checks</title>
+<meta name="description" content="Winding-up petitions in England and Wales reach free open data a median 36 days after the risk to every repayment begins. Drawstop is a Chainlink CRE workflow that lets a tokenized loan stop drawdowns and hold repayments the moment one appears.">
+<meta name="theme-color" content="#f2ede2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Drawstop">
+<meta property="og:description" content="94% of winding-up petitions became public only after a 14-day loan grace window had closed (Q3 2026, 1,594 petitions). A Chainlink CRE workflow that makes a tokenized loan act when they do.">
+<meta property="og:image" content="https://raw.githubusercontent.com/ZhenYan1214/Drawstop/main/docs/dorahacks/png/cover.png">
+<link rel="icon" href="site/favicon.svg" type="image/svg+xml">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('drawstop-edition');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<link rel="stylesheet" href="site/style.css?v=12">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="seal" viewBox="0 0 120 120">
+		<path fill="currentColor" d="M14.03 10 H60.36 A48.16 43.95 0 0 1 108.52 53.95 H79.46 A24.01 24.99 0 0 0 55.45 28.95 H37.47 V91.15 H55.17 A24.29 25.27 0 0 0 79.46 65.88 H108.52 A49.56 44.09 0 0 1 58.96 109.97 H14.03 Q11.5 109.97 11.5 107.44 V12.53 Q11.5 10 14.03 10 Z"/>
+	</symbol>
+</svg>
+
+<div style="font:500 14px/1 Inter,system-ui,sans-serif;background:#17150f;color:#f7f5f0;padding:11px 16px;text-align:center"><a href="./" style="color:inherit">← Drawstop product</a> &nbsp;·&nbsp; <a href="console.html" style="color:inherit">Open the live console</a> &nbsp;·&nbsp; <span style="opacity:.7">You are reading the full evidence</span></div>
+
+<!-- running head, appears after the masthead -->
+<div class="runner" id="runner" aria-hidden="true">
+	<div class="wrap">
+		<a class="brand" href="#top" tabindex="-1"><svg aria-hidden="true"><use href="#seal"/></svg>Drawstop</a>
+		<nav aria-label="Sections (compact)">
+			<a href="#gap" tabindex="-1"><b>§1</b>The gap</a>
+			<a href="#measured" tabindex="-1"><b>§2</b>Measured</a>
+			<a href="#record" tabindex="-1"><b>§3</b>On the record</a>
+			<a href="#mechanism" tabindex="-1"><b>§4</b>Mechanism</a>
+			<a href="#sepolia" tabindex="-1"><b>§5</b>On Sepolia</a>
+			<a href="#checked" tabindex="-1"><b>§6</b>Verification</a>
+			<a href="#limits" tabindex="-1"><b>§7</b>Limits</a>
+		</nav>
+		<button class="edition" type="button" data-edition tabindex="-1">Night edition</button>
+		<span class="progress" id="progress"></span>
+	</div>
+</div>
+
+<header class="masthead wrap" id="top">
+	<div class="ears caps">
+		<span>Vol. I · No. 1<span class="wide"> · Testnet edition</span></span>
+		<span>England and Wales · Insolvency Act 1986</span>
+		<span><span class="wide">October 2026 · </span><button class="edition" type="button" data-edition>Night edition</button></span>
+	</div>
+	<div class="nameplate">
+		<p class="motto">Statutory insolvency notices in,</p>
+		<h1><svg class="seal" aria-hidden="true"><use href="#seal"/></svg>Drawstop</h1>
+		<p class="motto right">loan drawdowns stopped, repayments held.</p>
+	</div>
+	<div class="double-rule"></div>
+	<nav class="index caps" aria-label="Sections">
+		<a href="#gap"><b>§ 1</b>The gap</a>
+		<a href="#measured"><b>§ 2</b>Measured</a>
+		<a href="#record"><b>§ 3</b>On the record</a>
+		<a href="#mechanism"><b>§ 4</b>The mechanism</a>
+		<a href="#sepolia"><b>§ 5</b>On Sepolia</a>
+		<a href="#checked"><b>§ 6</b>Verification</a>
+		<a href="#limits"><b>§ 7</b>Limits</a>
+	</nav>
+</header>
+
+<main>
+
+<!-- ───────────── Lead ───────────── -->
+<div class="wrap">
+	<article class="lead" aria-labelledby="lead-title">
+		<div class="lead-title">
+			<p class="kicker caps">The gap, measured</p>
+			<h2 id="lead-title">Thirty&#8209;six <em>days.</em></h2>
+		</div>
+		<div>
+			<p class="dek">The median time between a winding-up petition being presented in England and Wales, when every repayment the company makes is put at risk, and its first appearance in free open data.</p>
+			<p class="byline caps">Q3 2026 · 1,594 petitions · Data: The Gazette, Companies House · Not legal advice</p>
+		</div>
+		<aside class="lead-aside">
+			<p><b>Drawstop</b> is a Chainlink CRE workflow that reads the public insolvency record and writes a signed status on-chain. A tokenized loan reads it and does what an LMA-style agreement already says: no new drawdowns, repayments held, and acceleration left to the lender.</p>
+			<div class="cta">
+				<a href="#measured">Read the measurement</a>
+				<a href="#sepolia">Watch it on Sepolia</a>
+				<a href="#try">Try to break it</a>
+				<a href="https://github.com/ZhenYan1214/Drawstop">Source on GitHub ↗</a>
+			</div>
+		</aside>
+		<figure class="ruler" id="ruler" aria-label="A ruler of days: from presentation, a 14-day carve-out closes on day 14, while the median petition first appears in The Gazette on day 36.">
+			<svg viewBox="0 0 1100 150" role="img" aria-hidden="true">
+				<rect class="grace" x="20" y="58" width="353" height="22"/>
+				<text class="lbl lbl-ochre" x="26" y="52">14-day carve-out</text>
+				<g id="ticks"></g>
+				<line class="base" x1="20" y1="80" x2="1080" y2="80"/>
+				<rect class="exposure" x="20" y="83" width="908.6" height="7"/>
+				<line class="pin" x1="20" y1="24" x2="20" y2="80"/>
+				<text class="lbl lbl-seal" x="26" y="20">Day 0 · petition presented, s.127 exposure begins</text>
+				<g class="fade-in">
+					<line class="pin" x1="928.6" y1="90" x2="928.6" y2="126"/>
+					<text class="lbl" x="920" y="142" text-anchor="end">Day 36 · median first appearance in The Gazette</text>
+				</g>
+			</svg>
+		</figure>
+	</article>
+</div>
+
+<!-- ───────────── § 1 The gap ───────────── -->
+<section class="part wrap" id="gap" aria-labelledby="gap-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 1</b>The gap</p>
+		<div>
+			<h3 id="gap-title">Two clocks start at presentation. <em>Neither is visible.</em></h3>
+		</div>
+	</div>
+	<div class="column">
+		<aside class="margin" aria-label="Notes">
+			<ol>
+				<li id="n1"><b>1</b>Insolvency Act 1986, s.129(2): a compulsory winding-up is deemed to commence when the petition is presented.</li>
+				<li id="n2"><b>2</b>s.127: after commencement, any disposition of the company's property is void unless the court orders otherwise. It bites only if a winding-up order is made.</li>
+				<li id="n3"><b>3</b><i>Express Electrical Distributors Ltd v Beavis</i> [2016] EWCA Civ 765: the payee's good faith is not enough.</li>
+				<li id="n4"><b>4</b>Insolvency (England and Wales) Rules 2016, r.7.10: advertisement at least seven business days after service.</li>
+				<li id="n5"><b>5</b><i>Torre Asset Funding v RBS</i> [2013] EWHC 2670 (Ch): the agent may assume no Default has occurred unless told.</li>
+				<li id="n6"><b>6</b>Centrifuge governance forum, ConsolFreight CF4 pool update, August 2023.</li>
+			</ol>
+		</aside>
+		<div class="body reveal">
+			<p class="dropcap">Under the law of England and Wales, a compulsory winding-up is treated as starting the day a petition is <i>presented</i>.<a class="note-ref" href="#n1">1</a> If a winding-up order follows, every disposition of the company's property from that day, a loan repayment included, is void unless the court validates it,<a class="note-ref" href="#n2">2</a> and it does not help that the lender had no idea.<a class="note-ref" href="#n3">3</a></p>
+			<p>Yet a petition first reaches free open data only when The Gazette advertises it, at least seven business days after it is served.<a class="note-ref" href="#n4">4</a> Until then it sits on the court file. It is never filed at Companies House.</p>
+			<div class="clocks">
+				<div>
+					<h4><span>i.</span> The default clock</h4>
+					<p>LMA-style agreements stop new drawdowns while a Default continues. A petition gets a grace window only if it is frivolous or vexatious and dismissed within [14] days. The agent may assume nothing is wrong unless told,<a class="note-ref" href="#n5">5</a> and the borrower is the one who must tell it.</p>
+				</div>
+				<div>
+					<h4><span>ii.</span> The s.127 clock</h4>
+					<p>Runs from presentation whatever the carve-out says. Every repayment after that date is at risk if an order follows, and it has to come back from whoever received it.</p>
+				</div>
+			</div>
+			<p>Off-chain, a bank that learns of a petition usually freezes the company's account. That is bank practice, not law, and it has no equivalent for a stablecoin wallet: on-chain repayments keep flowing to token holders unless the loan contract itself stops them.</p>
+			<blockquote class="pull">Nobody freezes a stablecoin wallet. The loan contract has to know.<small>Token holders in one Centrifuge pool learned of a borrower's court-ordered liquidation 53 days after the order.<a class="note-ref" href="#n6">6</a></small></blockquote>
+		</div>
+	</div>
+</section>
+
+<!-- ───────────── § 2 Measured ───────────── -->
+<section class="part wrap" id="measured" aria-labelledby="measured-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 2</b>Measured</p>
+		<div>
+			<h3 id="measured-title">It is not one case. It is <em>how the system works.</em></h3>
+			<p class="standfirst">Every corporate winding-up petition advertised in The Gazette from July to September 2026, read through the same parser the workflow uses. Choose the grace window your agreement gives.</p>
+		</div>
+	</div>
+
+	<figure class="exhibit reveal" aria-labelledby="exhibit-label">
+		<div class="exhibit-head">
+			<p class="label caps" id="exhibit-label"><b>Exhibit A</b> · Days from presentation to Gazette advertisement · 1,594 petitions</p>
+			<p class="label caps faint">Drag across the chart, or use the slider</p>
+		</div>
+		<div class="exhibit-grid">
+			<div class="chart" id="chart">
+				<svg id="hist" viewBox="0 0 760 340" role="img" aria-label="Histogram of days from presentation to advertisement; petitions advertised after the selected carve-out are shaded red."></svg>
+				<div class="tip" id="tip" role="presentation"></div>
+			</div>
+			<div class="readout">
+				<div aria-live="polite">
+					<div class="big num" id="pct">94.4<small>%</small></div>
+					<p class="sentence" id="sentence">of petitions became public only after a <b>14-day</b> carve-out, counted from presentation, had already closed.</p>
+					<p class="count caps" id="count">1,505 of 1,594 petitions</p>
+				</div>
+				<div class="control">
+					<label for="days">Carve-out in the facility agreement: <b id="days-out">14</b> days</label>
+					<input type="range" id="days" min="0" max="70" step="1" value="14">
+					<div class="presets" role="group" aria-label="Common carve-outs">
+						<button type="button" data-days="7" aria-pressed="false">7 days</button>
+						<button type="button" data-days="14" aria-pressed="true">14 · LMA bracket</button>
+						<button type="button" data-days="30" aria-pressed="false">30 · borrower-friendly</button>
+						<button type="button" data-days="60" aria-pressed="false">60 days</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<figcaption class="source">Source: The Gazette linked data, notices 2450/2451 advertised 1 Jul – 30 Sep 2026; whole calendar days from presentation to advertisement. A carve-out of N days is still open on day N. <a href="https://github.com/ZhenYan1214/Drawstop/tree/main/research/petition-lag">Data, scripts and method ↗</a></figcaption>
+	</figure>
+
+	<div class="figures reveal">
+		<div><div class="fig num">36<small>days</small></div><p>Median from presentation to advertisement; the middle half fall between 30 and 41.</p></div>
+		<div><div class="fig num">61<small>%</small></div><p>Of petitioned companies with no winding-up order notice still read “active” at Companies House on 16 October.</p></div>
+		<div><div class="fig num">23<small>%</small></div><p>Of companies with an order advertised 1–15 October still read “active” on the register.</p></div>
+		<div><div class="fig num">27<small>days</small></div><p>Median lead of a Gazette check over the first insolvency filing at Companies House, earlier in 99% of 487 cases.</p></div>
+	</div>
+</section>
+
+<!-- ───────────── § 3 On the record ───────────── -->
+<section class="part wrap" id="record" aria-labelledby="record-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 3</b>On the record</p>
+		<div>
+			<h3 id="record-title">One company, <em>four dates.</em></h3>
+			<p class="standfirst">AMS FACILITIES (SW) LTD, company 11877818, from the public record. Monitoring only: no lending relationship is implied.</p>
+		</div>
+	</div>
+	<div class="record reveal">
+		<div class="track" id="track">
+			<div class="event red">
+				<div class="date caps">11 August 2026</div>
+				<h4>HMRC presents a winding-up petition</h4>
+				<p>Case CR-2026-006286. From today, s.127 exposure runs. Nothing appears in free open data.</p>
+			</div>
+			<div class="event">
+				<div class="date caps">29 September</div>
+				<h4>Petition advertised in The Gazette</h4>
+				<p>Notice 5219886. The first moment a public-source check, Drawstop included, can see it.</p>
+				<span class="gap-tag caps num">49 days later</span>
+			</div>
+			<div class="event">
+				<div class="date caps">7 October</div>
+				<h4>Winding-up order made</h4>
+				<p>A 30-day carve-out from presentation had closed 19 days before the petition was public.</p>
+			</div>
+			<div class="event">
+				<div class="date caps">14 October</div>
+				<h4>Order advertised</h4>
+				<p>Notice 5229442. The CRE workflow, on live sources, recorded “winding-up order found” <a href="https://sepolia.etherscan.io/tx/0x5bc10a0588bcc5f46f0f587be3280067a85e35d257b38022e3e8ef59c9d04cda">on Sepolia ↗</a>.</p>
+			</div>
+		</div>
+		<p class="register-note"><span class="stamp held">Register</span><span>On <b>16 October</b>, nine days after the order, Companies House still read <b>“active”</b>, with no insolvency filing at all. It recorded the order on <b>27 October</b>, 77 days after the petition was presented. Forty-nine days is typical: see <a href="#measured">Exhibit A</a>.</span></p>
+	</div>
+</section>
+
+<!-- ───────────── § 4 Mechanism ───────────── -->
+<section class="part wrap" id="mechanism" aria-labelledby="mech-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 4</b>The mechanism</p>
+		<div>
+			<h3 id="mech-title">The agreement's own terms, <em>where the money moves.</em></h3>
+			<p class="standfirst">A Chainlink CRE workflow checks three public registries on a schedule and on every drawdown request, agrees on each source, and writes a signed status. The loan contract reads it before any money moves.</p>
+		</div>
+	</div>
+
+	<div class="flow reveal" id="flow">
+		<div class="box">
+			<span class="kind caps">Triggers</span>
+			<h4>Schedule and request</h4>
+			<ul><li>Cron: rotates through registered companies</li><li>EVM log: a fresh check on every drawdown request</li></ul>
+		</div>
+		<div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 12"><path d="M0 6 H28 M23 1 L28 6 L23 11"/></svg></div>
+		<div class="box key">
+			<span class="kind caps">Chainlink CRE</span>
+			<h4>Three sources, one answer each</h4>
+			<ul><li>The Gazette: primary, each notice confirmed</li><li>Companies House: status, filings</li><li>GLEIF: cross-check only</li><li>Disagreement → “could not be checked”</li></ul>
+		</div>
+		<div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 12"><path d="M0 6 H28 M23 1 L28 6 L23 11"/></svg></div>
+		<div class="box">
+			<span class="kind caps">StatusRegistry</span>
+			<h4>A signed attestation</h4>
+			<ul><li>As of time T, in source S, event E was found, not found, or could not be checked</li><li>Expires after a day</li></ul>
+		</div>
+		<div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 12"><path d="M0 6 H28 M23 1 L28 6 L23 11"/></svg></div>
+		<div class="box seal-box">
+			<span class="kind caps">LoanFacility</span>
+			<h4>The agreement, enforced</h4>
+			<ul><li>Drawstop and carve-out window</li><li>s.127 suspense for repayments</li><li>Reviews by a neutral arbiter</li><li>Acceleration: the lender's call</li></ul>
+		</div>
+	</div>
+
+	<div class="reveal">
+		<table class="schedule">
+			<caption class="caps">Schedule of responses</caption>
+			<thead><tr><th scope="col">When the record shows</th><th scope="col">The facility</th><th scope="col">Why</th></tr></thead>
+			<tbody>
+				<tr><td>A petition to wind up <span class="code">2450 · 2451</span></td><td><span class="stamp stop">Drawstop</span> while the carve-out runs, then review</td><td>No drawdown while a Default continues (cf. LMA cl. 4.2); carve-out only for a frivolous or vexatious petition dismissed within [14] days (cf. cl. 23.7)</td></tr>
+				<tr><td>A repayment while a petition or proceeding is known</td><td><span class="stamp held">Held</span> in suspense, not passed on</td><td>Void if an order follows, unless validated (s.127); money spread across token holders could not be recovered</td></tr>
+				<tr><td>A dismissal for the same court case <span class="code">2461</span></td><td><span class="stamp open">Open</span>; suspense releasable</td><td>The petition is resolved; a dismissal clears only its own petition</td></tr>
+				<tr><td>An order, resolution or appointment <span class="code">2452 · 2431/2441 · 2432/2443/2454 · 2410</span></td><td><span class="stamp review">Review</span> no grace</td><td>An Event of Default; whether to accelerate is the lender's decision</td></tr>
+				<tr><td>A source that could not be checked</td><td><span class="stamp stop">Drawstop</span> until re-checked</td><td>Never recorded as clean; the agreement must allocate the outage risk</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<ol class="clauses reveal">
+		<li><b>Absence is not resolution.</b> A petition stays live until a dismissal for the same court case is found, or a winding-up order supersedes it.</li>
+		<li><b>“Could not be checked” is never “clean”.</b> A failed or disputed source blocks drawdowns and says so.</li>
+		<li><b>Humans accelerate.</b> The contract never accelerates, enforces security or cancels the lender's commitment on its own.</li>
+		<li><b>Reviews are narrow.</b> Append-only, expiring, and limited to what the latest attestation shows; they cannot release suspense while a petition is live.</li>
+		<li><b>Suspense has three exits.</b> The lender, the borrower, or an office-holder nominated on-chain two days in advance.</li>
+		<li><b>The agreement prevails over the code.</b> Illustrative facility terms are drafted in <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/agreement-rider.md">the rider ↗</a>, flagged where specialist advice is needed.</li>
+	</ol>
+</section>
+
+<!-- ───────────── § 5 On Sepolia ───────────── -->
+<section class="part wrap" id="sepolia" aria-labelledby="sepolia-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 5</b>On Sepolia</p>
+		<div>
+			<h3 id="sepolia-title">Eleven steps, <em>every one on-chain.</em></h3>
+			<p class="standfirst">A petition and its dismissal, then a petition nobody saw and the order that followed. Step through what the loan contract did.</p>
+		</div>
+	</div>
+	<p class="staged reveal"><b>What is real, and what is staged.</b> The contracts, the CRE workflow and every transaction are real, on Ethereum Sepolia. The borrower, DM000001, is <b>fictional</b>; its notices come from a local mirror shaped like The Gazette and Companies House, in <b>compressed time</b>. Terms: a 30-day carve-out from presentation.</p>
+	<div class="docket reveal">
+		<ol class="steps" id="steps" aria-label="Demo steps"></ol>
+		<div class="ledger" id="ledger" aria-live="polite">
+			<div class="ledger-head caps"><span>LoanFacility · DM000001</span><span id="ledger-step">Step 1 of 11</span></div>
+			<span class="stamp impress" id="impress" aria-hidden="true"></span>
+			<h4 id="ledger-title"></h4>
+			<p class="detail" id="ledger-detail"></p>
+			<dl>
+				<dt>Facility status</dt><dd id="l-status"></dd>
+				<dt>Borrower (mUSDC)</dt><dd id="l-borrower"></dd>
+				<dt>Lender (mUSDC)</dt><dd id="l-lender"></dd>
+				<dt>Held in suspense</dt><dd id="l-suspense"></dd>
+			</dl>
+			<div class="status-row">
+				<a id="ledger-tx" class="tx-link" href="#">Transaction ↗</a>
+				<div class="nav"><button type="button" id="prev">Previous</button><button type="button" id="next">Next</button></div>
+			</div>
+		</div>
+	</div>
+	<div class="statement reveal">
+		<div class="fig num">8,000</div>
+		<div>
+			<p><b>What a liquidator would look for.</b> Rebuilt from on-chain events alone, the s.127 statement shows <b>at least 8,000</b> reached the lender after presentation, not the 3,000 the contract's own view reports: 5,000 released from suspense after the first petition's dismissal left after the second petition had already been presented. A dismissal clears only its own petition.</p>
+			<p>Assumes money in suspense stays the borrower's until released, as the draft rider's trust wording intends; untested. Whether any payment is void, or should be validated, is for the court. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/tools/s127-report.ts">tools/s127-report.ts ↗</a></p>
+		</div>
+	</div>
+	<div class="tryit reveal" id="try" aria-labelledby="try-title">
+		<div class="try-head">
+			<h4 id="try-title">Try to break it</h4>
+			<p>Each button sends a real <span class="mono">eth_call</span> to the contracts deployed on Ethereum Sepolia: the network runs the contract code and returns what it would do. No wallet, nothing is signed or spent. Each attempt targets the contract directly; on testnet the simulation forwarder itself does not check signatures (see §7). You act as a random address, <span class="mono" id="try-you">…</span>.</p>
+		</div>
+		<ol class="attempts">
+			<li><button type="button" data-attempt="report">Write a status into the registry yourself</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="payme">Pay the money held in suspense to yourself</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="arbiter">Do it as the arbiter instead</button><div class="out" aria-live="polite"></div></li>
+			<li><button type="button" data-attempt="release">Release the held money to the lender now</button><div class="out" aria-live="polite"></div></li>
+		</ol>
+		<p class="try-foot">StatusRegistry <span class="mono">0x1AE2…1245</span> and LoanFacility <span class="mono">0x9116…0ab0</span>, source-verified on Sourcify. Suspense is empty today (the 2,000 went to the Official Receiver stand-in on 22 October); the refusals do not depend on the balance. The arbiter attempt borrows the arbiter's real address, which an <span class="mono">eth_call</span> allows without its key. <a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/site/try.js">How each call is built ↗</a></p>
+	</div>
+</section>
+
+<!-- ───────────── § 6 Verification ───────────── -->
+<section class="part wrap" id="checked" aria-labelledby="checked-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 6</b>Verification</p>
+		<div>
+			<h3 id="checked-title">Every claim has <em>a check behind it.</em></h3>
+		</div>
+	</div>
+	<ul class="checks reveal">
+		<li><div class="res num">42<small class="caps">pass</small></div><div><h4>Unit tests</h4><p>One scenario per test, including the real AMS timeline and nine issues found in an adversarial audit.</p></div></li>
+		<li><div class="res num">128k<small class="caps">calls</small></div><div><h4>Invariant fuzzing</h4><p>Every action in random order by every role, five properties checked after each call, against an independent reference model.</p></div></li>
+		<li><div class="res num">5 / 5<small class="caps">caught</small></div><div><h4>Mutation testing</h4><p>Five bugs planted to test the fuzzer. Two of the first four slipped past it, which is why the final suite looks the way it does.</p></div></li>
+		<li><div class="res num">3 / 3<small class="caps">match</small></div><div><h4>Deployed = source</h4><p>Sourcify recompiled the repository and matched the creation and runtime bytecode of all three contracts.</p></div></li>
+		<li><div class="res num">24<small class="caps">pass</small></div><div><h4>Real responses</h4><p>Workflow parsers tested on recorded Gazette, Companies House and GLEIF responses.</p></div></li>
+		<li><div class="res num">Daily<small class="caps">forward test</small></div><div><h4>Evidence that keeps growing</h4><p>GitHub Actions records each day's newly advertised petitions and every petitioned company's Companies House status, timestamped in public. On 23 October, 184 of 197 (93%) still showed active.</p></div></li>
+	</ul>
+	<div class="terminal reveal">
+		<div>
+			<p class="caps muted" style="margin:0 0 8px;font-size:.82rem">Verify in two minutes · no keys, no accounts</p>
+			<pre class="cmd" id="cmd1"><button class="copy" type="button" data-copy="cmd1">Copy</button><span class="p">$ </span>git clone https://github.com/ZhenYan1214/Drawstop
+<span class="p">$ </span>cd Drawstop/contracts/evm &amp;&amp; forge test   <span class="c"># 42 tests + 5 invariants</span>
+<span class="p">$ </span>cd ../../status-monitor &amp;&amp; bun test sources.test.ts</pre>
+			<p class="caps muted" style="margin:16px 0 8px;font-size:.82rem">Live sources · a CRE login and a free Companies House key</p>
+			<pre class="cmd" id="cmd2"><button class="copy" type="button" data-copy="cmd2">Copy</button><span class="p">$ </span>cre workflow simulate status-monitor \
+    --target staging-settings --non-interactive --trigger-index 0</pre>
+		</div>
+		<div>
+			<p class="caps muted" style="margin:0 0 8px;font-size:.82rem">Contracts · Ethereum Sepolia</p>
+			<ul class="addresses">
+				<li><span>StatusRegistry</span><span class="links"><a href="https://sepolia.etherscan.io/address/0x1AE232515B9C011152335e68314f12926e4d1245">Etherscan ↗</a><a href="https://repo.sourcify.dev/11155111/0x1AE232515B9C011152335e68314f12926e4d1245">Sourcify ↗</a></span><span class="mono">0x1AE232515B9C011152335e68314f12926e4d1245</span></li>
+				<li><span>LoanFacility · DM000001</span><span class="links"><a href="https://sepolia.etherscan.io/address/0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0">Etherscan ↗</a><a href="https://repo.sourcify.dev/11155111/0x911646d683E2D9bFF45DEc5BcEE9b0bc142a0Ab0">Sourcify ↗</a></span><span class="mono">0x911646d683e2d9bff45dec5bcee9b0bc142a0ab0</span></li>
+				<li><span>MockUSDC</span><span class="links"><a href="https://sepolia.etherscan.io/address/0x687d8a7c046f6e44bfc9f031411fa5618d17645d">Etherscan ↗</a><a href="https://repo.sourcify.dev/11155111/0x687D8A7C046f6e44bFC9f031411fA5618d17645D">Sourcify ↗</a></span><span class="mono">0x687d8a7c046f6e44bfc9f031411fa5618d17645d</span></li>
+			</ul>
+		</div>
+	</div>
+</section>
+
+<!-- ───────────── § 7 Limits ───────────── -->
+<section class="part wrap" id="limits" aria-labelledby="limits-title">
+	<div class="part-head reveal">
+		<p class="sect caps"><b>§ 7</b>Limits</p>
+		<div>
+			<h3 id="limits-title">What we <em>do not</em> claim.</h3>
+		</div>
+	</div>
+	<div class="errata reveal">
+		<ol>
+			<li><b>Not faster than commercial vendors,</b> some of which see petitions before The Gazette. Drawstop changes what happens once a petition is public.</li>
+			<li><b>“Not found” never rules out a petition</b> presented but not yet advertised. That is a limit of free open data, not of the law: 99% of England-and-Wales petitions sit in courts the CE-File search covers, a source that could be added.</li>
+			<li><b>A payment between presentation and advertisement cannot be stopped,</b> only surfaced afterwards.</li>
+			<li><b>The legal design is illustrative.</b> The draft facility terms flag what needs specialist advice. Not legal advice.</li>
+			<li><b>Test setup.</b> The CRE simulator runs consensus on one node. Sepolia writes go through the simulation forwarder, which does not check signatures, so anyone could push a report through it; production uses the KeystoneForwarder, which does. The registry owner is the test lender.</li>
+			<li><b>No user interviews yet.</b> Demand is argued from statute, case law, LMA structure and on-chain incidents.</li>
+			<li><b>One quarter of data, plus a two-week hold-out.</b> Predictions registered on 17 October held on all 5 checks for 409 October petitions. 12 Q3 notices were unretrievable. Corrected on 22 October to whole calendar days: the 30-day figure is 75%, not the 79% first published.</li>
+			<li><b>Mostly England and Wales.</b> 10% of the petitions concern Scottish or Northern Irish companies, whose rules differ; they are kept in, which makes the figures conservative (England and Wales only: 98% after 14 days).</li>
+		</ol>
+	</div>
+</section>
+
+</main>
+
+<footer class="wrap">
+	<div class="colophon">
+		<svg class="seal" aria-hidden="true"><use href="#seal"/></svg>
+		<div>
+			<p><b>Drawstop</b> is an open-source prototype for the BLI Legal Tech Hackathon 2, Chainlink “Best workflow with CRE”. Testnet only. Not legal advice. MIT licence.</p>
+			<p>Contains public sector information licensed under the Open Government Licence v3.0. Not affiliated with The Gazette, HM Courts &amp; Tribunals Service, Companies House or Chainlink Labs.</p>
+			<p class="faint">Set in Newsreader and IBM Plex Mono.</p>
+		</div>
+		<ul>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop">Repository ↗</a></li>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop/tree/main/research/petition-lag">Petition-lag study ↗</a></li>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop/blob/main/DESIGN.md">Design specification ↗</a></li>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop/blob/main/docs/agreement-rider.md">Agreement rider ↗</a></li>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop/blob/main/demo/s127-statement-DM000001.md">s.127 statement ↗</a></li>
+			<li><a href="https://github.com/ZhenYan1214/Drawstop/tree/main/research/forward">Forward test ↗</a></li>
+		</ul>
+	</div>
+</footer>
+
+<script src="site/data.js?v=8"></script>
+<script src="site/app.js?v=8"></script>
+<script src="site/try.js?v=2"></script>
+</body>
+</html>
