@@ -6,7 +6,7 @@
 Drawstop is a Chainlink CRE workflow that lets a tokenized loan stop new drawdowns, hold at-risk repayments<br>
 and call for human review the moment a statutory insolvency notice appears.
 
-**[Read it as a website](https://zhenyan1214.github.io/Drawstop/)** · **[Watch the demo (3:40)](https://youtu.be/d3qod9UnwVs)** · [The gap](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Trust model](#trust-model-and-honest-limits) · [Verification](#how-it-was-checked) · [Demo on Sepolia](#demo-on-sepolia)
+**[Read it as a website](https://zhenyan1214.github.io/Drawstop/)** · **[Watch the demo (3:40)](https://youtu.be/uUORqRNguMQ)** · [The gap](#the-problem) · [Measured](#it-is-not-one-case-a-quarter-of-petitions-measured) · [Solution](#the-solution) · [Architecture](#architecture) · [Trust model](#trust-model-and-honest-limits) · [Verification](#how-it-was-checked) · [Demo on Sepolia](#demo-on-sepolia)
 
 <sub>BLI Legal Tech Hackathon 2 · Chainlink “Best workflow with CRE” · Ethereum Sepolia · 42 unit tests · 5 invariants · 24 workflow tests · Testnet only · Not legal advice · MIT</sub>
 
